@@ -15,4 +15,4 @@ const ColourPickerCell: React.FC<ColourPickerCellProps> = ({ cellData }) => {
 	);
 };
 
-export { ColourPickerCell };
+export default ColourPickerCell;

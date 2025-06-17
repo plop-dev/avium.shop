@@ -15,8 +15,8 @@ const colourField: Field = {
 	required: true,
 	admin: {
 		components: {
-			Field: '@/components/ColourPicker/colour-picker#ColourPicker',
-			Cell: '@/components/ColourPicker/Cell#ColourPickerCell',
+			Field: '@/components/payload/ColourPicker/ColourPicker',
+			Cell: '@/components/payload/ColourPicker/Cell',
 		},
 	},
 };

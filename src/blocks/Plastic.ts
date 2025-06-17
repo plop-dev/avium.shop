@@ -1,4 +1,4 @@
-import colourField from '@/components/ColourPicker/config';
+import colourField from '@/components/payload/ColourPicker/config';
 import { Block } from 'payload';
 
 export const Plastic: Block = {
