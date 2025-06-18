@@ -1,87 +1,9 @@
 'use client';
 
 import { useField, TextInput, FieldLabel, toast } from '@payloadcms/ui';
-import styles from './colourPicker.module.css';
+import './ColourPicker.css';
 import { useEffect, useRef, useState, useCallback } from 'react';
-
-// Color conversion utilities
-const hexToHsv = (hex: string): { h: number; s: number; v: number } => {
-	// Remove # if present
-	hex = hex.replace(/^#/, '');
-
-	// Parse the hex values
-	const r = parseInt(hex.substring(0, 2), 16) / 255;
-	const g = parseInt(hex.substring(2, 4), 16) / 255;
-	const b = parseInt(hex.substring(4, 6), 16) / 255;
-
-	const max = Math.max(r, g, b);
-	const min = Math.min(r, g, b);
-	const delta = max - min;
-
-	// Calculate hue
-	let h = 0;
-	if (delta !== 0) {
-		if (max === r) h = ((g - b) / delta) % 6;
-		else if (max === g) h = (b - r) / delta + 2;
-		else h = (r - g) / delta + 4;
-	}
-
-	h = Math.round(h * 60);
-	if (h < 0) h += 360;
-
-	// Calculate saturation and value
-	const s = max === 0 ? 0 : delta / max;
-	const v = max;
-
-	return { h, s, v };
-};
-
-const hsvToHex = (h: number, s: number, v: number): string => {
-	h = (h % 360) / 60;
-
-	// Calculate chroma, x, and m
-	const c = v * s;
-	const x = c * (1 - Math.abs((h % 2) - 1));
-	const m = v - c;
-
-	let r = 0,
-		g = 0,
-		b = 0;
-
-	if (h >= 0 && h < 1) {
-		r = c;
-		g = x;
-		b = 0;
-	} else if (h >= 1 && h < 2) {
-		r = x;
-		g = c;
-		b = 0;
-	} else if (h >= 2 && h < 3) {
-		r = 0;
-		g = c;
-		b = x;
-	} else if (h >= 3 && h < 4) {
-		r = 0;
-		g = x;
-		b = c;
-	} else if (h >= 4 && h < 5) {
-		r = x;
-		g = 0;
-		b = c;
-	} else {
-		r = c;
-		g = 0;
-		b = x;
-	}
-
-	// Convert to hex
-	const toHex = (comp: number) => {
-		const hex = Math.round((comp + m) * 255).toString(16);
-		return hex.length === 1 ? '0' + hex : hex;
-	};
-
-	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-};
+import { hexToHsv, hsvToHex } from '@/utils/colourUtils';
 
 const ColourPicker = ({ field: { label, required = false }, path }: { field: { label: string; required?: boolean }; path: string }) => {
 	const { value, setValue, showError, errorMessage } = useField<string>({ path });
@@ -95,9 +17,13 @@ const ColourPicker = ({ field: { label, required = false }, path }: { field: { l
 	const [saturation, setSaturation] = useState<number>(hsv.s);
 	const [brightness, setBrightness] = useState<number>(hsv.v);
 
+	// Picker visibility state
+	const [showPicker, setShowPicker] = useState<boolean>(false);
+
 	// Refs for interaction
 	const satValGridRef = useRef<HTMLDivElement>(null);
 	const hueSliderRef = useRef<HTMLDivElement>(null);
+	const pickerRef = useRef<HTMLDivElement>(null);
 
 	// Update hsv when external value changes
 	useEffect(() => {
@@ -222,48 +148,72 @@ const ColourPicker = ({ field: { label, required = false }, path }: { field: { l
 		}
 	}, [showError, errorMessage, path]);
 
+	// Hide picker when clicking outside
+	useEffect(() => {
+		if (!showPicker) return;
+		const handleClickOutside = (event: MouseEvent) => {
+			if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+				setShowPicker(false);
+			}
+		};
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => document.removeEventListener('mousedown', handleClickOutside);
+	}, [showPicker]);
+
+	// Handle preview click with proper toggle behavior
+	const handlePreviewClick = () => {
+		setShowPicker(prev => !prev);
+	};
+
 	return (
-		<div className={styles.colourPickerContainer}>
+		<div className={'colourPickerContainer'}>
 			<FieldLabel htmlFor={path} label={label} required={required} />
 
-			<div className={styles.pickerWrapper}>
+			<div className={'pickerWrapper'}>
 				{/* Controls row with preview and hex input */}
-				<div className={styles.controlsRow}>
-					<div className={styles.colorPreview} style={{ backgroundColor: value || '#000000' }} />
-					<div className={styles.textInputWrapper}>
+				<div className={'controlsRow'}>
+					<div
+						className={'colorPreview'}
+						style={{ backgroundColor: value || '#000000', cursor: 'pointer' }}
+						onClick={handlePreviewClick}
+						tabIndex={0}
+						aria-label='Open color picker'
+					/>
+					<div className={'textInputWrapper'}>
 						<TextInput path={path} value={value || ''} onChange={handleTextChange} placeholder='#000000' showError={showError} />
 					</div>
 				</div>
 
-				{/* Color grid with saturation and brightness */}
-				<div
-					ref={satValGridRef}
-					className={styles.saturationValueGrid}
-					style={{ backgroundColor: `hsl(${hue}, 100%, 50%)` }}
-					onMouseDown={handleMouseDown(handleSatValChange)}
-					onTouchStart={handleMouseDown(handleSatValChange)}>
-					<div className={styles.saturationLayer}>
-						<div className={styles.valueLayer}>
-							<div
-								className={styles.gridPointer}
-								style={{
-									left: `${saturation * 100}%`,
-									top: `${(1 - brightness) * 100}%`,
-									backgroundColor: value || '#000000',
-								}}
-							/>
+				{showPicker && (
+					<div className={`gridWrapper ${showPicker ? 'pickerVisible' : ''}`} ref={pickerRef}>
+						<div
+							ref={satValGridRef}
+							className={'saturationValueGrid'}
+							style={{ backgroundColor: `hsl(${hue}, 100%, 50%)` }}
+							onMouseDown={handleMouseDown(handleSatValChange)}
+							onTouchStart={handleMouseDown(handleSatValChange)}>
+							<div className={'saturationLayer'}></div>
+							<div className={'valueLayer'}>
+								<div
+									className={'gridPointer'}
+									style={{
+										left: `${saturation * 100}%`,
+										top: `${(1 - brightness) * 100}%`,
+										backgroundColor: value || '#000000',
+									}}
+								/>
+							</div>
+						</div>
+
+						<div
+							ref={hueSliderRef}
+							className={'hueSlider'}
+							onMouseDown={handleMouseDown(handleHueChange)}
+							onTouchStart={handleMouseDown(handleHueChange)}>
+							<div className={'hueSliderPointer'} style={{ left: `${(hue / 360) * 100}%` }} />
 						</div>
 					</div>
-				</div>
-
-				{/* Hue slider */}
-				<div
-					ref={hueSliderRef}
-					className={styles.hueSlider}
-					onMouseDown={handleMouseDown(handleHueChange)}
-					onTouchStart={handleMouseDown(handleHueChange)}>
-					<div className={styles.hueSliderPointer} style={{ left: `${(hue / 360) * 100}%` }} />
-				</div>
+				)}
 			</div>
 		</div>
 	);

@@ -247,10 +247,6 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface PrintingOption {
   id: string;
-  layerHeight: {
-    min: number;
-    max: number;
-  };
   plastic?:
     | {
         /**
@@ -261,16 +257,21 @@ export interface PrintingOption {
          * A brief description of the plastic type
          */
         description?: string | null;
-        color: string;
-        /**
-         * Price per kilogram of this plastic type
-         */
-        price: number;
+        colours?:
+          | {
+              color: string;
+              id?: string | null;
+            }[]
+          | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'plastic';
       }[]
     | null;
+  layerHeight: {
+    min: number;
+    max: number;
+  };
   infill: {
     /**
      * e.g. 0–100
@@ -286,12 +287,6 @@ export interface PrintingOption {
  * via the `definition` "printing-options_select".
  */
 export interface PrintingOptionsSelect<T extends boolean = true> {
-  layerHeight?:
-    | T
-    | {
-        min?: T;
-        max?: T;
-      };
   plastic?:
     | T
     | {
@@ -300,11 +295,21 @@ export interface PrintingOptionsSelect<T extends boolean = true> {
           | {
               name?: T;
               description?: T;
-              color?: T;
-              price?: T;
+              colours?:
+                | T
+                | {
+                    color?: T;
+                    id?: T;
+                  };
               id?: T;
               blockName?: T;
             };
+      };
+  layerHeight?:
+    | T
+    | {
+        min?: T;
+        max?: T;
       };
   infill?:
     | T

@@ -1,0 +1,172 @@
+@import url('@/app/styles/vars.css');
+@import url('@/app/styles/theme.css');
+
+.colourPickerContainer {
+	margin-bottom: var(--base);
+}
+
+.pickerWrapper {
+	margin-top: calc(var(--base) / 4);
+	position: relative;
+}
+
+.gridWrapper {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
+	width: 220px;
+	background: var(--theme-elevation-50);
+	border: 1px solid var(--theme-elevation-200);
+	border-radius: var(--radius-lg);
+	padding: calc(var(--base) / 2);
+	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+	margin-top: calc(var(--base) / 4);
+	opacity: 0;
+	transform: translateY(-8px) scale(0.95);
+	animation: pickerSlideIn 0.15s ease-out forwards;
+}
+
+@keyframes pickerSlideIn {
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+.pickerVisible {
+	animation: pickerSlideIn 0.15s ease-out forwards;
+}
+
+.saturationValueGrid {
+	position: relative;
+	width: 100%;
+	height: 160px;
+	margin-bottom: calc(var(--base) / 2);
+	border-radius: var(--radius-md);
+	cursor: crosshair;
+	touch-action: none;
+	border: 1px solid var(--theme-elevation-200);
+	overflow: hidden;
+	z-index: 1;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.saturationLayer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0));
+	z-index: 2;
+}
+
+.valueLayer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(to top, #000000, rgba(0, 0, 0, 0));
+	z-index: 3;
+}
+
+.gridPointer {
+	position: absolute;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	border: 3px solid white;
+	box-sizing: border-box;
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+	z-index: 4;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+	transition: all 0.1s ease-out;
+}
+
+.controlsRow {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--base) / 2);
+	margin-bottom: calc(var(--base) / 2);
+}
+
+.colorPreview {
+	width: 36px;
+	height: 36px;
+	border-radius: var(--radius-md);
+	border: 2px solid var(--theme-elevation-200);
+	flex-shrink: 0;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	transition: all 0.15s ease-out;
+	position: relative;
+	overflow: hidden;
+}
+
+.colorPreview::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.1) 100%);
+	pointer-events: none;
+}
+
+.colorPreview:hover {
+	transform: scale(1.05);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.colorPreview:active {
+	transform: scale(0.98);
+}
+
+.textInputWrapper {
+	flex: 1;
+}
+
+.hueSlider {
+	box-sizing: content-box;
+	position: relative;
+	width: 100%;
+	height: 16px;
+	border-radius: var(--radius-md);
+	background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+	cursor: pointer;
+	touch-action: none;
+	border: 1px solid var(--theme-elevation-200);
+	overflow: visible;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hueSliderPointer {
+	position: absolute;
+	top: -1px;
+	width: 16px;
+	height: 16px;
+	background: white;
+	border-radius: 50%;
+	border: 3px solid var(--theme-elevation-400);
+	transform: translateX(-50%);
+	pointer-events: none;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+	transition: all 0.1s ease-out;
+}
+
+.hueSliderPointer::before {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	right: 2px;
+	bottom: 2px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.2) 100%);
+	pointer-events: none;
+}

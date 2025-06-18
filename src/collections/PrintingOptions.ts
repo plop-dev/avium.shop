@@ -6,6 +6,17 @@ const PrintingOptions: GlobalConfig = {
 	label: 'Printing Options',
 	fields: [
 		{
+			name: 'plastic',
+			label: 'Plastic',
+			labels: {
+				singular: 'Plastic',
+				plural: 'Plastics',
+			},
+			type: 'blocks',
+			blocks: [Plastic],
+		},
+
+		{
 			name: 'layerHeight',
 			label: 'Layer Height Range',
 			type: 'group',
@@ -23,16 +34,6 @@ const PrintingOptions: GlobalConfig = {
 					required: true,
 				},
 			],
-		},
-		{
-			name: 'plastic',
-			label: 'Plastic',
-			labels: {
-				singular: 'Plastic',
-				plural: 'Plastics',
-			},
-			type: 'blocks',
-			blocks: [Plastic],
 		},
 
 		//* infill is the only field that the user can change even with a preset selected

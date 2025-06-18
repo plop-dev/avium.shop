@@ -27,15 +27,10 @@ export const Plastic: Block = {
 			},
 			maxLength: 120,
 		},
-		colourField,
 		{
-			name: 'price',
-			label: 'Price per kg',
-			type: 'number',
-			required: true,
-			admin: {
-				description: 'Price per kilogram of this plastic type',
-			},
+			name: 'colours',
+			type: 'array',
+			fields: [colourField],
 		},
 	],
 };
