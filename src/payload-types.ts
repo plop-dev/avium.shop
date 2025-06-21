@@ -68,6 +68,8 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    orders: Order;
+    presets: Preset;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -75,6 +77,8 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
+    presets: PresetsSelect<false> | PresetsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -138,14 +142,151 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: string;
+  /**
+   * The name of the order
+   */
+  name: string;
+  /**
+   * The user who placed the order
+   */
+  customer: string | User;
+  /**
+   * The 3D model(s) associated with this order
+   */
+  model?:
+    | {
+        /**
+         * The name of the 3D model file (example: acb123)
+         */
+        filename: string;
+        filetype: 'stl' | 'obj' | '3mf';
+        /**
+         * The relative path of the 3D model file on the server (example: /files/abc123.stl)
+         */
+        serverPath: string;
+        id?: string | null;
+      }[]
+    | null;
+  quantity: number;
+  preset?: (string | null) | Preset;
+  statuses?:
+    | {
+        stage: 'received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled';
+        timestamp: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Denormalized field for quick access
+   */
+  currentStatus?:
+    | ('received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled')
+    | null;
+  comments?:
+    | {
+        /**
+         * The user who made the comment
+         */
+        author: string | User;
+        /**
+         * The content of the comment
+         */
+        content: {
+          root: {
+            type: string;
+            children: {
+              type: string;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        };
+        createdAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "presets".
+ */
+export interface Preset {
+  id: string;
+  /**
+   * The name of the preset
+   */
+  name: string;
+  /**
+   * A brief description of the preset
+   */
+  description?: string | null;
+  options: {
+    plastic?:
+      | {
+          /**
+           * The name of the plastic type
+           */
+          name: string;
+          /**
+           * A brief description of the plastic type
+           */
+          description?: string | null;
+          colours?:
+            | {
+                color: string;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'plastic';
+        }[]
+      | null;
+    layerHeight: {
+      min: number;
+      max: number;
+    };
+    infill: {
+      /**
+       * e.g. 0–100
+       */
+      min: number;
+      max: number;
+    };
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
   id: string;
-  document?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
+  document?:
+    | ({
+        relationTo: 'users';
+        value: string | User;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: string | Order;
+      } | null)
+    | ({
+        relationTo: 'presets';
+        value: string | Preset;
+      } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
@@ -205,6 +346,86 @@ export interface UsersSelect<T extends boolean = true> {
         provider?: T;
         providerAccountId?: T;
         type?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  name?: T;
+  customer?: T;
+  model?:
+    | T
+    | {
+        filename?: T;
+        filetype?: T;
+        serverPath?: T;
+        id?: T;
+      };
+  quantity?: T;
+  preset?: T;
+  statuses?:
+    | T
+    | {
+        stage?: T;
+        timestamp?: T;
+        id?: T;
+      };
+  currentStatus?: T;
+  comments?:
+    | T
+    | {
+        author?: T;
+        content?: T;
+        createdAt?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "presets_select".
+ */
+export interface PresetsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  options?:
+    | T
+    | {
+        plastic?:
+          | T
+          | {
+              plastic?:
+                | T
+                | {
+                    name?: T;
+                    description?: T;
+                    colours?:
+                      | T
+                      | {
+                          color?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+            };
+        layerHeight?:
+          | T
+          | {
+              min?: T;
+              max?: T;
+            };
+        infill?:
+          | T
+          | {
+              min?: T;
+              max?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;

@@ -12,7 +12,7 @@ export const Orders: CollectionConfig = {
 	},
 	access: {
 		read: () => true,
-		create: () => true,
+		create: () => false,
 		update: () => true,
 		delete: () => false,
 	},
@@ -35,55 +35,56 @@ export const Orders: CollectionConfig = {
 				description: 'The user who placed the order',
 			},
 		},
+
 		{
-			name: 'items',
+			name: 'model',
 			type: 'array',
-			minRows: 1,
+			admin: {
+				readOnly: true,
+				isSortable: false,
+				description: 'The 3D model(s) associated with this order',
+			},
 			fields: [
 				{
-					name: 'model',
-					type: 'upload',
-					relationTo: 'users', //! FIX
+					name: 'filename',
+					type: 'text',
+					required: true,
+					admin: { description: 'The name of the 3D model file (example: acb123)', readOnly: true },
+				},
+				{
+					name: 'filetype',
+					type: 'select',
+					options: ['stl', 'obj', '3mf'],
+					required: true,
+					admin: { readOnly: true },
+				},
+				{
+					name: 'serverPath',
+					type: 'text',
+					required: true,
 					admin: {
-						description: 'The 3D file to print',
+						description: 'The relative path of the 3D model file on the server (example: /files/abc123.stl)',
+						readOnly: true,
 					},
-					required: true,
-				},
-				{
-					name: 'quantity',
-					type: 'number',
-					required: true,
-					defaultValue: 1,
-				},
-				{
-					name: 'material',
-					type: 'select',
-					options: [
-						{ label: 'PLA', value: 'pla' },
-						{ label: 'PETG', value: 'petg' },
-						{ label: 'TPU', value: 'tpu' },
-					],
-					required: true,
-				},
-				{
-					name: 'colour',
-					type: 'select',
-					options: [
-						{ label: 'Black', value: 'black' },
-						{ label: 'White', value: 'white' },
-						{ label: 'Red', value: 'red' },
-						{ label: 'Blue', value: 'blue' },
-						{ label: 'Green', value: 'green' },
-					],
-					required: true,
-				},
-				{
-					name: 'unitPrice',
-					type: 'number',
-					required: true,
 				},
 			],
 		},
+
+		{
+			name: 'quantity',
+			type: 'number',
+			required: true,
+			defaultValue: 1,
+		},
+
+		{
+			name: 'preset',
+			type: 'relationship',
+			relationTo: 'presets',
+		},
+
+		//#region status
+		//! CHANGE THIS -------------
 		{
 			name: 'statuses',
 			type: 'array',
@@ -143,12 +144,36 @@ export const Orders: CollectionConfig = {
 				],
 			},
 		},
+		//! --------------------------------
+		//#endregion
+
+		//? TBD
 		{
-			name: 'notes',
-			type: 'textarea',
-			admin: {
-				description: 'Internal notes or comments about the order',
-			},
+			name: 'comments',
+			type: 'array',
+			label: 'Comments',
+
+			fields: [
+				{
+					name: 'author',
+					type: 'relationship',
+					relationTo: 'users',
+					required: true,
+					admin: { description: 'The user who made the comment' },
+				},
+				{
+					name: 'content',
+					type: 'richText',
+					required: true,
+					admin: { description: 'The content of the comment' },
+				},
+				{
+					name: 'createdAt',
+					type: 'date',
+					defaultValue: new Date(),
+					admin: { readOnly: true, date: { pickerAppearance: 'dayOnly' } },
+				},
+			],
 		},
 	],
 };

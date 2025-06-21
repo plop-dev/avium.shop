@@ -12,6 +12,8 @@ import sharp from 'sharp';
 import { Users } from '@/collections/Users';
 import { authConfig } from '@/auth.config';
 import { PrintingOptions } from '@/collections/PrintingOptions';
+import { Orders } from '@/collections/Order';
+import { Presets } from '@/collections/Presets';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -24,7 +26,7 @@ export default buildConfig({
 		},
 	},
 	globals: [PrintingOptions],
-	collections: [Users],
+	collections: [Users, Orders, Presets],
 	editor: lexicalEditor(),
 	secret: process.env.PAYLOAD_SECRET || '',
 	typescript: {
