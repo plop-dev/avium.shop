@@ -78,9 +78,77 @@ export const Orders: CollectionConfig = {
 		},
 
 		{
-			name: 'preset',
-			type: 'relationship',
-			relationTo: 'presets',
+			name: 'printingOptions',
+			type: 'group',
+			required: true,
+			fields: [
+				{
+					name: 'preset',
+					type: 'relationship',
+					relationTo: 'presets',
+					admin: {
+						condition: (data, siblingData, { blockData, path, user }) => {
+							if (data.printingOptions.layerHeight) {
+								// if layerHeight is set, we assume it's a custom print
+								return false; // don't show preset selection
+							} else {
+								// if layerHeight is not set, we allow preset selection
+								return true; // show preset selection
+							}
+						},
+					},
+				},
+
+				// or custom settings (below)
+				{
+					name: 'layerHeight',
+					label: 'Layer Height',
+					type: 'number',
+					defaultValue: 0.2, //? get default from PrintingOptions global?
+				},
+
+				//* user can always change infill, even if a preset is selected
+				{
+					name: 'infill',
+					label: 'Infill Percentage Range',
+					type: 'group',
+					fields: [
+						{
+							name: 'min',
+							label: 'Minimum %',
+							type: 'number',
+							required: true,
+						},
+						{
+							name: 'max',
+							label: 'Maximum %',
+							type: 'number',
+							required: true,
+						},
+					],
+				},
+			],
+		},
+
+		//#region payment
+		//? DOUBLE CHECK WITH STRIPE AND SZYMON
+		{
+			name: 'payment',
+			type: 'group',
+			required: true,
+			fields: [
+				// if custom print, payment will be after the quote
+			],
+		},
+		//#endregion
+
+		// only if custom
+		{
+			name: 'quote',
+			type: 'group',
+			fields: [
+				//
+			],
 		},
 
 		//#region status

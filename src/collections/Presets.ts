@@ -1,11 +1,13 @@
 import type { CollectionConfig } from 'payload';
-import PrintingOptionsFields from './PrintingOptionsFields';
 
 export const Presets: CollectionConfig = {
 	slug: 'presets',
 	labels: {
 		singular: 'Preset',
 		plural: 'Presets',
+	},
+	admin: {
+		useAsTitle: 'name',
 	},
 	fields: [
 		{
@@ -24,10 +26,12 @@ export const Presets: CollectionConfig = {
 			},
 		},
 		{
-			name: 'options',
-			type: 'group',
-			label: 'Printing Options',
-			fields: PrintingOptionsFields, //? plastic blocks also appear in the panel (ask szymon if presets include plastics)
+			name: 'bambulabName',
+			label: 'Bambu Lab Preset Name',
+			type: 'text',
+			admin: {
+				description: 'The name of the preset in Bambu Lab',
+			},
 		},
 	],
 };

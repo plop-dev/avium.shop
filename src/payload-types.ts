@@ -172,7 +172,16 @@ export interface Order {
       }[]
     | null;
   quantity: number;
-  preset?: (string | null) | Preset;
+  printingOptions: {
+    preset?: (string | null) | Preset;
+    layerHeight?: number | null;
+    infill: {
+      min: number;
+      max: number;
+    };
+  };
+  payment: {};
+  quote?: {};
   statuses?:
     | {
         stage: 'received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled';
@@ -231,40 +240,10 @@ export interface Preset {
    * A brief description of the preset
    */
   description?: string | null;
-  options: {
-    plastic?:
-      | {
-          /**
-           * The name of the plastic type
-           */
-          name: string;
-          /**
-           * A brief description of the plastic type
-           */
-          description?: string | null;
-          colours?:
-            | {
-                color: string;
-                id?: string | null;
-              }[]
-            | null;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'plastic';
-        }[]
-      | null;
-    layerHeight: {
-      min: number;
-      max: number;
-    };
-    infill: {
-      /**
-       * e.g. 0–100
-       */
-      min: number;
-      max: number;
-    };
-  };
+  /**
+   * The name of the preset in Bambu Lab
+   */
+  bambulabName?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -366,7 +345,20 @@ export interface OrdersSelect<T extends boolean = true> {
         id?: T;
       };
   quantity?: T;
-  preset?: T;
+  printingOptions?:
+    | T
+    | {
+        preset?: T;
+        layerHeight?: T;
+        infill?:
+          | T
+          | {
+              min?: T;
+              max?: T;
+            };
+      };
+  payment?: T | {};
+  quote?: T | {};
   statuses?:
     | T
     | {
@@ -393,40 +385,7 @@ export interface OrdersSelect<T extends boolean = true> {
 export interface PresetsSelect<T extends boolean = true> {
   name?: T;
   description?: T;
-  options?:
-    | T
-    | {
-        plastic?:
-          | T
-          | {
-              plastic?:
-                | T
-                | {
-                    name?: T;
-                    description?: T;
-                    colours?:
-                      | T
-                      | {
-                          color?: T;
-                          id?: T;
-                        };
-                    id?: T;
-                    blockName?: T;
-                  };
-            };
-        layerHeight?:
-          | T
-          | {
-              min?: T;
-              max?: T;
-            };
-        infill?:
-          | T
-          | {
-              min?: T;
-              max?: T;
-            };
-      };
+  bambulabName?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -494,9 +453,6 @@ export interface PrintingOption {
     max: number;
   };
   infill: {
-    /**
-     * e.g. 0–100
-     */
     min: number;
     max: number;
   };
