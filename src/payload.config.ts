@@ -1,5 +1,4 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb';
-import { payloadCloudPlugin } from '@payloadcms/payload-cloud';
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer';
 import nodemailer from 'nodemailer';
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
@@ -37,7 +36,6 @@ export default buildConfig({
 	}),
 	sharp,
 	plugins: [
-		payloadCloudPlugin(),
 		authjsPlugin({
 			authjsConfig: authConfig,
 		}),
