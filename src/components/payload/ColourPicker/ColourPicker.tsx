@@ -2,7 +2,7 @@
 
 import { useField, TextInput, FieldLabel, toast } from '@payloadcms/ui';
 import './ColourPicker.css';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { hexToHsv, hsvToHex } from '@/utils/colourUtils';
 
 const ColourPicker = ({ field: { label, required = false }, path }: { field: { label: string; required?: boolean }; path: string }) => {
@@ -123,7 +123,14 @@ const ColourPicker = ({ field: { label, required = false }, path }: { field: { l
 	const handleMouseDown = (handler: (e: React.MouseEvent | React.TouchEvent) => void) => (e: React.MouseEvent | React.TouchEvent) => {
 		handler(e);
 
-		const moveHandler = (e: MouseEvent | TouchEvent) => handler(e as any);
+		const moveHandler = (e: MouseEvent | TouchEvent) => {
+			// Convert native events to React synthetic events for the handler
+			if (e instanceof MouseEvent) {
+				handler(e as unknown as React.MouseEvent);
+			} else if (e instanceof TouchEvent) {
+				handler(e as unknown as React.TouchEvent);
+			}
+		};
 		const upHandler = () => {
 			document.removeEventListener('mousemove', moveHandler);
 			document.removeEventListener('mouseup', upHandler);
@@ -180,7 +187,13 @@ const ColourPicker = ({ field: { label, required = false }, path }: { field: { l
 						aria-label='Open color picker'
 					/>
 					<div className={'textInputWrapper'}>
-						<TextInput path={path} value={value || ''} onChange={handleTextChange} placeholder='#000000' showError={showError} />
+						<TextInput
+							path={path}
+							value={value || ''}
+							onChange={handleTextChange}
+							placeholder='#000000'
+							showError={showError}
+						/>
 					</div>
 				</div>
 
