@@ -1,41 +1,201 @@
-@import url('@/app/styles/vars.css');
-@import url('@/app/styles/theme.css');
 @import 'tailwindcss';
-@plugin 'tailwindcss-animate';
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
+@import 'tw-animate-css';
 
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-	*,
-	::after,
-	::before,
-	::backdrop,
-	::file-selector-button {
-		border-color: var(--color-gray-200, currentColor);
-	}
+@plugin '@tailwindcss/typography';
+@plugin '@tailwindcss/container-queries';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+	--background: oklch(0.952 0.0083 91.4843);
+	--foreground: oklch(0.2046 0 0);
+	--card: oklch(0.9764 0.0013 286.3755);
+	--card-foreground: oklch(0.2046 0 0);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.2046 0 0);
+	--primary: oklch(0.2419 0.0869 273.3926);
+	--primary-foreground: oklch(0.9851 0 0);
+	--secondary: oklch(0.7641 0.1721 60.7003);
+	--secondary-foreground: oklch(0.2046 0 0);
+	--muted: oklch(0.9189 0 0);
+	--muted-foreground: oklch(0.5103 0 0);
+	--accent: oklch(0.9499 0.0243 280.8643);
+	--accent-foreground: oklch(0.2046 0 0);
+	--destructive: oklch(0.5829 0.2388 28.7513);
+	--destructive-foreground: oklch(1 0 0);
+	--border: oklch(0.9219 0 0);
+	--input: oklch(0.6949 0.0795 279.1987);
+	--ring: oklch(0.709 0 0);
+	--chart-1: oklch(0.8418 0.1211 68.3883);
+	--chart-2: oklch(0.8028 0.1494 65.8924);
+	--chart-3: oklch(0.7675 0.1709 61.5362);
+	--chart-4: oklch(0.7213 0.176 56.2613);
+	--chart-5: oklch(0.6297 0.1529 56.7032);
+	--sidebar: oklch(0.9764 0.0013 286.3755);
+	--sidebar-foreground: oklch(0.1448 0 0);
+	--sidebar-primary: oklch(0.2419 0.0869 273.3926);
+	--sidebar-primary-foreground: oklch(0.9851 0 0);
+	--sidebar-accent: oklch(0.952 0.0083 91.4843);
+	--sidebar-accent-foreground: oklch(0.2046 0 0);
+	--sidebar-border: oklch(0.9219 0 0);
+	--sidebar-ring: oklch(0.709 0 0);
+	--font-sans: DM Sans, sans-serif;
+	--font-serif: Source Serif Pro, serif;
+	--font-mono: Fira Code, monospace;
+	--radius: 0.625rem;
+	--shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+	--shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+	--shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+	--shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+	--shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+	--shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+	--shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+	--shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
 }
 
-@layer utilities {
-	body {
-		font-family: Arial, Helvetica, sans-serif;
-	}
+.dark {
+	--background: oklch(0.2046 0 0);
+	--foreground: oklch(1 0 0);
+	--card: oklch(0.3092 0 0);
+	--card-foreground: oklch(0.952 0.0083 91.4843);
+	--popover: oklch(0.252 0 0);
+	--popover-foreground: oklch(0.9851 0 0);
+	--primary: oklch(0.6002 0.2167 270.24);
+	--primary-foreground: oklch(0.9794 0.0013 286.3756);
+	--secondary: oklch(0.7641 0.1721 60.7003);
+	--secondary-foreground: oklch(0.9851 0 0);
+	--muted: oklch(0.2891 0 0);
+	--muted-foreground: oklch(0.7155 0 0);
+	--accent: oklch(0.419 0.0554 277.098);
+	--accent-foreground: oklch(0.9794 0.0013 286.3756);
+	--destructive: oklch(0.7017 0.1895 23.3274);
+	--destructive-foreground: oklch(0.9851 0 0);
+	--border: oklch(0.2686 0 0);
+	--input: oklch(0.6949 0.0795 279.1987);
+	--ring: oklch(0.4165 0 0);
+	--chart-1: oklch(0.8418 0.1211 68.3883);
+	--chart-2: oklch(0.8028 0.1494 65.8924);
+	--chart-3: oklch(0.7675 0.1709 61.5362);
+	--chart-4: oklch(0.7213 0.176 56.2613);
+	--chart-5: oklch(0.6297 0.1529 56.7032);
+	--sidebar: oklch(0.2046 0 0);
+	--sidebar-foreground: oklch(0.952 0.0083 91.4843);
+	--sidebar-primary: oklch(0.6002 0.2167 270.24);
+	--sidebar-primary-foreground: oklch(0.9851 0 0);
+	--sidebar-accent: oklch(0.2686 0 0);
+	--sidebar-accent-foreground: oklch(0.9851 0 0);
+	--sidebar-border: oklch(0.2768 0 0);
+	--sidebar-ring: oklch(0.4386 0 0);
+	--font-sans: DM Sans, sans-serif;
+	--font-serif: Source Serif Pro, serif;
+	--font-mono: Fira Code, monospace;
+	--radius: 0.625rem;
+	--shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+	--shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+	--shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+	--shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+	--shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+	--shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+	--shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+	--shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
 }
 
-/* @layer base {
+@theme inline {
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+}
 
-} */
+@keyframes accordion-down {
+	from {
+		height: 0;
+	}
+	to {
+		height: var(--radix-accordion-content-height);
+	}
+}
+@keyframes accordion-up {
+	from {
+		height: var(--radix-accordion-content-height);
+	}
+	to {
+		height: 0;
+	}
+}
 
 @layer base {
 	* {
-		@apply border-border;
+		@apply border-border outline-ring/50;
 	}
 	body {
 		@apply bg-background text-foreground;
 	}
+}
+
+/* View Transition Wave Effect */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation: none;
+	mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+	/* Ensure the outgoing view (old theme) is beneath */
+	z-index: 0;
+}
+
+::view-transition-new(root) {
+	/* Ensure the incoming view (new theme) is always on top */
+	z-index: 1;
+}
+
+@keyframes reveal {
+	from {
+		/* Use CSS variables for the origin, defaulting to center if not set */
+		clip-path: circle(0% at var(--x, 50%) var(--y, 50%));
+		opacity: 0.7;
+	}
+	to {
+		/* Use CSS variables for the origin, defaulting to center if not set */
+		clip-path: circle(150% at var(--x, 50%) var(--y, 50%));
+		opacity: 1;
+	}
+}
+
+::view-transition-new(root) {
+	/* Apply the reveal animation */
+	animation: reveal 0.4s ease-in-out forwards;
 }
