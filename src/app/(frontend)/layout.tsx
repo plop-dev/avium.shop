@@ -9,6 +9,7 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { Metadata } from 'next';
 import { SessionProvider } from 'next-auth/react';
 import { DM_Sans } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
 	title: 'Avium',
@@ -30,6 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 				<head />
 				<body className='bg-background overflow-hidden overscroll-none font-sans antialiased'>
 					<NextTopLoader showSpinner={false}></NextTopLoader>
+					<Analytics></Analytics>
 					<NuqsAdapter>
 						<SessionProvider>
 							<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange enableColorScheme>
