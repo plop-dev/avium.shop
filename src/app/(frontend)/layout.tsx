@@ -13,7 +13,7 @@ import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
 	title: 'Avium',
-	description: 'Avium offers cheap and simple 3d printing services',
+	description: 'Avium makes 3d printing simple and affordable',
 };
 
 const dmSans = DM_Sans({
@@ -23,7 +23,7 @@ const dmSans = DM_Sans({
 });
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-	const cookieStore = await cookies();
+	// const cookieStore = await cookies();
 
 	return (
 		<>
