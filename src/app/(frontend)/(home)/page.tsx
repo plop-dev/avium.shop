@@ -7,21 +7,17 @@ export default function Page() {
 		<PageContainer scrollable={true}>
 			<Hero
 				heading='3D Printing'
-				subheading=' cheaper than ever before'
-				description='Avium makes 3D printing simple and affordable'
+				subheading='Cheaper than ever before'
+				description='Avium makes 3D printing simple, affordable, and accessible. Get started today with free quotes for your projects.'
 				buttons={{
 					primary: {
-						text: 'Get Started',
+						text: 'Get A Free Quote',
 						url: '#',
 					},
 					secondary: {
 						text: 'Browse Prints',
 						url: '#',
 					},
-				}}
-				image={{
-					src: 'https://3d.nice-cdn.com/upload/image/product/large/default/bambu-lab-a1-1-pc-700537-en.png',
-					alt: 'Bambu Lab A1',
 				}}
 			/>
 		</PageContainer>

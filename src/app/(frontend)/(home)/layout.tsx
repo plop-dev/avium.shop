@@ -3,7 +3,7 @@ import Navbar from '@/components/Navbar';
 export default async function HomeLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<main className='px-64'>
-			<Navbar
+			{/* <Navbar
 				auth={{
 					login: {
 						title: 'Login',
@@ -26,7 +26,8 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 					{ title: 'Plus', url: '/plus' },
 					{ title: 'Shop', url: '/shop' },
 					{ title: 'Contact', url: '/contact' },
-				]}></Navbar>
+				]}></Navbar> */}
+			<Navbar />
 			{children}
 		</main>
 	);

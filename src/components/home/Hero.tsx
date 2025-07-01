@@ -1,31 +1,33 @@
 import { ArrowUpRight, ArrowRight } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-interface HeroProps {
-	badge?: string;
-	heading?: string;
-	subheading?: string;
-	description?: string;
-	buttons?: {
-		primary?: {
+export interface HeroBadgeProps {
+	text: string;
+	icon?: React.ReactNode;
+}
+
+export interface HeroProps {
+	badges?: HeroBadgeProps[];
+	heading: string;
+	subheading: string;
+	description: string;
+	buttons: {
+		primary: {
 			text: string;
 			url: string;
 		};
-		secondary?: {
+		secondary: {
 			text: string;
 			url: string;
 		};
-	};
-	image?: {
-		src: string;
-		alt: string;
 	};
 }
 
 const Hero = ({
-	badge,
 	heading = '3d Printing',
 	subheading = ' cheaper than ever before',
 	description = 'Avium makes 3d printing simple and affordable ',
@@ -39,43 +41,24 @@ const Hero = ({
 			url: '#',
 		},
 	},
-	image = {
-		src: 'https://3d.nice-cdn.com/upload/image/product/large/default/bambu-lab-a1-1-pc-700537-en.png',
-		alt: 'Bambu Lab A1',
-	},
 }: HeroProps) => {
 	return (
-		<section className='py-32'>
-			<div className='container'>
-				<div className='grid items-center gap-8 lg:grid-cols-2'>
-					<div className='flex flex-col items-center text-center lg:items-start lg:text-left'>
-						{badge && (
-							<Badge variant='outline'>
-								{badge}
-								<ArrowUpRight className='ml-2 size-4' />
-							</Badge>
-						)}
-						<h1 className='my-6 text-pretty text-4xl font-bold lg:text-6xl'>{heading}</h1>
-						<p className='text-muted-foreground mb-8 max-w-xl lg:text-xl'>{description}</p>
-						<div className='flex w-full flex-col justify-center gap-2 sm:flex-row lg:justify-start'>
-							{buttons.primary && (
-								<Button asChild className='w-full sm:w-auto'>
-									<a href={buttons.primary.url}>{buttons.primary.text}</a>
-								</Button>
-							)}
-							{buttons.secondary && (
-								<Button asChild variant='outline' className='w-full sm:w-auto'>
-									<a href={buttons.secondary.url}>
-										{buttons.secondary.text}
-										<ArrowRight className='size-4' />
-									</a>
-								</Button>
-							)}
-						</div>
-					</div>
-					<div className='h-96 aspect-square rounded-md flex justify-center items-center bg-white p-12'>
-						<img src={image.src} alt={image.alt} className='max-h-96 w-full rounded-md object-contain' />
-					</div>
+		<section className='w-full'>
+			<div className='py-32 flex flex-col items-center justify-center gap-y-8 text-center'>
+				<div className='heading'>
+					<h1 className='text-6xl'>
+						{heading} <br />
+						<span className='text-foreground/60'>{subheading}</span>
+					</h1>
+				</div>
+				<p className='w-1/3'>{description}</p>
+				<div className='flex gap-x-2'>
+					<Link href={buttons.primary.url} className={cn(buttonVariants({ variant: 'default' }))}>
+						{buttons.primary.text}
+					</Link>
+					<Link href={buttons.secondary.url} className={cn(buttonVariants({ variant: 'secondary' }))}>
+						{buttons.secondary.text}
+					</Link>
 				</div>
 			</div>
 		</section>
