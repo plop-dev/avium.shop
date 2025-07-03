@@ -43,15 +43,17 @@ const Hero = ({
 	},
 }: HeroProps) => {
 	return (
-		<section className='w-full'>
-			<div className='py-32 flex flex-col items-center justify-center gap-y-8 text-center'>
+		<section className='w-full flex justify-center'>
+			<div className='py-32 flex flex-col max-w-5xl items-center justify-center gap-y-8 text-center'>
 				<div className='heading'>
 					<h1 className='text-6xl'>
 						{heading} <br />
-						<span className='text-foreground/60'>{subheading}</span>
+						<span className='bg-clip-text text-transparent bg-gradient-to-b from-foreground/80 to-foreground/40'>
+							{subheading}
+						</span>
 					</h1>
 				</div>
-				<p className='w-1/3'>{description}</p>
+				<p className='w-2/3'>{description}</p>
 				<div className='flex gap-x-2'>
 					<Link href={buttons.primary.url} className={cn(buttonVariants({ variant: 'default' }))}>
 						{buttons.primary.text}
