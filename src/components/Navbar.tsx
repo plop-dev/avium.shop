@@ -14,8 +14,9 @@ import {
 	NavigationMenuTrigger,
 	navigationMenuTriggerStyle,
 	NavigationMenuIndicator,
+	NavigationMenuViewport,
 } from '@/components/ui/navigation-menu';
-import { Button } from './ui/button';
+import { Button, buttonVariants } from './ui/button';
 import ThemeToggle from './layouts/ThemeToggle';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -255,7 +256,7 @@ const Navbar = ({ items }: NavbarProps) => {
 				{/* Indicator Element with matching animation classes from NavigationMenuContent */}
 				<div
 					className={cn(
-						'absolute w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-border z-50',
+						'absolute w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-border shadow-md',
 						'data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52',
 					)}
 					data-motion={isOpen ? 'from-start' : 'to-start'}
@@ -339,8 +340,16 @@ const Navbar = ({ items }: NavbarProps) => {
 				))}
 			</NavigationMenuList>
 
+			<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' />
+
 			<div className='flex gap-x-4 ml-auto'>
-				<Button>test</Button>
+				<Link href={'#'} className={buttonVariants({ variant: 'default' })}>
+					Login
+				</Link>
+				<Link href={'#'} className={buttonVariants({ variant: 'outline' })}>
+					Sign Up
+				</Link>
+
 				<ThemeToggle></ThemeToggle>
 			</div>
 		</NavigationMenu>

@@ -20,7 +20,7 @@ function NavigationMenu({
 			className={cn('group/navigation-menu relative flex max-w-max flex-1 items-center justify-center', className)}
 			{...props}>
 			{children}
-			{viewport && <NavigationMenuViewport />}
+			{/* {viewport && <NavigationMenuViewport />} */}
 		</NavigationMenuPrimitive.Root>
 	);
 }
@@ -78,7 +78,7 @@ function NavigationMenuViewport({ className, ...props }: React.ComponentProps<ty
 			<NavigationMenuPrimitive.Viewport
 				data-slot='navigation-menu-viewport'
 				className={cn(
-					'origin-top-center bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border shadow md:w-[var(--radix-navigation-menu-viewport-width)]',
+					'origin-top-center bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border-2 shadow md:w-[var(--radix-navigation-menu-viewport-width)]',
 					className,
 				)}
 				{...props}
