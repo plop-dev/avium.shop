@@ -272,11 +272,16 @@ const Navbar = ({ items }: NavbarProps) => {
 					<NavigationMenuItem key={index} onMouseEnter={() => setHoveredIndex(index)} onMouseLeave={() => setHoveredIndex(null)}>
 						{item.type === 'link' ? (
 							<NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-								<Link href={item.href || '#'}>{item.title}</Link>
+								<span className='cursor-default'>{item.title}</span>
 							</NavigationMenuLink>
 						) : (
 							<>
-								<NavigationMenuTrigger onClick={() => setActiveItemIndex(index)}>{item.title}</NavigationMenuTrigger>
+								<NavigationMenuTrigger
+									onPointerDown={e => e.preventDefault()}
+									onMouseDown={e => e.preventDefault()}
+									onClick={e => e.preventDefault()}>
+									{item.title}
+								</NavigationMenuTrigger>
 								{item.content && (
 									<NavigationMenuContent>
 										<ul className={item.content.className}>
