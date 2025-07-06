@@ -240,7 +240,7 @@ const Navbar = ({ items }: NavbarProps) => {
 
 	return (
 		<NavigationMenu
-			className='min-w-[calc(100%-32rem)] fixed gap-x-8 h-16 items-center backdrop-blur-md z-50'
+			className='min-w-[calc(100%-32rem)] fixed gap-x-8 h-16 items-center backdrop-blur-md z-50 mx-64'
 			onValueChange={value => {
 				console.log('NavigationMenu value changed:', value);
 				setIsOpen(value !== '');

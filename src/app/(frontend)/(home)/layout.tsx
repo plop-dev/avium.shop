@@ -1,3 +1,4 @@
+import PageContainer from '@/components/layouts/PageContainer';
 import Navbar, { NavbarListItemProps, NavbarProps, NavMenuItem } from '@/components/Navbar';
 
 export default async function HomeLayout({ children }: { children: React.ReactNode }) {
@@ -67,7 +68,7 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 	];
 
 	return (
-		<main className='px-64 w-full'>
+		<main className='w-full'>
 			<Navbar items={items} />
 			{children}
 		</main>

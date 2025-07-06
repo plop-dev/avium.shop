@@ -4,7 +4,7 @@ import ThemeToggle from '@/components/layouts/ThemeToggle';
 
 export default function Page() {
 	return (
-		<PageContainer scrollable={true}>
+		<PageContainer scrollable={true} className='flex flex-col gap-x-2'>
 			<Hero
 				heading='3D Printing'
 				subheading='Cheaper than ever before'
@@ -20,6 +20,7 @@ export default function Page() {
 					},
 				}}
 			/>
+			{/* <div className='px-64 w-full'></div> */}
 		</PageContainer>
 	);
 }

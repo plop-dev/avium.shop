@@ -43,25 +43,29 @@ const Hero = ({
 	},
 }: HeroProps) => {
 	return (
-		<section className='w-full flex justify-center'>
-			<div className='py-32 flex flex-col max-w-5xl items-center justify-center gap-y-8 text-center'>
-				<div className='heading'>
+		<section className='w-full flex flex-col items-center'>
+			<div className='pt-20 pb-16 max-w-5xl'>
+				<div className='flex flex-col items-center justify-center gap-y-8 text-center'>
 					<h1 className='text-6xl'>
 						{heading} <br />
 						<span className='bg-clip-text text-transparent bg-gradient-to-b from-foreground/80 to-foreground/40'>
 							{subheading}
 						</span>
 					</h1>
+					<p className='w-2/3'>{description}</p>
+					<div className='flex gap-x-2'>
+						<Link href={buttons.primary.url} className={cn(buttonVariants({ variant: 'default' }))}>
+							{buttons.primary.text}
+						</Link>
+						<Link href={buttons.secondary.url} className={cn(buttonVariants({ variant: 'secondary' }))}>
+							{buttons.secondary.text}
+						</Link>
+					</div>
 				</div>
-				<p className='w-2/3'>{description}</p>
-				<div className='flex gap-x-2'>
-					<Link href={buttons.primary.url} className={cn(buttonVariants({ variant: 'default' }))}>
-						{buttons.primary.text}
-					</Link>
-					<Link href={buttons.secondary.url} className={cn(buttonVariants({ variant: 'secondary' }))}>
-						{buttons.secondary.text}
-					</Link>
-				</div>
+			</div>
+
+			<div className='media rounded-lg bg-secondary-foreground w-2/3 aspect-video border-2 grid place-items-center'>
+				<h1 className='text-secondary'>SZYMON VID HERE</h1>
 			</div>
 		</section>
 	);
