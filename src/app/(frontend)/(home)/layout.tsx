@@ -1,7 +1,9 @@
-import PageContainer from '@/components/layouts/PageContainer';
+import { auth } from '@/auth';
 import Navbar, { NavbarListItemProps, NavbarProps, NavMenuItem } from '@/components/Navbar';
 
 export default async function HomeLayout({ children }: { children: React.ReactNode }) {
+	const session = await auth();
+
 	const options: NavbarListItemProps[] = [
 		{
 			title: 'PETG',
@@ -69,7 +71,7 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 
 	return (
 		<main className='w-full'>
-			<Navbar items={items} />
+			<Navbar items={items} user={session?.user} />
 			{children}
 		</main>
 	);

@@ -64,7 +64,7 @@ const Hero = ({
 				</div>
 			</div>
 
-			<div className='media rounded-lg bg-secondary-foreground w-2/3 aspect-video border-2 grid place-items-center'>
+			<div className='media rounded-lg bg-border w-2/3 aspect-video border-secondary/40 border-2 grid place-items-center'>
 				<h1 className='text-secondary'>SZYMON VID HERE</h1>
 			</div>
 		</section>

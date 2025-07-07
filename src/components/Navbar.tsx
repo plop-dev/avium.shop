@@ -16,10 +16,15 @@ import {
 	NavigationMenuIndicator,
 	NavigationMenuViewport,
 } from '@/components/ui/navigation-menu';
-import { Button, buttonVariants } from './ui/button';
-import ThemeToggle from './layouts/ThemeToggle';
+import { Button, buttonVariants } from '@/components/ui/button';
+import ThemeToggle from '@/components/ThemeToggle';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import getInitials from '@/utils/getInitials';
+import { User } from 'next-auth';
+import { signIn } from 'next-auth/react';
 
 export interface NavbarListItemProps {
 	title: string;
@@ -52,6 +57,7 @@ export interface NavMenuItem {
 
 export interface NavbarProps {
 	items: NavMenuItem[];
+	user?: User;
 }
 
 //* example usage
@@ -192,7 +198,7 @@ export interface NavbarProps {
  
  */
 
-const Navbar = ({ items }: NavbarProps) => {
+const Navbar = ({ items, user }: NavbarProps) => {
 	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 	const listRef = useRef<HTMLUListElement>(null);
 	const [indicatorStyle, setIndicatorStyle] = useState({
@@ -201,6 +207,7 @@ const Navbar = ({ items }: NavbarProps) => {
 	});
 	const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
 	const [isOpen, setIsOpen] = useState(false);
+	// const user = useSession();
 
 	// Update indicator position when hoveredIndex changes
 	useEffect(() => {
@@ -348,12 +355,30 @@ const Navbar = ({ items }: NavbarProps) => {
 			<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' />
 
 			<div className='flex gap-x-4 ml-auto'>
-				<Link href={'#'} className={buttonVariants({ variant: 'default' })}>
-					Login
-				</Link>
-				<Link href={'#'} className={buttonVariants({ variant: 'outline' })}>
-					Sign Up
-				</Link>
+				{/* {user.status === 'loading' && <Skeleton className='w-[200px] h-9'></Skeleton>} */}
+
+				{!user ? (
+					<>
+						<Link href={'#'} onClick={() => signIn()} className={buttonVariants({ variant: 'default' })}>
+							Login
+						</Link>
+						<Link href={'#'} onClick={() => signIn()} className={buttonVariants({ variant: 'outline' })}>
+							Sign Up
+						</Link>
+					</>
+				) : (
+					// user.status === 'authenticated' && (
+					<Avatar className='flex items-center justify-center cursor-pointer'>
+						<AvatarImage
+							className='border-2 rounded-full'
+							src={user.image || '#'}
+							alt='User'
+							width={36}
+							height={36}></AvatarImage>
+						<AvatarFallback>{getInitials(user.name || '')}</AvatarFallback>
+					</Avatar>
+					// )
+				)}
 
 				<ThemeToggle></ThemeToggle>
 			</div>
