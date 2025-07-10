@@ -1,30 +1,30 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
-export default function LoginForm() {
+export default function SignupForm() {
 	const router = useRouter();
 
-	async function handleProviderLogin(e: React.FormEvent, provider: 'google' | 'github') {
+	async function handleProviderSignup(e: React.FormEvent, provider: 'google' | 'github') {
 		const res = await signIn(provider, { redirect: false });
 		if (res?.error) {
-			toast.error('Login failed: ' + res.error, {
+			toast.error('Signup failed: ' + res.error, {
 				duration: 3000,
 				dismissible: true,
 				action: {
 					label: 'Retry',
-					onClick: () => handleProviderLogin(e, provider),
+					onClick: () => handleProviderSignup(e, provider),
 				},
 			});
-			console.error('Login failed:', res.error);
+			console.error('Signup failed:', res.error);
 			return;
 		}
 
@@ -37,8 +37,8 @@ export default function LoginForm() {
 		<div className={cn('flex flex-col gap-6')}>
 			<Card>
 				<CardHeader className='text-center'>
-					<CardTitle className='text-xl'>Welcome back</CardTitle>
-					<CardDescription>Login with your Google or Github account</CardDescription>
+					<CardTitle className='text-xl'>Create your Avium account</CardTitle>
+					<CardDescription>Signup with your Google or Github account</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<form>
@@ -49,7 +49,7 @@ export default function LoginForm() {
 									className='w-full'
 									onClick={e => {
 										e.preventDefault();
-										handleProviderLogin(e, 'google');
+										handleProviderSignup(e, 'google');
 									}}>
 									<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
 										<path
@@ -57,14 +57,14 @@ export default function LoginForm() {
 											fill='currentColor'
 										/>
 									</svg>
-									Login with Google
+									Signup with Google
 								</Button>
 								<Button
 									variant='outline'
 									className='w-full'
 									onClick={e => {
 										e.preventDefault();
-										handleProviderLogin(e, 'github');
+										handleProviderSignup(e, 'github');
 									}}>
 									<svg role='img' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
 										<title>GitHub</title>
@@ -73,7 +73,7 @@ export default function LoginForm() {
 											fill='currentColor'
 										/>
 									</svg>
-									Login with Github
+									Signup with Github
 								</Button>
 							</div>
 							<div className='after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t'>
@@ -87,9 +87,6 @@ export default function LoginForm() {
 								<div className='grid gap-3'>
 									<div className='flex items-center'>
 										<Label htmlFor='password'>Password</Label>
-										<a href='#' className='ml-auto text-sm underline-offset-4 hover:underline'>
-											Forgot your password?
-										</a>
 									</div>
 									<Input id='password' type='password' required />
 								</div>
@@ -98,9 +95,9 @@ export default function LoginForm() {
 								</Button>
 							</div>
 							<div className='text-center text-sm'>
-								Don&apos;t have an account?{' '}
-								<Link href='/auth/signup' className='underline underline-offset-4'>
-									Sign up
+								Already have an account?{' '}
+								<Link href='/auth/login' className='underline underline-offset-4'>
+									Login
 								</Link>
 							</div>
 						</div>
@@ -108,7 +105,7 @@ export default function LoginForm() {
 				</CardContent>
 			</Card>
 			<div className='text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4'>
-				By clicking login, you agree to our <Link href='#'>Terms of Service</Link> and <Link href='#'>Privacy Policy</Link>.
+				By clicking signup, you agree to our <Link href='#'>Terms of Service</Link> and <Link href='#'>Privacy Policy</Link>.
 			</div>
 		</div>
 	);

@@ -1,5 +1,6 @@
 import { auth } from '@/auth';
 import Navbar, { NavbarListItemProps, NavbarProps, NavMenuItem } from '@/components/Navbar';
+import { redirect } from 'next/navigation';
 
 export default async function HomeLayout({ children }: { children: React.ReactNode }) {
 	const session = await auth();

@@ -16,6 +16,21 @@ import {
 	NavigationMenuIndicator,
 	NavigationMenuViewport,
 } from '@/components/ui/navigation-menu';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuPortal,
+	DropdownMenuSeparator,
+	DropdownMenuShortcut,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
 import { Button, buttonVariants } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 import Image from 'next/image';
@@ -24,7 +39,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import getInitials from '@/utils/getInitials';
 import { User } from 'next-auth';
-import { signIn } from 'next-auth/react';
+import { signIn, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export interface NavbarListItemProps {
 	title: string;
@@ -208,6 +225,17 @@ const Navbar = ({ items, user }: NavbarProps) => {
 	const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
 	const [isOpen, setIsOpen] = useState(false);
 	// const user = useSession();
+	const router = useRouter();
+
+	function handleLogout() {
+		signOut({ redirect: false }).then(() => {
+			router.push('/');
+			toast.success('Logged out successfully', {
+				duration: 3000,
+				dismissible: true,
+			});
+		});
+	}
 
 	// Update indicator position when hoveredIndex changes
 	useEffect(() => {
@@ -359,25 +387,50 @@ const Navbar = ({ items, user }: NavbarProps) => {
 
 				{!user ? (
 					<>
-						<Link href={'#'} onClick={() => signIn()} className={buttonVariants({ variant: 'default' })}>
+						<Link href={'/auth/login'} className={buttonVariants({ variant: 'default' })}>
 							Login
 						</Link>
-						<Link href={'#'} onClick={() => signIn()} className={buttonVariants({ variant: 'outline' })}>
+						<Link href={'/auth/signup'} className={buttonVariants({ variant: 'outline' })}>
 							Sign Up
 						</Link>
 					</>
 				) : (
-					// user.status === 'authenticated' && (
-					<Avatar className='flex items-center justify-center cursor-pointer'>
-						<AvatarImage
-							className='border-2 rounded-full'
-							src={user.image || '#'}
-							alt='User'
-							width={36}
-							height={36}></AvatarImage>
-						<AvatarFallback>{getInitials(user.name || '')}</AvatarFallback>
-					</Avatar>
-					// )
+					<DropdownMenu>
+						<DropdownMenuTrigger>
+							<Avatar className='flex items-center justify-center cursor-pointer'>
+								<AvatarImage
+									className='border-2 rounded-full'
+									src={user.image || '#'}
+									alt='User'
+									width={36}
+									height={36}></AvatarImage>
+								<AvatarFallback>{getInitials(user.name || '')}</AvatarFallback>
+							</Avatar>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent className='w-56' align='start'>
+							<DropdownMenuLabel>My Account</DropdownMenuLabel>
+							<DropdownMenuGroup>
+								<DropdownMenuItem>Dashboard</DropdownMenuItem>
+								<DropdownMenuItem>Profile</DropdownMenuItem>
+								<DropdownMenuItem>Orders</DropdownMenuItem>
+								<DropdownMenuItem>Settings</DropdownMenuItem>
+							</DropdownMenuGroup>
+
+							<DropdownMenuSeparator />
+
+							<DropdownMenuItem>Contact</DropdownMenuItem>
+							<DropdownMenuItem>GitHub</DropdownMenuItem>
+							<DropdownMenuItem disabled>API</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								variant='destructive'
+								onClick={async () => {
+									handleLogout();
+								}}>
+								Log out
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				)}
 
 				<ThemeToggle></ThemeToggle>

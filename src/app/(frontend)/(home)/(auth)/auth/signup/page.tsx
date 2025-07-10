@@ -1,19 +1,21 @@
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import Image from 'next/image';
+import logo from '@/assets/logo.png';
+import Link from 'next/link';
+import SignupForm from './form';
 
 export default async function SignUpPage() {
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>Create your account</CardTitle>
-				<CardDescription>Join Avium for </CardDescription>
-				{/* <CardAction>Card Action</CardAction> */}
-			</CardHeader>
-			<CardContent>
-				<p>Card Content</p>
-			</CardContent>
-			<CardFooter>
-				<p>Card Footer</p>
-			</CardFooter>
-		</Card>
+		<div className='flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10'>
+			<div className='flex w-full max-w-sm flex-col gap-6'>
+				<Link href='#' className='flex items-center gap-2 self-center font-medium text-2xl'>
+					<div className='text-primary-foreground flex size-8 items-center justify-center'>
+						<Image src={logo} alt='Avium' height={32} width={32}></Image>
+					</div>
+					Avium
+				</Link>
+
+				<SignupForm></SignupForm>
+			</div>
+		</div>
 	);
 }
