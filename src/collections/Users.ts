@@ -1,3 +1,4 @@
+import { anyoneAccess } from '@/access/anyone';
 import { adminAccess, devAccess } from '@/access/elevated';
 import type { CollectionConfig } from 'payload';
 
@@ -9,7 +10,7 @@ export const Users: CollectionConfig = {
 	access: {
 		read: adminAccess,
 		update: adminAccess,
-		create: devAccess,
+		create: anyoneAccess,
 		delete: () => false,
 	},
 	auth: {
