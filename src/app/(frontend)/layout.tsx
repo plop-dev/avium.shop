@@ -37,7 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 					<NuqsAdapter>
 						<SessionProvider session={session}>
 							<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange enableColorScheme>
-								<Toaster richColors></Toaster>
+								<Toaster richColors theme={'system'}></Toaster>
 								{children}
 							</ThemeProvider>
 						</SessionProvider>

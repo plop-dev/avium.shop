@@ -35,6 +35,7 @@ export default buildConfig({
 		url: process.env.DATABASE_URI || '',
 	}),
 	sharp,
+	// serverURL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
 	plugins: [
 		authjsPlugin({
 			authjsConfig: authConfig,

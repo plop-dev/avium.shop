@@ -1,115 +1,149 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { submitLoginForm } from '@/actions/login';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { submitForgotPasswordForm } from '@/actions/forgotPassword';
+import { loginFormSchema } from '@/schemas/loginForm';
 
 export default function LoginForm() {
 	const router = useRouter();
+	const [isLoading, setIsLoading] = useState(false);
+	const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false);
 
-	async function handleProviderLogin(e: React.FormEvent, provider: 'google' | 'github') {
-		const res = await signIn(provider, { redirect: false });
-		if (res?.error) {
-			toast.error('Login failed: ' + res.error, {
-				duration: 3000,
-				dismissible: true,
-				action: {
-					label: 'Retry',
-					onClick: () => handleProviderLogin(e, provider),
-				},
-			});
-			console.error('Login failed:', res.error);
+	const form = useForm<z.infer<typeof loginFormSchema>>({
+		resolver: zodResolver(loginFormSchema),
+		mode: 'onChange',
+		defaultValues: {
+			email: '',
+			password: '',
+		},
+	});
+
+	async function onSubmit(data: z.infer<typeof loginFormSchema>) {
+		setIsLoading(true);
+
+		try {
+			const formData = new FormData();
+			formData.append('email', data.email);
+			formData.append('password', data.password);
+
+			const result = await submitLoginForm(formData);
+
+			if (result.error) {
+				toast.error(result.error);
+			} else {
+				toast.success('Login successful! Redirecting...');
+				router.push('/dashboard/home');
+			}
+		} catch (error) {
+			toast.error('An unexpected error occurred. Please try again.');
+		} finally {
+			setIsLoading(false);
+		}
+	}
+
+	async function handleForgotPassword() {
+		const email = form.getValues('email');
+		if (!email) {
+			toast.error('Please enter your email address first');
 			return;
 		}
 
-		if (res?.ok) {
-			router.push('/dashboard/home');
+		const formData = new FormData();
+		formData.append('email', email);
+
+		const result = await submitForgotPasswordForm(formData);
+
+		if (result.error) {
+			toast.error(result.error);
+		} else {
+			toast.success('Password reset email sent! Check your inbox.');
 		}
 	}
 
 	return (
-		<div className={cn('flex flex-col gap-6')}>
-			<Card>
-				<CardHeader className='text-center'>
-					<CardTitle className='text-xl'>Welcome back</CardTitle>
-					<CardDescription>Login with your Google or Github account</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<form>
-						<div className='grid gap-6'>
-							<div className='flex flex-col gap-4'>
-								<Button
-									variant='outline'
-									className='w-full'
-									onClick={e => {
-										e.preventDefault();
-										handleProviderLogin(e, 'google');
-									}}>
-									<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
-										<path
-											d='M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z'
-											fill='currentColor'
-										/>
-									</svg>
-									Login with Google
-								</Button>
-								<Button
-									variant='outline'
-									className='w-full'
-									onClick={e => {
-										e.preventDefault();
-										handleProviderLogin(e, 'github');
-									}}>
-									<svg role='img' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
-										<title>GitHub</title>
-										<path
-											d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'
-											fill='currentColor'
-										/>
-									</svg>
-									Login with Github
-								</Button>
-							</div>
-							<div className='after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t'>
-								<span className='bg-card text-muted-foreground relative z-10 px-2'>Or continue with</span>
-							</div>
-							<div className='grid gap-6'>
-								<div className='grid gap-3'>
-									<Label htmlFor='email'>Email</Label>
-									<Input id='email' type='email' placeholder='m@example.com' required />
-								</div>
-								<div className='grid gap-3'>
-									<div className='flex items-center'>
-										<Label htmlFor='password'>Password</Label>
-										<a href='#' className='ml-auto text-sm underline-offset-4 hover:underline'>
-											Forgot your password?
-										</a>
-									</div>
-									<Input id='password' type='password' required />
-								</div>
-								<Button type='submit' className='w-full'>
-									Login
-								</Button>
-							</div>
-							<div className='text-center text-sm'>
-								Don&apos;t have an account?{' '}
-								<Link href='/auth/signup' className='underline underline-offset-4'>
-									Sign up
-								</Link>
-							</div>
+		<Form {...form}>
+			<form onSubmit={form.handleSubmit(onSubmit)}>
+				<div className='grid gap-6'>
+					<FormField
+						control={form.control}
+						name='email'
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Email</FormLabel>
+								<FormControl>
+									<Input type='email' placeholder='help@avium.shop' disabled={isLoading} {...field} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<div className='grid gap-3'>
+						<div className='flex items-center'>
+							<FormField
+								control={form.control}
+								name='password'
+								render={({ field }) => (
+									<FormItem className='flex-1'>
+										<div className='flex items-center'>
+											<FormLabel>Password</FormLabel>
+
+											<AlertDialog open={isForgotPasswordDialogOpen} onOpenChange={setIsForgotPasswordDialogOpen}>
+												<AlertDialogTrigger asChild>
+													<Button variant={'link'} className='ml-auto text-sm underline-offset-4 hover:underline'>
+														Forgot your password?
+													</Button>
+												</AlertDialogTrigger>
+												<AlertDialogContent>
+													<AlertDialogHeader>
+														<AlertDialogTitle>Are you sure you want to reset your password?</AlertDialogTitle>
+														<AlertDialogDescription>
+															This action will send a password reset link to your email address. Please ensure
+															you have access to the email associated with your account.
+														</AlertDialogDescription>
+													</AlertDialogHeader>
+													<AlertDialogFooter>
+														<AlertDialogCancel>Cancel</AlertDialogCancel>
+														<AlertDialogAction onClick={handleForgotPassword}>Continue</AlertDialogAction>
+													</AlertDialogFooter>
+												</AlertDialogContent>
+											</AlertDialog>
+										</div>
+										<FormControl>
+											<Input type='password' disabled={isLoading} {...field} />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 						</div>
-					</form>
-				</CardContent>
-			</Card>
-			<div className='text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4'>
-				By clicking login, you agree to our <Link href='#'>Terms of Service</Link> and <Link href='#'>Privacy Policy</Link>.
-			</div>
-		</div>
+					</div>
+					<Button type='submit' className='w-full' disabled={isLoading}>
+						{isLoading ? <Loader2 className='animate-spin' /> : 'Login'}
+					</Button>
+				</div>
+			</form>
+		</Form>
 	);
 }

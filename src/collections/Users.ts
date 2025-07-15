@@ -8,10 +8,11 @@ export const Users: CollectionConfig = {
 		useAsTitle: 'name',
 	},
 	access: {
-		read: adminAccess,
-		update: adminAccess,
+		read: anyoneAccess,
+		update: anyoneAccess,
 		create: anyoneAccess,
 		delete: () => false,
+		unlock: anyoneAccess,
 	},
 	auth: {
 		verify: true,

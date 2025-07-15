@@ -1,11 +1,18 @@
-import { signupFormSchema } from '@/app/(frontend)/(home)/(auth)/auth/signup/form';
+'use server';
+
+// import { signupFormSchema } from '@/app/(frontend)/(home)/(auth)/auth/signup/form';
+import { getPayload } from 'payload';
+import config from '@payload-config';
+import { signupFormSchema } from '@/schemas/signupForm';
 
 export async function submitSignupForm(formData: FormData) {
+	const payload = await getPayload({ config });
+
 	const data = {
 		name: formData.get('name')?.toString(),
 		email: formData.get('email')?.toString(),
 		password: formData.get('password')?.toString(),
-		verifyPassword: formData.get('password')?.toString(), // Use same password for verification
+		verifyPassword: formData.get('verifyPassword')?.toString(),
 	};
 
 	const result = signupFormSchema.safeParse(data);
@@ -15,25 +22,53 @@ export async function submitSignupForm(formData: FormData) {
 	}
 
 	// Remove verifyPassword before sending to API
-	const { verifyPassword, ...apiData } = result.data;
+	const { verifyPassword, ...signupData } = result.data;
 
 	try {
-		const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/users/`, {
+		console.log('Submitting signup data:', signupData);
+		const createRes = await payload.create({
+			collection: 'users',
+			data: signupData,
+		});
+
+		if (!createRes) {
+			console.error('Account creation failed:', createRes);
+			return { error: 'Signup failed. Please try again.' };
+		}
+
+		// const createRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/users`, {
+		// 	method: 'POST',
+		// 	headers: {
+		// 		'Content-Type': 'application/json',
+		// 	},
+		// 	body: JSON.stringify(signupData),
+		// });
+
+		// if (!createRes.ok) {
+		// 	const errorData = await createRes.json();
+		// 	return { error: errorData.message || 'Signup failed. Please try again.' };
+		// }
+
+		const { verifyPassword, name, ...loginData } = result.data;
+
+		const loginRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/users/login`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify(apiData),
+			credentials: 'include',
+			body: JSON.stringify(loginData),
 		});
 
-		if (!res.ok) {
-			const errorData = await res.json();
-			return { error: errorData.message || 'Login failed. Please try again.' };
+		if (!loginRes.ok) {
+			const errorData = await loginRes.json();
+			console.error('Login error:', errorData);
+			return { error: errorData.message || 'Signup failed. Please try again.' };
 		}
 
 		return { success: true };
 	} catch (error) {
-		console.error('Login error:', error);
+		console.error('Signup error:', error);
 		return { error: 'An unexpected error occurred. Please try again later.' };
 	}
 }

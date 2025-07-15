@@ -127,8 +127,28 @@ export interface User {
   id: string;
   email: string;
   emailVerified?: string | null;
-  name?: string | null;
+  name: string;
   image?: string | null;
+  role?: ('customer' | 'employee' | 'admin' | 'developer') | null;
+  address?:
+    | {
+        line1: string;
+        line2?: string | null;
+        city: string;
+        postalCode: string;
+        country: string;
+        id?: string | null;
+      }[]
+    | null;
+  orders?: (string | Order)[] | null;
+  subscription?: {
+    plan?: ('none' | 'plus') | null;
+    status?: ('Active' | 'PastDue' | 'Unpaid' | 'Paused') | null;
+    stripeSubscriptionId?: string | null;
+    currentPeriodStart?: string | null;
+    currentPeriodEnd?: string | null;
+  };
+  stripeCustomerId?: string | null;
   accounts?:
     | {
         id?: string | null;
@@ -318,6 +338,28 @@ export interface UsersSelect<T extends boolean = true> {
   emailVerified?: T;
   name?: T;
   image?: T;
+  role?: T;
+  address?:
+    | T
+    | {
+        line1?: T;
+        line2?: T;
+        city?: T;
+        postalCode?: T;
+        country?: T;
+        id?: T;
+      };
+  orders?: T;
+  subscription?:
+    | T
+    | {
+        plan?: T;
+        status?: T;
+        stripeSubscriptionId?: T;
+        currentPeriodStart?: T;
+        currentPeriodEnd?: T;
+      };
+  stripeCustomerId?: T;
   accounts?:
     | T
     | {
