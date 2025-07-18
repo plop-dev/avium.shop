@@ -23,6 +23,8 @@ export default buildConfig({
 		importMap: {
 			baseDir: path.resolve(dirname),
 		},
+		avatar: 'default',
+		dateFormat: 'DD/MM/YYYY',
 	},
 	globals: [PrintingOptions],
 	collections: [Users, Orders, Presets],
@@ -35,10 +37,12 @@ export default buildConfig({
 		url: process.env.DATABASE_URI || '',
 	}),
 	sharp,
-	// serverURL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+	serverURL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
 	plugins: [
 		authjsPlugin({
 			authjsConfig: authConfig,
+			enableLocalStrategy: true,
+			userCollectionSlug: 'users',
 		}),
 	],
 	email: nodemailerAdapter({

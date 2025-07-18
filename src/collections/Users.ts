@@ -16,6 +16,9 @@ export const Users: CollectionConfig = {
 	},
 	auth: {
 		verify: true,
+		useAPIKey: true,
+		maxLoginAttempts: 5,
+		lockTime: 30 * 60 * 1000, // 30 minutes
 	},
 	fields: [
 		{
