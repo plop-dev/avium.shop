@@ -29,7 +29,7 @@ function VerifyEmailContent({ from }: { from: 'signup' | 'login' }) {
 					<Card>
 						<CardHeader className='text-center'>
 							<CardTitle className='text-xl'>Check your email</CardTitle>
-							<CardDescription>We've sent you a verification link</CardDescription>
+							<CardDescription>We&#39;ve sent you a verification link</CardDescription>
 						</CardHeader>
 						<CardContent>
 							<div className='text-center space-y-6'>
