@@ -1,9 +1,12 @@
-import { ArrowUpRight, ArrowRight } from 'lucide-react';
+'use server';
 
+import { ArrowUpRight, ArrowRight } from 'lucide-react';
+import { list } from '@vercel/blob';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Video } from '../Video';
 
 export interface HeroBadgeProps {
 	text: string;
@@ -27,7 +30,7 @@ export interface HeroProps {
 	};
 }
 
-const Hero = ({
+const Hero = async ({
 	heading = '3d Printing',
 	subheading = ' cheaper than ever before',
 	description = 'Avium makes 3d printing simple and affordable ',
@@ -44,7 +47,7 @@ const Hero = ({
 }: HeroProps) => {
 	return (
 		<section className='w-full flex flex-col items-center'>
-			<div className='pt-20 pb-16 max-w-5xl'>
+			<div className='pt-36 pb-24 max-w-5xl'>
 				<div className='flex flex-col items-center justify-center gap-y-8 text-center'>
 					<h1 className='text-6xl'>
 						{heading} <br />
@@ -64,8 +67,9 @@ const Hero = ({
 				</div>
 			</div>
 
-			<div className='media rounded-lg bg-border w-2/3 aspect-video border-secondary/40 border-2 grid place-items-center'>
-				<h1 className='text-secondary'>SZYMON VID HERE</h1>
+			<div className='w-[60%] grid place-items-center'>
+				{/* <h1 className='text-secondary'>SZYMON VID HERE</h1> */}
+				<Video type='video/webm' filename='hero-printer-0.webm' muted autoPlay playsInline loop className='rounded-xl'></Video>
 			</div>
 		</section>
 	);
