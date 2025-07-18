@@ -13,6 +13,7 @@ import { Loader2 } from 'lucide-react';
 import { submitSignupForm } from '@/actions/signup';
 import { Separator } from '@/components/ui/separator';
 import { signupFormSchema } from '@/schemas/signupForm';
+import { Email, setVerifyEmail } from '@/stores/verifyEmail';
 
 export default function SignupForm() {
 	const router = useRouter();
@@ -37,15 +38,17 @@ export default function SignupForm() {
 			formData.append('name', data.name);
 			formData.append('email', data.email);
 			formData.append('password', data.password);
-			formData.append('verifyPassword', data.verifyPassword); // Added missing field
+			formData.append('verifyPassword', data.verifyPassword);
 
 			const result = await submitSignupForm(formData);
 
-			if (result.error) {
-				toast.error(result.error);
+			if (result.success) {
+				toast.success('Account created successfully! Please check your email to verify your account.');
+
+				setVerifyEmail(data.email as Email);
+				router.push('/auth/verify-email');
 			} else {
-				toast.success('Signup successful! Redirecting...');
-				router.push('/dashboard/home');
+				toast.error(result.error || 'An error occurred during signup. Please try again.');
 			}
 		} catch (error) {
 			console.error('Signup error:', error);
@@ -121,7 +124,7 @@ export default function SignupForm() {
 					/>
 
 					<Button type='submit' className='w-full' disabled={isLoading}>
-						{isLoading ? <Loader2 className='animate-spin' /> : 'Signup'}
+						{isLoading ? <Loader2 className='animate-spin' /> : 'Continue'}
 					</Button>
 				</div>
 			</form>

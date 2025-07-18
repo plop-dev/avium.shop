@@ -1,3 +1,5 @@
+'use server';
+
 import Image from 'next/image';
 import logo from '@/assets/logo.png';
 import Link from 'next/link';
@@ -44,8 +46,8 @@ export default async function SignUpPage() {
 						</CardContent>
 					</Card>
 					<div className='text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4'>
-						By clicking signup, you agree to our <Link href='#'>Terms of Service</Link> and <Link href='#'>Privacy Policy</Link>
-						.
+						By clicking continue, you agree to our <Link href='#'>Terms of Service</Link> and{' '}
+						<Link href='#'>Privacy Policy</Link>.
 					</div>
 				</div>
 			</div>

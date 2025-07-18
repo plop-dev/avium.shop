@@ -111,7 +111,9 @@ export default function LoginForm() {
 
 											<AlertDialog open={isForgotPasswordDialogOpen} onOpenChange={setIsForgotPasswordDialogOpen}>
 												<AlertDialogTrigger asChild>
-													<Button variant={'link'} className='ml-auto text-sm underline-offset-4 hover:underline'>
+													<Button
+														variant={'link'}
+														className='ml-auto text-sm underline-offset-4 hover:underline p-0'>
 														Forgot your password?
 													</Button>
 												</AlertDialogTrigger>
