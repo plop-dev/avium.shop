@@ -46,6 +46,10 @@ export async function submitLoginForm(formData: FormData) {
 
 		return { success: true };
 	} catch (error) {
+		if (error instanceof Error) {
+			return { error: error.message };
+		}
+
 		console.error('Login error:', error);
 		return { error: 'An unexpected error occurred. Please try again later.' };
 	}

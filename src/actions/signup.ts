@@ -49,25 +49,12 @@ export async function submitSignupForm(formData: FormData) {
 		// 	return { error: errorData.message || 'Signup failed. Please try again.' };
 		// }
 
-		const { verifyPassword, name, ...loginData } = result.data;
-
-		const loginRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/users/login`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			credentials: 'include',
-			body: JSON.stringify(loginData),
-		});
-
-		if (!loginRes.ok) {
-			const errorData = await loginRes.json();
-			console.error('Login error:', errorData);
-			return { error: errorData.message || 'Signup failed. Please try again.' };
-		}
-
 		return { success: true };
 	} catch (error) {
+		if (error instanceof Error) {
+			return { error: error.message };
+		}
+
 		console.error('Signup error:', error);
 		return { error: 'An unexpected error occurred. Please try again later.' };
 	}
