@@ -10,6 +10,7 @@ import { Metadata } from 'next';
 import { SessionProvider } from 'next-auth/react';
 import { DM_Sans } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
+import { auth } from '@/auth';
 
 export const metadata: Metadata = {
 	title: 'Avium',
@@ -24,6 +25,7 @@ const dmSans = DM_Sans({
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
 	// const cookieStore = await cookies();
+	const session = await auth();
 
 	return (
 		<>
@@ -33,9 +35,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 					<NextTopLoader showSpinner={false}></NextTopLoader>
 					<Analytics></Analytics>
 					<NuqsAdapter>
-						<SessionProvider>
+						<SessionProvider session={session}>
 							<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange enableColorScheme>
-								<Toaster></Toaster>
+								<Toaster richColors theme={'system'}></Toaster>
 								{children}
 							</ThemeProvider>
 						</SessionProvider>

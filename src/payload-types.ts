@@ -125,10 +125,30 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
-  email: string;
   emailVerified?: string | null;
-  name?: string | null;
+  name: string;
   image?: string | null;
+  email: string;
+  role?: ('customer' | 'employee' | 'admin' | 'developer') | null;
+  address?:
+    | {
+        line1: string;
+        line2?: string | null;
+        city: string;
+        postalCode: string;
+        country: string;
+        id?: string | null;
+      }[]
+    | null;
+  orders?: (string | Order)[] | null;
+  subscription?: {
+    plan?: ('none' | 'plus') | null;
+    status?: ('Active' | 'PastDue' | 'Unpaid' | 'Paused') | null;
+    stripeSubscriptionId?: string | null;
+    currentPeriodStart?: string | null;
+    currentPeriodEnd?: string | null;
+  };
+  stripeCustomerId?: string | null;
   accounts?:
     | {
         id?: string | null;
@@ -139,6 +159,18 @@ export interface User {
     | null;
   updatedAt: string;
   createdAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  _verified?: boolean | null;
+  _verificationToken?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  password?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -314,10 +346,32 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   id?: T;
-  email?: T;
   emailVerified?: T;
   name?: T;
   image?: T;
+  email?: T;
+  role?: T;
+  address?:
+    | T
+    | {
+        line1?: T;
+        line2?: T;
+        city?: T;
+        postalCode?: T;
+        country?: T;
+        id?: T;
+      };
+  orders?: T;
+  subscription?:
+    | T
+    | {
+        plan?: T;
+        status?: T;
+        stripeSubscriptionId?: T;
+        currentPeriodStart?: T;
+        currentPeriodEnd?: T;
+      };
+  stripeCustomerId?: T;
   accounts?:
     | T
     | {
@@ -328,6 +382,17 @@ export interface UsersSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+  enableAPIKey?: T;
+  apiKey?: T;
+  apiKeyIndex?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  _verified?: T;
+  _verificationToken?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

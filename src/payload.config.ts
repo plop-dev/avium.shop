@@ -7,6 +7,7 @@ import { buildConfig } from 'payload';
 import { authjsPlugin } from 'payload-authjs';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob';
 
 import { Users } from '@/collections/Users';
 import { authConfig } from '@/auth.config';
@@ -23,6 +24,8 @@ export default buildConfig({
 		importMap: {
 			baseDir: path.resolve(dirname),
 		},
+		avatar: 'default',
+		dateFormat: 'DD/MM/YYYY',
 	},
 	globals: [PrintingOptions],
 	collections: [Users, Orders, Presets],
@@ -35,9 +38,20 @@ export default buildConfig({
 		url: process.env.DATABASE_URI || '',
 	}),
 	sharp,
+	serverURL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
 	plugins: [
 		authjsPlugin({
 			authjsConfig: authConfig,
+			enableLocalStrategy: true,
+			userCollectionSlug: 'users',
+		}),
+		vercelBlobStorage({
+			enabled: true,
+			collections: {
+				// If you have another collection that supports uploads, you can add it below
+				media: true,
+			},
+			token: process.env.BLOB_READ_WRITE_TOKEN,
 		}),
 	],
 	email: nodemailerAdapter({

@@ -170,22 +170,22 @@
 		@apply text-[1.125rem];
 	}
 	h1:not(.not-prose, .not-prose *) {
-		@apply mt-11 scroll-m-20 text-[2.5rem] font-bold tracking-tight;
+		@apply scroll-m-20 text-[2.5rem] font-bold tracking-tight;
 	}
 	h2:not(.not-prose, .not-prose *) {
-		@apply mt-10 scroll-m-20 pb-2 text-[2.125rem] font-semibold tracking-tight;
+		@apply scroll-m-20 pb-2 text-[2.125rem] font-semibold tracking-tight;
 	}
 	h3:not(.not-prose, .not-prose *) {
-		@apply mt-8 scroll-m-20 text-[1.8125rem] font-semibold tracking-tight;
+		@app8 scroll-m-20 text-[1.8125rem] font-semibold tracking-tight;
 	}
 	h4:not(.not-prose, .not-prose *) {
-		@apply mt-7 scroll-m-20 text-[1.5625rem] font-semibold tracking-tight;
+		@apply scroll-m-20 text-[1.5625rem] font-semibold tracking-tight;
 	}
 	h5:not(.not-prose, .not-prose *) {
-		@apply mt-7 scroll-m-20 text-[1.3125rem] font-semibold tracking-tight;
+		@apply scroll-m-20 text-[1.3125rem] font-semibold tracking-tight;
 	}
 	h6:not(.not-prose, .not-prose *) {
-		@apply mt-7 scroll-m-20 text-lg font-semibold tracking-tight;
+		@apply scroll-m-20 text-lg font-semibold tracking-tight;
 	}
 	p:not(.not-prose, .not-prose *) {
 		&:empty {

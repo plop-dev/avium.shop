@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { CircleCheckIcon, CircleHelpIcon, CircleIcon } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
 import {
@@ -13,13 +12,30 @@ import {
 	NavigationMenuList,
 	NavigationMenuTrigger,
 	navigationMenuTriggerStyle,
-	NavigationMenuIndicator,
 	NavigationMenuViewport,
 } from '@/components/ui/navigation-menu';
-import { Button, buttonVariants } from './ui/button';
-import ThemeToggle from './layouts/ThemeToggle';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+import { buttonVariants } from '@/components/ui/button';
+import ThemeToggle from '@/components/ThemeToggle';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import getInitials from '@/utils/getInitials';
+import { User } from 'next-auth';
+import { signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+import { set } from 'zod';
 
 export interface NavbarListItemProps {
 	title: string;
@@ -52,6 +68,7 @@ export interface NavMenuItem {
 
 export interface NavbarProps {
 	items: NavMenuItem[];
+	user?: User;
 }
 
 //* example usage
@@ -192,8 +209,10 @@ export interface NavbarProps {
  
  */
 
-const Navbar = ({ items }: NavbarProps) => {
+const Navbar = ({ items, user }: NavbarProps) => {
 	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+	const [userData, setUserData] = useState<User | null>(user || null);
+	const [logoutLoading, setLogoutLoading] = useState(false);
 	const listRef = useRef<HTMLUListElement>(null);
 	const [indicatorStyle, setIndicatorStyle] = useState({
 		left: 0,
@@ -201,6 +220,21 @@ const Navbar = ({ items }: NavbarProps) => {
 	});
 	const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
 	const [isOpen, setIsOpen] = useState(false);
+	// const user = useSession();
+	const router = useRouter();
+
+	function handleLogout() {
+		setLogoutLoading(true);
+		signOut({ redirect: false }).then(res => {
+			router.push('/');
+			setUserData(null);
+			setLogoutLoading(false);
+			toast.success('Logged out successfully', {
+				duration: 3000,
+				dismissible: true,
+			});
+		});
+	}
 
 	// Update indicator position when hoveredIndex changes
 	useEffect(() => {
@@ -240,9 +274,9 @@ const Navbar = ({ items }: NavbarProps) => {
 
 	return (
 		<NavigationMenu
-			className='min-w-[calc(100%-32rem)] fixed gap-x-8 h-16 items-center backdrop-blur-md z-50'
+			className='min-w-[calc(100%-32rem)] fixed gap-x-8 h-16 items-center backdrop-blur-md z-50 mx-64'
 			onValueChange={value => {
-				console.log('NavigationMenu value changed:', value);
+				console.log('navmenu value changed:', value);
 				setIsOpen(value !== '');
 			}}>
 			<div className='flex-shrink-0'>
@@ -272,11 +306,17 @@ const Navbar = ({ items }: NavbarProps) => {
 					<NavigationMenuItem key={index} onMouseEnter={() => setHoveredIndex(index)} onMouseLeave={() => setHoveredIndex(null)}>
 						{item.type === 'link' ? (
 							<NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-								<Link href={item.href || '#'}>{item.title}</Link>
+								<span className='cursor-default'>{item.title}</span>
 							</NavigationMenuLink>
 						) : (
 							<>
-								<NavigationMenuTrigger onClick={() => setActiveItemIndex(index)}>{item.title}</NavigationMenuTrigger>
+								<NavigationMenuTrigger
+									onPointerDown={e => e.preventDefault()}
+									onMouseDown={e => e.preventDefault()}
+									onClick={e => e.preventDefault()}
+									className='cursor-pointer'>
+									{item.title}
+								</NavigationMenuTrigger>
 								{item.content && (
 									<NavigationMenuContent>
 										<ul className={item.content.className}>
@@ -343,12 +383,60 @@ const Navbar = ({ items }: NavbarProps) => {
 			<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' />
 
 			<div className='flex gap-x-4 ml-auto'>
-				<Link href={'#'} className={buttonVariants({ variant: 'default' })}>
-					Login
-				</Link>
-				<Link href={'#'} className={buttonVariants({ variant: 'outline' })}>
-					Sign Up
-				</Link>
+				{/* {user.status === 'loading' && <Skeleton className='w-[200px] h-9'></Skeleton>} */}
+
+				{!userData ? (
+					<>
+						<Link href={'/auth/login'} className={buttonVariants({ variant: 'default' })}>
+							Login
+						</Link>
+						<Link href={'/auth/signup'} className={buttonVariants({ variant: 'outline' })}>
+							Sign Up
+						</Link>
+					</>
+				) : (
+					<DropdownMenu>
+						<DropdownMenuTrigger>
+							<Avatar className='flex items-center justify-center cursor-pointer'>
+								<AvatarImage
+									className='border-2 rounded-full'
+									src={userData.image || '#'}
+									alt='User'
+									width={36}
+									height={36}></AvatarImage>
+								<AvatarFallback>{getInitials(userData.name || '')}</AvatarFallback>
+							</Avatar>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent className='w-56' align='start'>
+							<DropdownMenuLabel>My Account</DropdownMenuLabel>
+							<DropdownMenuGroup>
+								<DropdownMenuItem>Dashboard</DropdownMenuItem>
+								<DropdownMenuItem>Profile</DropdownMenuItem>
+								<DropdownMenuItem>Orders</DropdownMenuItem>
+								<DropdownMenuItem>Settings</DropdownMenuItem>
+							</DropdownMenuGroup>
+
+							<DropdownMenuSeparator />
+
+							<DropdownMenuItem>Contact</DropdownMenuItem>
+							<DropdownMenuItem>GitHub</DropdownMenuItem>
+							<DropdownMenuItem disabled>API</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								variant='destructive'
+								onClick={async () => {
+									handleLogout();
+								}}
+								className='relative'>
+								Log out
+								<Loader2
+									className={cn('absolute top-1/2 -translate-y-1/2 right-2 animate-spin', {
+										hidden: !logoutLoading,
+									})}></Loader2>
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				)}
 
 				<ThemeToggle></ThemeToggle>
 			</div>
