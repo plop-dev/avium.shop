@@ -41,13 +41,13 @@ function VerifyEmailContent({ from }: { from: 'signup' | 'login' }) {
 
 								<div className='space-y-2'>
 									<p className='text-muted-foreground text-sm'>
-										We've sent a verification link to <span className='font-medium'>{email}</span>
+										We&#39;ve sent a verification link to <span className='font-medium'>{email}</span>
 									</p>
 								</div>
 
 								<div className='space-y-4'>
 									<p className='text-sm text-muted-foreground'>
-										Click the link in the email to verify your account. If you don't see it, check your spam folder.
+										Click the link in the email to verify your account. If you don&#39;t see it, check your spam folder.
 									</p>
 
 									<Button variant='outline' asChild className='w-full'>
