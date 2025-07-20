@@ -36,6 +36,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { set } from 'zod';
+import { UserMenu } from './User';
 
 export interface NavbarListItemProps {
 	title: string;
@@ -385,7 +386,7 @@ const Navbar = ({ items, user }: NavbarProps) => {
 			<div className='flex gap-x-4 ml-auto'>
 				{/* {user.status === 'loading' && <Skeleton className='w-[200px] h-9'></Skeleton>} */}
 
-				{!userData ? (
+				{!userData || !(userData.name && userData.image) ? (
 					<>
 						<Link href={'/auth/login'} className={buttonVariants({ variant: 'default' })}>
 							Login
@@ -395,47 +396,11 @@ const Navbar = ({ items, user }: NavbarProps) => {
 						</Link>
 					</>
 				) : (
-					<DropdownMenu>
-						<DropdownMenuTrigger>
-							<Avatar className='flex items-center justify-center cursor-pointer'>
-								<AvatarImage
-									className='border-2 rounded-full'
-									src={userData.image || '#'}
-									alt='User'
-									width={36}
-									height={36}></AvatarImage>
-								<AvatarFallback>{getInitials(userData.name || '')}</AvatarFallback>
-							</Avatar>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent className='w-56' align='start'>
-							<DropdownMenuLabel>My Account</DropdownMenuLabel>
-							<DropdownMenuGroup>
-								<DropdownMenuItem>Dashboard</DropdownMenuItem>
-								<DropdownMenuItem>Profile</DropdownMenuItem>
-								<DropdownMenuItem>Orders</DropdownMenuItem>
-								<DropdownMenuItem>Settings</DropdownMenuItem>
-							</DropdownMenuGroup>
-
-							<DropdownMenuSeparator />
-
-							<DropdownMenuItem>Contact</DropdownMenuItem>
-							<DropdownMenuItem>GitHub</DropdownMenuItem>
-							<DropdownMenuItem disabled>API</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								variant='destructive'
-								onClick={async () => {
-									handleLogout();
-								}}
-								className='relative'>
-								Log out
-								<Loader2
-									className={cn('absolute top-1/2 -translate-y-1/2 right-2 animate-spin', {
-										hidden: !logoutLoading,
-									})}></Loader2>
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+					<UserMenu
+						userData={{ name: userData.name, image: userData.image }}
+						handleLogout={handleLogout}
+						logoutLoading={logoutLoading}
+					/>
 				)}
 
 				<ThemeToggle></ThemeToggle>

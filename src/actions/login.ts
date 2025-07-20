@@ -3,6 +3,7 @@
 import { loginFormSchema } from '@/schemas/loginForm';
 import { getPayload } from 'payload';
 import config from '@payload-config';
+import { cookies } from 'next/headers';
 
 export async function submitLoginForm(formData: FormData) {
 	const payload = await getPayload({ config });
@@ -40,11 +41,18 @@ export async function submitLoginForm(formData: FormData) {
 		// 	body: JSON.stringify(data),
 		// });
 
-		if (!res.user) {
+		if (res.token) {
+			const cookieStore = await cookies();
+			cookieStore.set('payload-token', res.token, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				path: '/',
+			});
+
+			return { success: true };
+		} else {
 			return { error: 'Login failed. Please try again.' };
 		}
-
-		return { success: true };
 	} catch (error) {
 		if (error instanceof Error) {
 			return { error: error.message };
