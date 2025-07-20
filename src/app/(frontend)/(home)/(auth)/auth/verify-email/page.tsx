@@ -1,19 +1,15 @@
 import { Suspense } from 'react';
-import { parseAsString, parseAsStringLiteral, useQueryState, createLoader } from 'nuqs';
+import { SearchParams } from 'nuqs/server';
 import { VerifyEmailContent } from './alertUser';
 import { redirect } from 'next/navigation';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 import { loadSearchParams } from './searchParams';
 
-interface SearchParams {
-	[key: string]: string;
-}
-
-export default async function VerifyEmailPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function VerifyEmailPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
 	const payload = await getPayload({ config });
 
-	const { from, token } = loadSearchParams(searchParams);
+	const { from, token } = await loadSearchParams(searchParams);
 
 	// if no token, this page is used to tell the user to check their email
 

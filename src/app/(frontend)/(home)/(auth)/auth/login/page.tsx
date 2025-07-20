@@ -5,8 +5,12 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import AuthButtons from './authButtons';
+import { SearchParams } from 'nuqs/server';
+import { loadSearchParams } from './searchParams';
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+	const { error, success, message } = await loadSearchParams(searchParams);
+
 	return (
 		<div className='flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10'>
 			<div className='flex w-full max-w-sm flex-col gap-6'>
@@ -32,7 +36,7 @@ export default async function LoginPage() {
 									<span className='bg-card text-muted-foreground relative z-10 px-2'>Or continue with</span>
 								</div>
 
-								<LoginForm />
+								<LoginForm error={error} message={message} success={success} />
 
 								<div className='text-center text-sm'>
 									Don&apos;t have an account?{' '}

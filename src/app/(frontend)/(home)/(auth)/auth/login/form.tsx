@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { submitLoginForm } from '@/actions/login';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
 	AlertDialog,
@@ -26,7 +26,7 @@ import {
 import { submitForgotPasswordForm } from '@/actions/forgotPassword';
 import { loginFormSchema } from '@/schemas/loginForm';
 
-export default function LoginForm() {
+export default function LoginForm({ error, success, message }: { error?: string; success?: string; message?: string }) {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false);
@@ -81,6 +81,16 @@ export default function LoginForm() {
 			toast.success('Password reset email sent! Check your inbox.');
 		}
 	}
+
+	useEffect(() => {
+		if (error) {
+			toast.error(error);
+		} else if (success) {
+			toast.success(success);
+		} else if (message) {
+			toast(message);
+		}
+	}, [error, success, message]);
 
 	return (
 		<Form {...form}>
