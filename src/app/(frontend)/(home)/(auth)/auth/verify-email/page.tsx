@@ -1,14 +1,19 @@
 import { Suspense } from 'react';
-import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
+import { parseAsString, parseAsStringLiteral, useQueryState, createLoader } from 'nuqs';
 import { VerifyEmailContent } from './alertUser';
 import { redirect } from 'next/navigation';
 import { getPayload } from 'payload';
 import config from '@payload-config';
+import { loadSearchParams } from './searchParams';
 
-export default async function VerifyEmailPage() {
+interface SearchParams {
+	[key: string]: string;
+}
+
+export default async function VerifyEmailPage({ searchParams }: { searchParams: SearchParams }) {
 	const payload = await getPayload({ config });
-	const [from] = useQueryState<'login' | 'signup'>('from', parseAsStringLiteral(['login', 'signup']).withDefault('signup'));
-	const [token] = useQueryState('token', parseAsString.withDefault(''));
+
+	const { from, token } = loadSearchParams(searchParams);
 
 	// if no token, this page is used to tell the user to check their email
 
