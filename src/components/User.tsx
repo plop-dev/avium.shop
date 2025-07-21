@@ -33,7 +33,7 @@ function UserMenu({
 						alt='User'
 						width={36}
 						height={36}></AvatarImage>
-					<AvatarFallback>{getInitials(userData.name || '')}</AvatarFallback>
+					<AvatarFallback className='border-2 rounded-full w-36 aspect-square'>{getInitials(userData.name || '')}</AvatarFallback>
 				</Avatar>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className='w-56' align='start'>
