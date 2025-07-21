@@ -26,8 +26,8 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
 		}
 	}
 
-	// check if from or token is not defined in the URL (this means the user accessed this page directly, manually)
-	if (!from && !token.trim()) {
+	// check if from is not defined in the URL (this means the user accessed this page directly, manually)
+	if (!from) {
 		return redirect(`/auth/login?error=${encodeURIComponent('Invalid request. Please try again.')}`);
 	}
 
