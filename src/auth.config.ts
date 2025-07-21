@@ -16,8 +16,12 @@ export const authConfig: NextAuthConfig = {
 			return isLoggedIn; // Require auth for other pages
 		},
 	},
+	session: {
+		strategy: 'jwt',
+	},
 	pages: {
 		signIn: '/auth/login',
 		newUser: '/auth/signup',
 	},
+	secret: process.env.AUTH_SECRET,
 };

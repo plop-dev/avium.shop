@@ -38,7 +38,7 @@ export const Users: CollectionConfig = {
 									<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin: 0; padding: 0; width: 100%; max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
 										<!-- Header -->
 										<tr>
-											<td style="padding: 32px 40px; text-align: center; background-color: #27104e; border-radius: 8px 8px 0 0;">
+											<td style="padding: 32px 40px; text-align: center; background-color: #2a2e58; border-radius: 8px 8px 0 0;">
 												<h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #ffffff;">Avium</h1>
 											</td>
 										</tr>
@@ -53,7 +53,7 @@ export const Users: CollectionConfig = {
 												<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
 													<tr>
 														<td align="center" style="padding: 16px 0 32px;">
-															<a href="${verificationURL}" target="_blank" style="display: inline-block; padding: 10px 16px; background-color: #27104e; border-radius: 6px; font-size: 14px; font-weight: 500; color: #ffffff; text-decoration: none; text-align: center; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">Verify Email Address</a>
+															<a href="${verificationURL}" target="_blank" style="display: inline-block; padding: 10px 16px; background-color: #fca644; border-radius: 6px; font-size: 14px; font-weight: 500; color: #ffffff; text-decoration: none; text-align: center; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">Verify Email Address</a>
 														</td>
 													</tr>
 												</table>
@@ -69,8 +69,8 @@ export const Users: CollectionConfig = {
 										
 										<!-- Footer -->
 										<tr>
-											<td style="padding: 24px 40px; text-align: center; background-color: #f5f2fa; border-radius: 0 0 8px 8px;">
-												<p style="margin: 0; font-size: 14px; line-height: 20px; color: #71717a;">
+											<td style="padding: 24px 40px; text-align: center; background-color: #eee; border-radius: 0 0 8px 8px;">
+												<p style="margin: 0; font-size: 14px; line-height: 20px; color: #121212;">
 													&copy; ${new Date().getFullYear()} Avium. All rights reserved.
 												</p>
 											</td>
