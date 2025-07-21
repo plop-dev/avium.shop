@@ -14,29 +14,16 @@ import {
 	navigationMenuTriggerStyle,
 	NavigationMenuViewport,
 } from '@/components/ui/navigation-menu';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 import { buttonVariants } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import getInitials from '@/utils/getInitials';
 import { User } from 'next-auth';
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import { set } from 'zod';
-import { UserMenu } from './User';
+import { UserMenu } from './UserMenu';
 
 export interface NavbarListItemProps {
 	title: string;
@@ -221,20 +208,29 @@ const Navbar = ({ items, user }: NavbarProps) => {
 	});
 	const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
 	const [isOpen, setIsOpen] = useState(false);
-	// const user = useSession();
 	const router = useRouter();
 
-	function handleLogout() {
+	async function handleLogout(): Promise<{ success: boolean; error?: string }> {
+		if (logoutLoading) return { success: false, error: 'Logout already in progress' };
+
 		setLogoutLoading(true);
-		signOut({ redirect: false }).then(res => {
+
+		try {
+			await signOut({ redirect: false });
 			router.push('/');
 			setUserData(null);
-			setLogoutLoading(false);
+
 			toast.success('Logged out successfully', {
 				duration: 3000,
 				dismissible: true,
 			});
-		});
+
+			setLogoutLoading(false);
+			return { success: true };
+		} catch (error) {
+			setLogoutLoading(false);
+			return { success: false, error: 'Failed to logout' };
+		}
 	}
 
 	// Update indicator position when hoveredIndex changes
@@ -386,7 +382,7 @@ const Navbar = ({ items, user }: NavbarProps) => {
 			<div className='flex gap-x-4 ml-auto'>
 				{/* {user.status === 'loading' && <Skeleton className='w-[200px] h-9'></Skeleton>} */}
 
-				{!userData || !(userData.name && userData.image) ? (
+				{!userData ? (
 					<>
 						<Link href={'/auth/login'} className={buttonVariants({ variant: 'default' })}>
 							Login
@@ -397,7 +393,7 @@ const Navbar = ({ items, user }: NavbarProps) => {
 					</>
 				) : (
 					<UserMenu
-						userData={{ name: userData.name, image: userData.image }}
+						userData={{ name: userData.name || '', image: userData.image || '#' }}
 						handleLogout={handleLogout}
 						logoutLoading={logoutLoading}
 					/>

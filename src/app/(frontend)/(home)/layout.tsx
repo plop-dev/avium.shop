@@ -1,9 +1,18 @@
 import { auth } from '@/auth';
 import Navbar, { NavbarListItemProps, NavbarProps, NavMenuItem } from '@/components/Navbar';
 import { redirect } from 'next/navigation';
+import { getPayload } from 'payload';
+import config from '@payload-config';
+import { headers as nextHeaders } from 'next/headers';
+import { getUser } from '@/utils/getUser';
 
 export default async function HomeLayout({ children }: { children: React.ReactNode }) {
-	const session = await auth();
+	const headers = await nextHeaders();
+
+	const user = await getUser();
+
+	// console.log('auth user:', session?.user);
+	// console.log('payload user:', user.user);
 
 	const options: NavbarListItemProps[] = [
 		{
@@ -72,7 +81,7 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 
 	return (
 		<main className='w-full'>
-			<Navbar items={items} user={session?.user} />
+			<Navbar items={items} user={user || undefined} />
 			{children}
 		</main>
 	);

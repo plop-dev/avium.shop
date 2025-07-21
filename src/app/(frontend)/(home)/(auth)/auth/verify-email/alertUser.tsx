@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@nanostores/react';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowLeft, MessageCircleQuestion } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { $verifyEmail } from '@/stores/verifyEmail';
 
@@ -49,9 +49,11 @@ export function VerifyEmailContent({ from }: { from: 'signup' | 'login' }) {
 									</p>
 
 									<Button variant='outline' asChild className='w-full'>
-										<Link href='/auth/signup'>
-											<ArrowLeft className='w-4 h-4 mr-2' />
-											Back to {from === 'signup' ? 'Signup' : 'Login'}
+										<Link href='/contact'>
+											<MessageCircleQuestion className='w-4 h-4'></MessageCircleQuestion>
+											Contact support
+											{/* <ArrowLeft className='w-4 h-4 mr-2' />
+											Back to {from === 'signup' ? 'Signup' : 'Login'} */}
 										</Link>
 									</Button>
 								</div>

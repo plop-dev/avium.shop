@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 import getInitials from '@/utils/getInitials';
 import { Loader2 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 function UserMenu({
 	userData,
@@ -20,20 +22,19 @@ function UserMenu({
 	logoutLoading,
 }: {
 	userData: { name: string; image: string };
-	handleLogout: () => void;
+	handleLogout: () => Promise<{ success: boolean; error?: string }>;
 	logoutLoading: boolean;
 }) {
+	const [isLogOutLoading, setIsLogOutLoading] = useState(false);
+
 	return (
-		<DropdownMenu>
+		<DropdownMenu open={isLogOutLoading} onOpenChange={setIsLogOutLoading}>
 			<DropdownMenuTrigger>
 				<Avatar className='flex items-center justify-center cursor-pointer'>
-					<AvatarImage
-						className='border-2 rounded-full'
-						src={userData.image || '#'}
-						alt='User'
-						width={36}
-						height={36}></AvatarImage>
-					<AvatarFallback className='border-2 rounded-full w-36 aspect-square'>{getInitials(userData.name || '')}</AvatarFallback>
+					<AvatarImage className='border-2 rounded-full' src={userData.image} alt='User' width={36} height={36}></AvatarImage>
+					<AvatarFallback className='border-2 rounded-full w-9 aspect-square grid place-items-center'>
+						{getInitials(userData.name)}
+					</AvatarFallback>
 				</Avatar>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className='w-56' align='start'>
@@ -53,8 +54,19 @@ function UserMenu({
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					variant='destructive'
-					onClick={async () => {
-						handleLogout();
+					onClick={async e => {
+						e.preventDefault();
+
+						setIsLogOutLoading(true);
+
+						const res = await handleLogout();
+
+						if (res.success) {
+							toast.success('Logged out successfully');
+						} else {
+							toast.error(res.error || 'Failed to log out');
+						}
+						setIsLogOutLoading(false);
 					}}
 					className='relative'>
 					Log out
