@@ -1,8 +1,7 @@
 import '@/app/styles/globals.css';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { cookies } from 'next/headers';
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import NextTopLoader from 'nextjs-toploader';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
@@ -26,10 +25,9 @@ const dmSans = DM_Sans({
 	style: ['normal'],
 });
 
-export default async function RootLayout({ children, searchParams }: { children: React.ReactNode; searchParams: Promise<SearchParams> }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
 	// const cookieStore = await cookies();
 	const session = await auth();
-	const { error, success, message } = await loadSearchParams(searchParams);
 
 	return (
 		<>
@@ -40,12 +38,12 @@ export default async function RootLayout({ children, searchParams }: { children:
 					<Analytics></Analytics>
 					<NuqsAdapter>
 						<SessionProvider session={session}>
+							<Toaster richColors theme='system'></Toaster>
 							<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange enableColorScheme>
-								<Toaster richColors theme='system'></Toaster>
-								<>
-									<MessageToaster error={error} success={success} message={message}></MessageToaster>
-									{children}
-								</>
+								<Suspense>
+									<MessageToaster></MessageToaster>
+								</Suspense>
+								{children}
 							</ThemeProvider>
 						</SessionProvider>
 					</NuqsAdapter>

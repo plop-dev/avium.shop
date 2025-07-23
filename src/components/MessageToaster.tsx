@@ -2,9 +2,16 @@
 
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { parseAsString, useQueryState } from 'nuqs';
 
-function MessageToaster({ error, success, message }: { error?: string; success?: string; message?: string }) {
+function MessageToaster() {
 	const displayedMessages = useRef(new Set<string>());
+
+	const [error] = useQueryState('error', parseAsString);
+	const [success] = useQueryState('success', parseAsString);
+	const [message] = useQueryState('message', parseAsString);
+
+	console.log('MessageToaster rendered with:', { error, success, message });
 
 	useEffect(() => {
 		const messageToShow = error || success || message;
@@ -21,7 +28,7 @@ function MessageToaster({ error, success, message }: { error?: string; success?:
 		}
 	}, [error, success, message]);
 
-	return <></>;
+	return null;
 }
 
 export { MessageToaster };
