@@ -69,7 +69,14 @@ const Hero = async ({
 
 			<div className='w-[60%] grid place-items-center'>
 				{/* <h1 className='text-secondary'>SZYMON VID HERE</h1> */}
-				<Video type='video/webm' filename='hero-printer-0.webm' muted autoPlay playsInline loop className='rounded-xl'></Video>
+				<Video
+					type='video/webm'
+					url={'https://tt9cm3m7y1kbfhht.public.blob.vercel-storage.com/hero-printer-0.webm'}
+					muted
+					autoPlay
+					playsInline
+					loop
+					className='rounded-xl'></Video>
 			</div>
 		</section>
 	);
