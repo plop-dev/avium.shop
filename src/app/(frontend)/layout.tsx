@@ -10,8 +10,6 @@ import { SessionProvider } from 'next-auth/react';
 import { DM_Sans } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { auth } from '@/auth';
-import { loadSearchParams } from './(home)/(auth)/auth/login/searchParams';
-import { SearchParams } from 'nuqs/server';
 import { MessageToaster } from '@/components/MessageToaster';
 
 export const metadata: Metadata = {

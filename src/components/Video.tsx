@@ -1,20 +1,8 @@
 'use server';
 
-import { list } from '@vercel/blob';
-import mime from 'mime-types'; //? idk how to add types
+export type VideoMimeType = 'video/mp4' | 'video/webm' | 'video/ogg' | 'video/avi' | 'video/mov' | 'video/wmv' | 'video/flv' | 'video/mkv';
 
-export async function Video({
-	type,
-	filename,
-	...props
-}: { type: string; filename: string } & React.VideoHTMLAttributes<HTMLVideoElement>) {
-	const { blobs } = await list({
-		prefix: filename,
-		limit: 1,
-	});
-
-	const { url } = blobs[0];
-
+export async function Video({ type, url, ...props }: { type: VideoMimeType; url: string } & React.VideoHTMLAttributes<HTMLVideoElement>) {
 	return (
 		<video {...props}>
 			<source src={url} type={type}></source>

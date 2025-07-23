@@ -53,7 +53,8 @@ export const authConfig: NextAuthConfig = {
 		jwt({ token, user }) {
 			if (user) {
 				token.id = user.id;
-				// @ts-expect-error
+
+				// @ts-expect-error: ts being annoying
 				token.token = user.token;
 			}
 			return token;
