@@ -217,8 +217,9 @@ export function ChartAreaInteractive() {
 							content={props => (
 								<ChartTooltipContent
 									{...props}
-									labelFormatter={value => {
-										return new Date(value).toLocaleDateString('en-US', {
+									labelFormatter={(label: string | number | undefined) => {
+										if (!label) return '';
+										return new Date(label).toLocaleDateString('en-US', {
 											month: 'short',
 											day: 'numeric',
 										});
