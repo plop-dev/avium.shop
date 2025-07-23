@@ -7,11 +7,9 @@ import { parseAsString, useQueryState } from 'nuqs';
 function MessageToaster() {
 	const displayedMessages = useRef(new Set<string>());
 
-	const [error] = useQueryState('error', parseAsString);
-	const [success] = useQueryState('success', parseAsString);
-	const [message] = useQueryState('message', parseAsString);
-
-	console.log('MessageToaster rendered with:', { error, success, message });
+	const [error, setError] = useQueryState('error', parseAsString);
+	const [success, setSuccess] = useQueryState('success', parseAsString);
+	const [message, setMessage] = useQueryState('message', parseAsString);
 
 	useEffect(() => {
 		const messageToShow = error || success || message;
@@ -20,10 +18,13 @@ function MessageToaster() {
 
 			if (error) {
 				toast.error(error);
+				setError(null);
 			} else if (success) {
 				toast.success(success);
+				setSuccess(null);
 			} else if (message) {
 				toast(message);
+				setMessage(null);
 			}
 		}
 	}, [error, success, message]);

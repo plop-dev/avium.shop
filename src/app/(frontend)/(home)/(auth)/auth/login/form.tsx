@@ -27,6 +27,7 @@ import { submitForgotPasswordForm } from '@/actions/forgotPassword';
 import { loginFormSchema } from '@/schemas/loginForm';
 import { signIn } from 'next-auth/react';
 import { LoadingSwap } from '@/components/ui/loading-swap';
+import { Email, setResetPasswordEmail } from '@/stores/resetPasswordEmail';
 
 export default function LoginForm() {
 	const router = useRouter();
@@ -73,24 +74,29 @@ export default function LoginForm() {
 	}
 
 	async function handleForgotPassword(e: React.MouseEvent<HTMLButtonElement>) {
-		e.preventDefault();
+		startResetButtonLoading(async () => {
+			e.preventDefault();
 
-		const email = form.getValues('email');
-		if (!email) {
-			toast.error('Please enter your email address first');
-			return;
-		}
+			const email = form.getValues('email');
+			if (!email) {
+				toast.error('Please enter your email address first');
+				return;
+			}
 
-		const formData = new FormData();
-		formData.append('email', email);
+			const formData = new FormData();
+			formData.append('email', email);
 
-		const result = await submitForgotPasswordForm(formData);
+			const result = await submitForgotPasswordForm(formData);
 
-		if (result.error) {
-			toast.error(result.error);
-		} else {
-			toast.success('Password reset email sent! Check your inbox.');
-		}
+			if (result.error) {
+				toast.error(result.error);
+			} else {
+				toast.success('Password reset email sent! Check your inbox.');
+				setIsForgotPasswordDialogOpen(false);
+				setResetPasswordEmail(email as Email);
+				router.push('/auth/reset-password');
+			}
+		});
 	}
 
 	return (
@@ -138,7 +144,9 @@ export default function LoginForm() {
 													</AlertDialogHeader>
 													<AlertDialogFooter>
 														<AlertDialogCancel>Cancel</AlertDialogCancel>
-														<AlertDialogAction onClick={e => handleForgotPassword(e)}>
+														<AlertDialogAction
+															onClick={e => handleForgotPassword(e)}
+															disabled={isResetButtonLoading}>
 															<LoadingSwap isLoading={isResetButtonLoading}>Continue</LoadingSwap>
 														</AlertDialogAction>
 													</AlertDialogFooter>

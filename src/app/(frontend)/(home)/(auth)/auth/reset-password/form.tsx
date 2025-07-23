@@ -6,13 +6,14 @@ import { resetPasswordFormSchema } from '@/schemas/resetPasswordForm';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Form, useForm } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 import z from 'zod';
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { submitResetPasswordForm } from '@/actions/resetPassword';
 
-export default function ResetPasswordForm() {
+export default function ResetPasswordForm({ token }: { token: string }) {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -22,6 +23,7 @@ export default function ResetPasswordForm() {
 		defaultValues: {
 			password: '',
 			verifyPassword: '',
+			token: '', // set as query param in the page component
 		},
 	});
 
@@ -32,11 +34,17 @@ export default function ResetPasswordForm() {
 			const formData = new FormData();
 			formData.append('password', data.password);
 			formData.append('verifyPassword', data.verifyPassword);
+			formData.append('token', token);
 
-			const result = await setTimeout(() => {
-				toast.success('Password reset successfully! Redirecting...');
-				router.push('/auth/login');
-			}, 1000);
+			const result = await submitResetPasswordForm(formData);
+
+			if (result.success) {
+				toast.success('Password reset successfully! You can now log in with your new password.');
+
+				router.push('/auth/login'); // or dashboard?
+			} else {
+				toast.error(result.error || 'An error occurred while resetting your password. Please try again.');
+			}
 		} catch (error) {
 			console.error('Error resetting password:', error);
 			toast.error('An error occurred while resetting your password. Please try again.');
@@ -46,7 +54,7 @@ export default function ResetPasswordForm() {
 	}
 
 	return (
-		<Form {...form}>
+		<FormProvider {...form}>
 			<form onSubmit={form.handleSubmit(onSubmit)}>
 				<div className='grid gap-6'>
 					<FormField
@@ -55,7 +63,7 @@ export default function ResetPasswordForm() {
 						render={({ field }) => (
 							<FormItem className='flex-1'>
 								<div className='flex items-center'>
-									<FormLabel>Password</FormLabel>
+									<FormLabel>New Password</FormLabel>
 								</div>
 								<FormControl>
 									<Input type='password' disabled={isLoading} {...field} />
@@ -71,7 +79,7 @@ export default function ResetPasswordForm() {
 						render={({ field }) => (
 							<FormItem className='flex-1'>
 								<div className='flex items-center'>
-									<FormLabel>Verify Password</FormLabel>
+									<FormLabel>Verify New Password</FormLabel>
 								</div>
 								<FormControl>
 									<Input type='password' disabled={isLoading} {...field} />
@@ -81,10 +89,10 @@ export default function ResetPasswordForm() {
 						)}
 					/>
 					<Button type='submit' className='w-full' disabled={isLoading}>
-						{isLoading ? <Loader2 className='animate-spin' /> : 'Login'}
+						{isLoading ? <Loader2 className='animate-spin' /> : 'Reset'}
 					</Button>
 				</div>
 			</form>
-		</Form>
+		</FormProvider>
 	);
 }
