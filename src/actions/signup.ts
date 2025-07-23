@@ -25,7 +25,22 @@ export async function submitSignupForm(formData: FormData) {
 	const { verifyPassword, ...signupData } = result.data;
 
 	try {
-		console.log('Submitting signup data:', signupData);
+		console.log('Submitting signup data:', signupData.email, signupData.name);
+
+		// check if email is already used
+		const emailExists = await payload.find({
+			collection: 'users',
+			where: {
+				email: {
+					equals: signupData.email,
+				},
+			},
+		});
+
+		if (emailExists.totalDocs > 0) {
+			return { error: 'Email is already in use. Please use a different email.' };
+		}
+
 		const createRes = await payload.create({
 			collection: 'users',
 			data: signupData,

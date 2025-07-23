@@ -14,28 +14,16 @@ import {
 	navigationMenuTriggerStyle,
 	NavigationMenuViewport,
 } from '@/components/ui/navigation-menu';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 import { buttonVariants } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import getInitials from '@/utils/getInitials';
 import { User } from 'next-auth';
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import { set } from 'zod';
+import { UserMenu } from './UserMenu';
 
 export interface NavbarListItemProps {
 	title: string;
@@ -220,20 +208,29 @@ const Navbar = ({ items, user }: NavbarProps) => {
 	});
 	const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
 	const [isOpen, setIsOpen] = useState(false);
-	// const user = useSession();
 	const router = useRouter();
 
-	function handleLogout() {
+	async function handleLogout(): Promise<{ success: boolean; error?: string }> {
+		if (logoutLoading) return { success: false, error: 'Logout already in progress' };
+
 		setLogoutLoading(true);
-		signOut({ redirect: false }).then(res => {
+
+		try {
+			await signOut({ redirect: false });
 			router.push('/');
 			setUserData(null);
-			setLogoutLoading(false);
+
 			toast.success('Logged out successfully', {
 				duration: 3000,
 				dismissible: true,
 			});
-		});
+
+			setLogoutLoading(false);
+			return { success: true };
+		} catch (error) {
+			setLogoutLoading(false);
+			return { success: false, error: 'Failed to logout' };
+		}
 	}
 
 	// Update indicator position when hoveredIndex changes
@@ -395,47 +392,11 @@ const Navbar = ({ items, user }: NavbarProps) => {
 						</Link>
 					</>
 				) : (
-					<DropdownMenu>
-						<DropdownMenuTrigger>
-							<Avatar className='flex items-center justify-center cursor-pointer'>
-								<AvatarImage
-									className='border-2 rounded-full'
-									src={userData.image || '#'}
-									alt='User'
-									width={36}
-									height={36}></AvatarImage>
-								<AvatarFallback>{getInitials(userData.name || '')}</AvatarFallback>
-							</Avatar>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent className='w-56' align='start'>
-							<DropdownMenuLabel>My Account</DropdownMenuLabel>
-							<DropdownMenuGroup>
-								<DropdownMenuItem>Dashboard</DropdownMenuItem>
-								<DropdownMenuItem>Profile</DropdownMenuItem>
-								<DropdownMenuItem>Orders</DropdownMenuItem>
-								<DropdownMenuItem>Settings</DropdownMenuItem>
-							</DropdownMenuGroup>
-
-							<DropdownMenuSeparator />
-
-							<DropdownMenuItem>Contact</DropdownMenuItem>
-							<DropdownMenuItem>GitHub</DropdownMenuItem>
-							<DropdownMenuItem disabled>API</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								variant='destructive'
-								onClick={async () => {
-									handleLogout();
-								}}
-								className='relative'>
-								Log out
-								<Loader2
-									className={cn('absolute top-1/2 -translate-y-1/2 right-2 animate-spin', {
-										hidden: !logoutLoading,
-									})}></Loader2>
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+					<UserMenu
+						userData={{ name: userData.name || '', image: userData.image || '#' }}
+						handleLogout={handleLogout}
+						logoutLoading={logoutLoading}
+					/>
 				)}
 
 				<ThemeToggle></ThemeToggle>

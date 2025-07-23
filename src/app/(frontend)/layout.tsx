@@ -1,8 +1,7 @@
 import '@/app/styles/globals.css';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { cookies } from 'next/headers';
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import NextTopLoader from 'nextjs-toploader';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
@@ -11,6 +10,9 @@ import { SessionProvider } from 'next-auth/react';
 import { DM_Sans } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { auth } from '@/auth';
+import { loadSearchParams } from './(home)/(auth)/auth/login/searchParams';
+import { SearchParams } from 'nuqs/server';
+import { MessageToaster } from '@/components/MessageToaster';
 
 export const metadata: Metadata = {
 	title: 'Avium',
@@ -36,8 +38,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 					<Analytics></Analytics>
 					<NuqsAdapter>
 						<SessionProvider session={session}>
+							<Toaster richColors theme='system'></Toaster>
 							<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange enableColorScheme>
-								<Toaster richColors theme={'system'}></Toaster>
+								<Suspense>
+									<MessageToaster></MessageToaster>
+								</Suspense>
 								{children}
 							</ThemeProvider>
 						</SessionProvider>

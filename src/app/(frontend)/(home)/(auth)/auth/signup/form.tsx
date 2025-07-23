@@ -46,7 +46,7 @@ export default function SignupForm() {
 				toast.success('Account created successfully! Please check your email to verify your account.');
 
 				setVerifyEmail(data.email as Email);
-				router.push('/auth/verify-email');
+				router.push('/auth/verify-email?from=signup');
 			} else {
 				toast.error(result.error || 'An error occurred during signup. Please try again.');
 			}
