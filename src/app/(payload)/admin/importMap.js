@@ -25,6 +25,7 @@ import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { default as default_0965c07dbf33c562ea92d03cfa6c8333 } from '@/components/payload/ColourPicker/Cell'
 import { default as default_49570ae9bf8bf66145aa422326191e11 } from '@/components/payload/ColourPicker/ColourPicker'
 import { SignInButton as SignInButton_06d0cb594d8f6ba2ac35015f930c882e } from 'payload-authjs/components'
+import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
 
 export const importMap = {
   "payload-authjs/components#AccountRowLabel": AccountRowLabel_06d0cb594d8f6ba2ac35015f930c882e,
@@ -53,5 +54,6 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/components/payload/ColourPicker/Cell#default": default_0965c07dbf33c562ea92d03cfa6c8333,
   "@/components/payload/ColourPicker/ColourPicker#default": default_49570ae9bf8bf66145aa422326191e11,
-  "payload-authjs/components#SignInButton": SignInButton_06d0cb594d8f6ba2ac35015f930c882e
+  "payload-authjs/components#SignInButton": SignInButton_06d0cb594d8f6ba2ac35015f930c882e,
+  "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e
 }

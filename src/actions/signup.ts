@@ -25,7 +25,7 @@ export async function submitSignupForm(formData: FormData) {
 	const { verifyPassword, ...signupData } = result.data;
 
 	try {
-		console.log('Submitting signup data:', signupData);
+		console.log('Submitting signup data:', signupData.email, signupData.name);
 
 		// check if email is already used
 		const emailExists = await payload.find({

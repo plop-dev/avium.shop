@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { submitLoginForm } from '@/actions/login';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
 	AlertDialog,
@@ -25,10 +25,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { submitForgotPasswordForm } from '@/actions/forgotPassword';
 import { loginFormSchema } from '@/schemas/loginForm';
+import { signIn } from 'next-auth/react';
+import { LoadingSwap } from '@/components/ui/loading-swap';
 
 export default function LoginForm() {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
+	const [isResetButtonLoading, startResetButtonLoading] = useTransition();
 	const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false);
 
 	const form = useForm<z.infer<typeof loginFormSchema>>({
@@ -44,15 +47,21 @@ export default function LoginForm() {
 		setIsLoading(true);
 
 		try {
-			const formData = new FormData();
-			formData.append('email', data.email);
-			formData.append('password', data.password);
+			// const formData = new FormData();
+			// formData.append('email', data.email);
+			// formData.append('password', data.password);
 
-			const result = await submitLoginForm(formData);
+			// const result = await submitLoginForm(formData);
 
-			if (result.success) {
+			const result = await signIn('credentials', {
+				redirect: false,
+				email: data.email,
+				password: data.password,
+			});
+
+			if (result.ok) {
 				toast.success('Login successful! Redirecting...');
-				router.push('/dashboard/home');
+				router.push('/dashboard/home'); // or router.push(result.url)
 			} else {
 				toast.error(result.error || 'Login failed. Please try again.');
 			}
@@ -63,7 +72,9 @@ export default function LoginForm() {
 		}
 	}
 
-	async function handleForgotPassword() {
+	async function handleForgotPassword(e: React.MouseEvent<HTMLButtonElement>) {
+		e.preventDefault();
+
 		const email = form.getValues('email');
 		if (!email) {
 			toast.error('Please enter your email address first');
@@ -127,7 +138,9 @@ export default function LoginForm() {
 													</AlertDialogHeader>
 													<AlertDialogFooter>
 														<AlertDialogCancel>Cancel</AlertDialogCancel>
-														<AlertDialogAction onClick={handleForgotPassword}>Continue</AlertDialogAction>
+														<AlertDialogAction onClick={e => handleForgotPassword(e)}>
+															<LoadingSwap isLoading={isResetButtonLoading}>Continue</LoadingSwap>
+														</AlertDialogAction>
 													</AlertDialogFooter>
 												</AlertDialogContent>
 											</AlertDialog>

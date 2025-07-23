@@ -84,6 +84,74 @@ export const Users: CollectionConfig = {
 				`;
 			},
 		},
+		forgotPassword: {
+			generateEmailSubject(args) {
+				return `Reset your password`;
+			},
+			generateEmailHTML(args) {
+				const resetPasswordURL = `${getServerSideURL()}/auth/reset-password?token=${args?.token}`;
+
+				return `
+					<!DOCTYPE html>
+					<html>
+					<head>
+						<meta charset="utf-8">
+						<meta name="viewport" content="width=device-width, initial-scale=1.0">
+						<title>Reset your password</title>
+					</head>
+					<body style="margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; color: #18181b;">
+						<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin: 0; padding: 0; width: 100%; background-color: #f4f4f5;">
+							<tr>
+								<td align="center" style="padding: 40px 0;">
+									<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin: 0; padding: 0; width: 100%; max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+										<!-- Header -->
+										<tr>
+											<td style="padding: 32px 40px; text-align: center; background-color: #2a2e58; border-radius: 8px 8px 0 0;">
+												<h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #ffffff;">Avium</h1>
+											</td>
+										</tr>
+										
+										<!-- Content -->
+										<tr>
+											<td style="padding: 40px;">
+												<p style="margin: 0 0 24px; font-size: 16px; line-height: 24px; color: #18181b;">Hi ${args?.user.name || 'there'},</p>
+												<p style="margin: 0 0 24px; font-size: 16px; line-height: 24px; color: #18181b;">You recently requested to reset your password for your Avium account. Click the button below to reset it.</p>
+												
+												<!-- Reset Password Button -->
+												<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+													<tr>
+														<td align="center" style="padding: 16px 0 32px;">
+															<a href="${resetPasswordURL}" target="_blank" style="display: inline-block; padding: 10px 16px; background-color: #fca644; border-radius: 6px; font-size: 14px; font-weight: 500; color: #ffffff; text-decoration: none; text-align: center; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">Reset Your Password</a>
+														</td>
+													</tr>
+												</table>
+												
+												<p style="margin: 0 0 24px; font-size: 16px; line-height: 24px; color: #18181b;">Or copy and paste this URL into your browser:</p>
+												<p style="margin: 0 0 32px; font-size: 14px; line-height: 24px; color: #71717a; word-break: break-all;">
+													<a href="${resetPasswordURL}" style="color: #27104e; text-decoration: underline;">${resetPasswordURL}</a>
+												</p>
+												
+												<p style="margin: 0; font-size: 16px; line-height: 24px; color: #18181b;">If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>
+											</td>
+										</tr>
+										
+										<!-- Footer -->
+										<tr>
+											<td style="padding: 24px 40px; text-align: center; background-color: #eee; border-radius: 0 0 8px 8px;">
+												<p style="margin: 0; font-size: 14px; line-height: 20px; color: #121212;">
+													&copy; ${new Date().getFullYear()} Avium. All rights reserved.
+												</p>
+											</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+					</body>
+					</html>
+				`;
+			},
+		},
 		useAPIKey: true,
 		maxLoginAttempts: 5,
 		lockTime: 30 * 60 * 1000, // 30 minutes
