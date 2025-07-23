@@ -214,19 +214,22 @@ export function ChartAreaInteractive() {
 						<ChartTooltip
 							cursor={false}
 							defaultIndex={isMobile ? -1 : 10}
-							content={props => (
-								<ChartTooltipContent
-									{...props}
-									labelFormatter={(label: string | number | undefined) => {
-										if (!label) return '';
-										return new Date(label).toLocaleDateString('en-US', {
-											month: 'short',
-											day: 'numeric',
-										});
-									}}
-									indicator='dot'
-								/>
-							)}
+							content={props => {
+								const { content, ...restProps } = props;
+								return (
+									<ChartTooltipContent
+										{...restProps}
+										labelFormatter={(label: string | number | undefined) => {
+											if (!label) return '';
+											return new Date(label).toLocaleDateString('en-US', {
+												month: 'short',
+												day: 'numeric',
+											});
+										}}
+										indicator='dot'
+									/>
+								);
+							}}
 						/>
 						<Area dataKey='mobile' type='natural' fill='url(#fillMobile)' stroke='var(--color-mobile)' stackId='a' />
 						<Area dataKey='desktop' type='natural' fill='url(#fillDesktop)' stroke='var(--color-desktop)' stackId='a' />
