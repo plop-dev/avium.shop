@@ -22,7 +22,7 @@ export const authConfig: NextAuthConfig = {
 			async authorize(credentials) {
 				if (!credentials) return null;
 
-				const { email, password } = credentials as any;
+				const { email, password } = credentials;
 
 				const res = await fetch(`${getServerSideURL()}/api/users/login`, {
 					method: 'POST',
