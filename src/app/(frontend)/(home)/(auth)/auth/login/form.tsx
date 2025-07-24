@@ -62,7 +62,7 @@ export default function LoginForm() {
 
 			if (result.ok) {
 				toast.success('Login successful! Redirecting...');
-				router.push('/dashboard/home'); // or router.push(result.url)
+				router.push(result.url || '/dashboard/home'); // or router.push(result.url)
 			} else {
 				toast.error(result.error || 'Login failed. Please try again.');
 			}
