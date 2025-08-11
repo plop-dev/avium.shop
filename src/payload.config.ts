@@ -5,6 +5,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import path from 'path';
 import { buildConfig } from 'payload';
 import { authjsPlugin } from 'payload-authjs';
+import { searchPlugin } from '@payloadcms/plugin-search';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob';
@@ -52,6 +53,9 @@ export default buildConfig({
 				media: true,
 			},
 			token: process.env.BLOB_READ_WRITE_TOKEN,
+		}),
+		searchPlugin({
+			collections: ['products'],
 		}),
 	],
 	email: nodemailerAdapter({
