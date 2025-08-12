@@ -67,8 +67,8 @@ const Hero = async ({
 				</div>
 			</div>
 
-			<div className='w-[60%] grid place-items-center'>
-				{/* <h1 className='text-secondary'>SZYMON VID HERE</h1> */}
+			<div className='w-[60%] grid place-items-center relative'>
+				<div className='absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/80 z-10 pointer-events-none'></div>
 				<Video
 					type='video/webm'
 					url={'https://tt9cm3m7y1kbfhht.public.blob.vercel-storage.com/hero-printer-0.webm'}
@@ -76,7 +76,8 @@ const Hero = async ({
 					autoPlay
 					playsInline
 					loop
-					className='rounded-xl'></Video>
+					className='rounded-xl'
+				/>
 			</div>
 		</section>
 	);
