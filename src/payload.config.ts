@@ -15,6 +15,7 @@ import { authConfig } from '@/auth.config';
 import { PrintingOptions } from '@/collections/PrintingOptions';
 import { Orders } from '@/collections/Order';
 import { Presets } from '@/collections/Presets';
+import { Products } from '@/collections/Products';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -26,10 +27,10 @@ export default buildConfig({
 			baseDir: path.resolve(dirname),
 		},
 		avatar: 'default',
-		dateFormat: 'DD/MM/YYYY',
+		dateFormat: 'dd/MM/yyyy',
 	},
 	globals: [PrintingOptions],
-	collections: [Users, Orders, Presets],
+	collections: [Users, Orders, Presets, Products],
 	editor: lexicalEditor(),
 	secret: process.env.PAYLOAD_SECRET || '',
 	typescript: {

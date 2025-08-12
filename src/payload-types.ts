@@ -70,6 +70,8 @@ export interface Config {
     users: User;
     orders: Order;
     presets: Preset;
+    products: Product;
+    search: Search;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -79,6 +81,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
+    search: SearchSelect<false> | SearchSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -151,10 +155,10 @@ export interface User {
   stripeCustomerId?: string | null;
   accounts?:
     | {
-        id?: string | null;
         provider: string;
         providerAccountId: string;
         type: string;
+        id?: string | null;
       }[]
     | null;
   updatedAt: string;
@@ -193,47 +197,51 @@ export interface Order {
    * The user who placed the order
    */
   customer: string | User;
-  /**
-   * The 3D model(s) associated with this order
-   */
-  model?:
+  prints?:
     | {
         /**
-         * The name of the 3D model file (example: acb123)
+         * The 3D model(s) associated with this order
          */
-        filename: string;
-        filetype: 'stl' | 'obj' | '3mf';
-        /**
-         * The relative path of the 3D model file on the server (example: /files/abc123.stl)
-         */
-        serverPath: string;
+        model: {
+          /**
+           * The name of the 3D model file (example: acb123)
+           */
+          filename: string;
+          filetype: 'stl' | 'obj' | '3mf';
+          /**
+           * The relative path of the 3D model file on the server (example: /files/abc123.stl)
+           */
+          serverPath: string;
+        };
+        quantity: number;
+        printingOptions: {
+          preset?: (string | null) | Preset;
+          layerHeight?: number | null;
+          infill: {
+            min: number;
+            max: number;
+          };
+        };
         id?: string | null;
       }[]
     | null;
-  quantity: number;
-  printingOptions: {
-    preset?: (string | null) | Preset;
-    layerHeight?: number | null;
-    infill: {
-      min: number;
-      max: number;
-    };
-  };
   payment: {};
   quote?: {};
-  statuses?:
-    | {
-        stage: 'received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled';
-        timestamp: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Denormalized field for quick access
-   */
-  currentStatus?:
-    | ('received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled')
-    | null;
+  status?: {
+    statuses?:
+      | {
+          stage: 'received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled';
+          timestamp: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Denormalized field for quick access
+     */
+    currentStatus?:
+      | ('received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled')
+      | null;
+  };
   comments?:
     | {
         /**
@@ -288,6 +296,92 @@ export interface Preset {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: string;
+  /**
+   * The name of the product
+   */
+  name: string;
+  /**
+   * A detailed description of the product
+   */
+  description: string;
+  pictures: {
+    /**
+     * The url of the product image. MAKE SURE THIS INCLUDES A VALID IMAGE FORMAT (jpg, png, etc.)
+     */
+    url: string;
+    /**
+     * The alternative text (description) of the product image
+     */
+    alt: string;
+    id?: string | null;
+  }[];
+  /**
+   * The price of the product in GBP (£)
+   */
+  price: number;
+  printingOptions: {
+    plastic?:
+      | {
+          /**
+           * The name of the plastic type
+           */
+          name: string;
+          /**
+           * A brief description of the plastic type
+           */
+          description?: string | null;
+          colours?:
+            | {
+                color: string;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'plastic';
+        }[]
+      | null;
+    /**
+     * The range of layer heights available for this product. This is set by the preset and cannot be changed by the user. Set both values to the same value to display only one value to the user.
+     */
+    layerHeight: {
+      min: number;
+      max: number;
+    };
+    /**
+     * The range of infill percentages available for this product. This is set by the preset and cannot be changed by the user. Set both values to the same value to display only one value to the user.
+     */
+    infill: {
+      min: number;
+      max: number;
+    };
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This is a collection of automatically created search results. These results are used by the global site search and will be updated automatically as documents in the CMS are created or updated.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search".
+ */
+export interface Search {
+  id: string;
+  title?: string | null;
+  priority?: number | null;
+  doc: {
+    relationTo: 'products';
+    value: string | Product;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -304,6 +398,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'presets';
         value: string | Preset;
+      } | null)
+    | ({
+        relationTo: 'products';
+        value: string | Product;
+      } | null)
+    | ({
+        relationTo: 'search';
+        value: string | Search;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -382,10 +484,10 @@ export interface UsersSelect<T extends boolean = true> {
   accounts?:
     | T
     | {
-        id?: T;
         provider?: T;
         providerAccountId?: T;
         type?: T;
+        id?: T;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -415,37 +517,45 @@ export interface UsersSelect<T extends boolean = true> {
 export interface OrdersSelect<T extends boolean = true> {
   name?: T;
   customer?: T;
-  model?:
+  prints?:
     | T
     | {
-        filename?: T;
-        filetype?: T;
-        serverPath?: T;
-        id?: T;
-      };
-  quantity?: T;
-  printingOptions?:
-    | T
-    | {
-        preset?: T;
-        layerHeight?: T;
-        infill?:
+        model?:
           | T
           | {
-              min?: T;
-              max?: T;
+              filename?: T;
+              filetype?: T;
+              serverPath?: T;
             };
+        quantity?: T;
+        printingOptions?:
+          | T
+          | {
+              preset?: T;
+              layerHeight?: T;
+              infill?:
+                | T
+                | {
+                    min?: T;
+                    max?: T;
+                  };
+            };
+        id?: T;
       };
   payment?: T | {};
   quote?: T | {};
-  statuses?:
+  status?:
     | T
     | {
-        stage?: T;
-        timestamp?: T;
-        id?: T;
+        statuses?:
+          | T
+          | {
+              stage?: T;
+              timestamp?: T;
+              id?: T;
+            };
+        currentStatus?: T;
       };
-  currentStatus?: T;
   comments?:
     | T
     | {
@@ -465,6 +575,69 @@ export interface PresetsSelect<T extends boolean = true> {
   name?: T;
   description?: T;
   bambulabName?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  pictures?:
+    | T
+    | {
+        url?: T;
+        alt?: T;
+        id?: T;
+      };
+  price?: T;
+  printingOptions?:
+    | T
+    | {
+        plastic?:
+          | T
+          | {
+              plastic?:
+                | T
+                | {
+                    name?: T;
+                    description?: T;
+                    colours?:
+                      | T
+                      | {
+                          color?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+            };
+        layerHeight?:
+          | T
+          | {
+              min?: T;
+              max?: T;
+            };
+        infill?:
+          | T
+          | {
+              min?: T;
+              max?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search_select".
+ */
+export interface SearchSelect<T extends boolean = true> {
+  title?: T;
+  priority?: T;
+  doc?: T;
   updatedAt?: T;
   createdAt?: T;
 }
