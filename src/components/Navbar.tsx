@@ -270,138 +270,144 @@ const Navbar = ({ items, user }: NavbarProps) => {
 	}, [hoveredIndex, items, isOpen, activeItemIndex]);
 
 	return (
-		<NavigationMenu
-			className='min-w-[calc(100%-32rem)] fixed gap-x-8 h-16 items-center backdrop-blur-md z-50 mx-64'
-			onValueChange={value => {
-				console.log('navmenu value changed:', value);
-				setIsOpen(value !== '');
-			}}>
-			<div className='flex-shrink-0'>
-				<Link href='/' className='flex items-center gap-4'>
-					<Image src={logo} alt='Avium Logo' height={28} width={28}></Image>
-					<span className='text-lg font-bold whitespace-nowrap'>Avium</span>
-				</Link>
-			</div>
+		<>
+			<div className='absolute top-0 left-0 h-16 overflow-hidden min-w-screen backdrop-blur-md z-[49]'></div>
+			<NavigationMenu
+				className='min-w-[calc(100%-32rem)] fixed gap-x-8 h-16 items-center z-50'
+				onValueChange={value => {
+					console.log('navmenu value changed:', value);
+					setIsOpen(value !== '');
+				}}>
+				<div className='flex-shrink-0'>
+					<Link href='/' className='flex items-center gap-4'>
+						<Image src={logo} alt='Avium Logo' height={28} width={28}></Image>
+						<span className='text-lg font-bold whitespace-nowrap'>Avium</span>
+					</Link>
+				</div>
 
-			<NavigationMenuList ref={listRef} className='relative'>
-				{/* Indicator Element with matching animation classes from NavigationMenuContent */}
-				<div
-					className={cn(
-						'absolute w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-border shadow-md',
-						'data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52',
-					)}
-					data-motion={isOpen ? 'from-start' : 'to-start'}
-					style={{
-						bottom: '-22px',
-						left: indicatorStyle.left,
-						opacity: indicatorStyle.opacity,
-						pointerEvents: 'none',
-					}}
-				/>
+				<NavigationMenuList ref={listRef} className='relative'>
+					{/* Indicator Element with matching animation classes from NavigationMenuContent */}
+					<div
+						className={cn(
+							'absolute w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-border shadow-md',
+							'data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52',
+						)}
+						data-motion={isOpen ? 'from-start' : 'to-start'}
+						style={{
+							bottom: '-22px',
+							left: indicatorStyle.left,
+							opacity: indicatorStyle.opacity,
+							pointerEvents: 'none',
+						}}
+					/>
 
-				{items.map((item, index) => (
-					<NavigationMenuItem key={index} onMouseEnter={() => setHoveredIndex(index)} onMouseLeave={() => setHoveredIndex(null)}>
-						{item.type === 'link' ? (
-							<NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-								<span className='cursor-default'>{item.title}</span>
-							</NavigationMenuLink>
-						) : (
-							<>
-								<NavigationMenuTrigger
-									onPointerDown={e => e.preventDefault()}
-									onMouseDown={e => e.preventDefault()}
-									onClick={e => e.preventDefault()}
-									className='cursor-pointer'>
-									{item.title}
-								</NavigationMenuTrigger>
-								{item.content && (
-									<NavigationMenuContent>
-										<ul className={item.content.className}>
-											{item.content.featured && (
-												<li style={{ gridRow: `span ${items.length} / span ${items.length}` }}>
-													<NavigationMenuLink asChild>
-														<Link
-															className='from-muted/50 to-muted flex h-full w-full flex-col justify-end rounded-md bg-linear-to-b p-6 no-underline outline-hidden select-none focus:shadow-md'
-															href={item.content.featured.href}>
-															<div className='mt-4 mb-2 text-lg font-medium'>
-																{item.content.featured.title}
-															</div>
-															<p className='text-muted-foreground text-sm leading-tight'>
-																{item.content.featured.description}
-															</p>
-														</Link>
-													</NavigationMenuLink>
-												</li>
-											)}
-											{item.content.layout === 'grid' ? (
-												item.content.items.map((contentItem, contentIndex) =>
-													'description' in contentItem ? (
-														<ListItem key={contentIndex} title={contentItem.title} href={contentItem.href}>
-															{contentItem.description}
-														</ListItem>
-													) : null,
-												)
-											) : (
-												<li>
-													{item.content.items.map((contentItem, contentIndex) => (
-														<NavigationMenuLink key={contentIndex} asChild>
+					{items.map((item, index) => (
+						<NavigationMenuItem
+							key={index}
+							onMouseEnter={() => setHoveredIndex(index)}
+							onMouseLeave={() => setHoveredIndex(null)}>
+							{item.type === 'link' ? (
+								<NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+									<span className='cursor-default'>{item.title}</span>
+								</NavigationMenuLink>
+							) : (
+								<>
+									<NavigationMenuTrigger
+										onPointerDown={e => e.preventDefault()}
+										onMouseDown={e => e.preventDefault()}
+										onClick={e => e.preventDefault()}
+										className='cursor-pointer'>
+										{item.title}
+									</NavigationMenuTrigger>
+									{item.content && (
+										<NavigationMenuContent>
+											<ul className={item.content.className}>
+												{item.content.featured && (
+													<li style={{ gridRow: `span ${items.length} / span ${items.length}` }}>
+														<NavigationMenuLink asChild>
 															<Link
-																href={contentItem.href}
-																className={
-																	'icon' in contentItem && contentItem.icon
-																		? 'flex-row items-center gap-2'
-																		: ''
-																}>
-																{'icon' in contentItem && contentItem.icon}
-																{'description' in contentItem && contentItem.description ? (
-																	<div>
-																		<div className='font-medium'>{contentItem.title}</div>
-																		<div className='text-muted-foreground'>
-																			{contentItem.description}
-																		</div>
-																	</div>
-																) : (
-																	contentItem.title
-																)}
+																className='from-muted/50 to-muted flex h-full w-full flex-col justify-end rounded-md bg-linear-to-b p-6 no-underline outline-hidden select-none focus:shadow-md'
+																href={item.content.featured.href}>
+																<div className='mt-4 mb-2 text-lg font-medium'>
+																	{item.content.featured.title}
+																</div>
+																<p className='text-muted-foreground text-sm leading-tight'>
+																	{item.content.featured.description}
+																</p>
 															</Link>
 														</NavigationMenuLink>
-													))}
-												</li>
-											)}
-										</ul>
-									</NavigationMenuContent>
-								)}
-							</>
-						)}
-					</NavigationMenuItem>
-				))}
-			</NavigationMenuList>
+													</li>
+												)}
+												{item.content.layout === 'grid' ? (
+													item.content.items.map((contentItem, contentIndex) =>
+														'description' in contentItem ? (
+															<ListItem key={contentIndex} title={contentItem.title} href={contentItem.href}>
+																{contentItem.description}
+															</ListItem>
+														) : null,
+													)
+												) : (
+													<li>
+														{item.content.items.map((contentItem, contentIndex) => (
+															<NavigationMenuLink key={contentIndex} asChild>
+																<Link
+																	href={contentItem.href}
+																	className={
+																		'icon' in contentItem && contentItem.icon
+																			? 'flex-row items-center gap-2'
+																			: ''
+																	}>
+																	{'icon' in contentItem && contentItem.icon}
+																	{'description' in contentItem && contentItem.description ? (
+																		<div>
+																			<div className='font-medium'>{contentItem.title}</div>
+																			<div className='text-muted-foreground'>
+																				{contentItem.description}
+																			</div>
+																		</div>
+																	) : (
+																		contentItem.title
+																	)}
+																</Link>
+															</NavigationMenuLink>
+														))}
+													</li>
+												)}
+											</ul>
+										</NavigationMenuContent>
+									)}
+								</>
+							)}
+						</NavigationMenuItem>
+					))}
+				</NavigationMenuList>
 
-			<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' />
+				<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' />
 
-			<div className='flex gap-x-4 ml-auto'>
-				{/* {user.status === 'loading' && <Skeleton className='w-[200px] h-9'></Skeleton>} */}
+				<div className='flex gap-x-4 ml-auto'>
+					{/* {user.status === 'loading' && <Skeleton className='w-[200px] h-9'></Skeleton>} */}
 
-				{!userData ? (
-					<>
-						<Link href={'/auth/login'} className={buttonVariants({ variant: 'default' })}>
-							Login
-						</Link>
-						<Link href={'/auth/signup'} className={buttonVariants({ variant: 'outline' })}>
-							Sign Up
-						</Link>
-					</>
-				) : (
-					<UserMenu
-						userData={{ name: userData.name || '', image: userData.image || '#' }}
-						handleLogout={handleLogout}
-						logoutLoading={logoutLoading}
-					/>
-				)}
+					{!userData ? (
+						<>
+							<Link href={'/auth/login'} className={buttonVariants({ variant: 'default' })}>
+								Login
+							</Link>
+							<Link href={'/auth/signup'} className={buttonVariants({ variant: 'outline' })}>
+								Sign Up
+							</Link>
+						</>
+					) : (
+						<UserMenu
+							userData={{ name: userData.name || '', image: userData.image || '#' }}
+							handleLogout={handleLogout}
+							logoutLoading={logoutLoading}
+						/>
+					)}
 
-				<ThemeToggle></ThemeToggle>
-			</div>
-		</NavigationMenu>
+					<ThemeToggle></ThemeToggle>
+				</div>
+			</NavigationMenu>
+		</>
 	);
 };
 
