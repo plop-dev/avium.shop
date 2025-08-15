@@ -113,22 +113,8 @@ export const Orders: CollectionConfig = {
 						//* user can always change infill, even if a preset is selected
 						{
 							name: 'infill',
-							label: 'Infill Percentage Range',
-							type: 'group',
-							fields: [
-								{
-									name: 'min',
-									label: 'Minimum %',
-									type: 'number',
-									required: true,
-								},
-								{
-									name: 'max',
-									label: 'Maximum %',
-									type: 'number',
-									required: true,
-								},
-							],
+							label: 'Infill Percentage',
+							type: 'number',
 						},
 					],
 				},

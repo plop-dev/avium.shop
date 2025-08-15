@@ -93,50 +93,20 @@ export const Products: CollectionConfig = {
 
 				{
 					name: 'layerHeight',
-					label: 'Layer Height Range',
+					label: 'Layer Height',
 					admin: {
-						description:
-							'The range of layer heights available for this product. This is set by the preset and cannot be changed by the user. Set both values to the same value to display only one value to the user.',
+						description: 'The layer height of the product. This is set by the preset and cannot be changed by the user.',
 					},
-					type: 'group',
-					fields: [
-						{
-							name: 'min',
-							label: 'Minimum mm',
-							type: 'number',
-							required: true,
-						},
-						{
-							name: 'max',
-							label: 'Maximum mm',
-							type: 'number',
-							required: true,
-						},
-					],
+					type: 'number',
 				},
 
 				{
 					name: 'infill',
-					label: 'Infill Percentage Range',
+					label: 'Infill Percentage',
 					admin: {
-						description:
-							'The range of infill percentages available for this product. This is set by the preset and cannot be changed by the user. Set both values to the same value to display only one value to the user.',
+						description: 'The infill percentage of the product. This is set by the preset and cannot be changed by the user.',
 					},
-					type: 'group',
-					fields: [
-						{
-							name: 'min',
-							label: 'Minimum %',
-							type: 'number',
-							required: true,
-						},
-						{
-							name: 'max',
-							label: 'Maximum %',
-							type: 'number',
-							required: true,
-						},
-					],
+					type: 'number',
 				},
 			],
 		},

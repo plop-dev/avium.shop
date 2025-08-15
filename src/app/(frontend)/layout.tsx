@@ -19,8 +19,8 @@ export const metadata: Metadata = {
 
 const dmSans = DM_Sans({
 	subsets: ['latin'],
-	weight: ['200', '300', '400', '500', '600', '700', '800', '900'],
-	style: ['normal'],
+	weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900', '1000'],
+	style: ['normal', 'italic'],
 });
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 		<>
 			<html lang='en' suppressHydrationWarning className={dmSans.className}>
 				<head />
-				<body className='bg-background overflow-hidden overscroll-none font-sans antialiased'>
+				<body className='bg-background font-sans antialiased'>
 					<NextTopLoader showSpinner={false}></NextTopLoader>
 					<Analytics></Analytics>
 					<NuqsAdapter>

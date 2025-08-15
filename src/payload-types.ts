@@ -217,10 +217,7 @@ export interface Order {
         printingOptions: {
           preset?: (string | null) | Preset;
           layerHeight?: number | null;
-          infill: {
-            min: number;
-            max: number;
-          };
+          infill?: number | null;
         };
         id?: string | null;
       }[]
@@ -346,19 +343,13 @@ export interface Product {
         }[]
       | null;
     /**
-     * The range of layer heights available for this product. This is set by the preset and cannot be changed by the user. Set both values to the same value to display only one value to the user.
+     * The layer height of the product. This is set by the preset and cannot be changed by the user.
      */
-    layerHeight: {
-      min: number;
-      max: number;
-    };
+    layerHeight?: number | null;
     /**
-     * The range of infill percentages available for this product. This is set by the preset and cannot be changed by the user. Set both values to the same value to display only one value to the user.
+     * The infill percentage of the product. This is set by the preset and cannot be changed by the user.
      */
-    infill: {
-      min: number;
-      max: number;
-    };
+    infill?: number | null;
   };
   updatedAt: string;
   createdAt: string;
@@ -533,12 +524,7 @@ export interface OrdersSelect<T extends boolean = true> {
           | {
               preset?: T;
               layerHeight?: T;
-              infill?:
-                | T
-                | {
-                    min?: T;
-                    max?: T;
-                  };
+              infill?: T;
             };
         id?: T;
       };
@@ -614,18 +600,8 @@ export interface ProductsSelect<T extends boolean = true> {
                     blockName?: T;
                   };
             };
-        layerHeight?:
-          | T
-          | {
-              min?: T;
-              max?: T;
-            };
-        infill?:
-          | T
-          | {
-              min?: T;
-              max?: T;
-            };
+        layerHeight?: T;
+        infill?: T;
       };
   updatedAt?: T;
   createdAt?: T;

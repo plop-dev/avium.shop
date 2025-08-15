@@ -5,23 +5,13 @@ import { Search, Printer } from 'lucide-react';
 
 export default async function Shop() {
 	return (
-		<div className='flex flex-col gap-y-8 relative pt-8'>
+		<div className='flex flex-col gap-y-4'>
 			<div className=''>
-				<h2 className=''>Shop</h2>
-				<p className='text-muted-foreground mt-2'>Browse and discover our amazing products</p>
+				<h2 className='p-0'>Shop</h2>
+				<p className='text-muted-foreground'>Browse and discover our ready-made products</p>
 			</div>
 
-			{/* Custom Prints Button */}
-			<div className=''>
-				<Button className='w-full text-lg py-6' size={'lg'}>
-					<Printer className='h-5 w-5 mr-2' />
-					Create Your Custom Print
-				</Button>
-			</div>
-
-			{/* <div> */}
-
-			<div className='flex items-center justify-between'>
+			<div className='flex items-center justify-between mb-2'>
 				<div className='relative w-72'>
 					<Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
 					<Input type='search' placeholder='Search products...' className='pl-8' />
@@ -43,11 +33,11 @@ export default async function Shop() {
 				</div>
 			</div>
 
-			<div className='grid grid-cols-4 gap-6'>
+			<div className='grid grid-cols-3 gap-4 max-h-[calc(100vh-4rem-78px-42px-32px-13px)] pb-0.5 overflow-y-auto overflow-x-hidden'>
 				{Array.from({ length: 16 }).map((_, i) => (
 					<div
 						key={i}
-						className='h-auto rounded-lg border shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col'>
+						className='h-auto min-w-48 rounded-lg border shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col'>
 						<div className='h-48 bg-muted flex items-center justify-center cursor-pointer rounded-t-lg'>
 							<span className='text-muted-foreground'>Product Image</span>
 						</div>
