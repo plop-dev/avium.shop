@@ -80,9 +80,9 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 	];
 
 	return (
-		<main className='w-full'>
+		<main className='w-full px-64'>
 			<Navbar items={items} user={user || undefined} />
-			{children}
+			<div className='pt-16'>{children}</div>
 		</main>
 	);
 }

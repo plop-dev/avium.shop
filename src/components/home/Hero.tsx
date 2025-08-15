@@ -46,8 +46,8 @@ const Hero = async ({
 	},
 }: HeroProps) => {
 	return (
-		<section className='w-full flex flex-col items-center'>
-			<div className='pt-36 pb-24 max-w-5xl'>
+		<section className='flex flex-col items-center px-64'>
+			<div className='pt-36 pb-24'>
 				<div className='flex flex-col items-center justify-center gap-y-8 text-center'>
 					<h1 className='text-6xl'>
 						{heading} <br />
@@ -67,7 +67,7 @@ const Hero = async ({
 				</div>
 			</div>
 
-			<div className='w-[60%] grid place-items-center relative'>
+			<div className='grid place-items-center relative'>
 				<div className='absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/80 z-10 pointer-events-none'></div>
 				<Video
 					type='video/webm'
