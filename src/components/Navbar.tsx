@@ -271,7 +271,7 @@ const Navbar = ({ items, user }: NavbarProps) => {
 
 	return (
 		<>
-			<div className='top-0 left-0 h-16 overflow-hidden min-w-screen fixed backdrop-blur-md z-[49]'></div>
+			<div className='top-0 left-0 h-16 overflow-hidden min-w-screen fixed bg-background border-b-border border-2 z-[49]'></div>
 			<NavigationMenu
 				className='min-w-[calc(100%-32rem)] fixed gap-x-8 h-16 items-center z-50'
 				onValueChange={value => {
