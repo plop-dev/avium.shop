@@ -57,10 +57,10 @@ const Hero = async ({
 					</h1>
 					<p className='w-2/3'>{description}</p>
 					<div className='flex gap-x-2'>
-						<Link href={buttons.primary.url} className={cn(buttonVariants({ variant: 'default' }))}>
+						<Link href={buttons.primary.url} className={cn(buttonVariants({ variant: 'default', size: 'lg' }))}>
 							{buttons.primary.text}
 						</Link>
-						<Link href={buttons.secondary.url} className={cn(buttonVariants({ variant: 'secondary' }))}>
+						<Link href={buttons.secondary.url} className={cn(buttonVariants({ variant: 'secondary', size: 'lg' }))}>
 							{buttons.secondary.text}
 						</Link>
 					</div>

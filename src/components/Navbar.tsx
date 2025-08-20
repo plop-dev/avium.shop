@@ -49,8 +49,8 @@ export interface NavMenuItem {
 			title: string;
 			description: string;
 			href: string;
-		};
-		items: (NavbarListItemProps | NavMenuLinkItem)[];
+		}[];
+		items?: (NavbarListItemProps | NavMenuLinkItem)[];
 	};
 }
 
@@ -271,9 +271,8 @@ const Navbar = ({ items, user }: NavbarProps) => {
 
 	return (
 		<>
-			<div className='top-0 left-0 h-16 overflow-hidden min-w-screen fixed bg-background border-b-border border-2 z-[49]'></div>
 			<NavigationMenu
-				className='min-w-[calc(100%-32rem)] fixed gap-x-8 h-16 items-center z-50'
+				className='min-w-full fixed gap-x-8 h-16 items-center z-50 bg-background border-b-border border-b-2 box-border left-0 px-64'
 				onValueChange={value => {
 					console.log('navmenu value changed:', value);
 					setIsOpen(value !== '');
@@ -322,57 +321,72 @@ const Navbar = ({ items, user }: NavbarProps) => {
 									{item.content && (
 										<NavigationMenuContent>
 											<ul className={item.content.className}>
-												{item.content.featured && (
-													<li style={{ gridRow: `span ${items.length} / span ${items.length}` }}>
-														<NavigationMenuLink asChild>
-															<Link
-																className='from-muted/50 to-muted flex h-full w-full flex-col justify-end rounded-md bg-linear-to-b p-6 no-underline outline-hidden select-none focus:shadow-md'
-																href={item.content.featured.href}>
-																<div className='mt-4 mb-2 text-lg font-medium'>
-																	{item.content.featured.title}
-																</div>
-																<p className='text-muted-foreground text-sm leading-tight'>
-																	{item.content.featured.description}
-																</p>
-															</Link>
-														</NavigationMenuLink>
-													</li>
-												)}
-												{item.content.layout === 'grid' ? (
-													item.content.items.map((contentItem, contentIndex) =>
-														'description' in contentItem ? (
-															<ListItem key={contentIndex} title={contentItem.title} href={contentItem.href}>
-																{contentItem.description}
-															</ListItem>
-														) : null,
-													)
-												) : (
-													<li>
-														{item.content.items.map((contentItem, contentIndex) => (
-															<NavigationMenuLink key={contentIndex} asChild>
+												{item.content.featured &&
+													item.content.featured.map((featuredItem, featuredIndex) => (
+														<li
+															key={featuredIndex}
+															style={{
+																gridRow: `span ${Math.ceil(
+																	(item.content?.items?.length || 0) /
+																		(item.content?.featured?.length || 1),
+																)} / span ${Math.ceil(
+																	(item.content?.items?.length || 0) /
+																		(item.content?.featured?.length || 1),
+																)}`,
+															}}>
+															<NavigationMenuLink asChild>
 																<Link
-																	href={contentItem.href}
-																	className={
-																		'icon' in contentItem && contentItem.icon
-																			? 'flex-row items-center gap-2'
-																			: ''
-																	}>
-																	{'icon' in contentItem && contentItem.icon}
-																	{'description' in contentItem && contentItem.description ? (
-																		<div>
-																			<div className='font-medium'>{contentItem.title}</div>
-																			<div className='text-muted-foreground'>
-																				{contentItem.description}
-																			</div>
-																		</div>
-																	) : (
-																		contentItem.title
-																	)}
+																	className='from-muted/50 to-muted flex h-full w-full flex-col justify-end rounded-md bg-linear-to-b p-6 no-underline outline-hidden select-none focus:shadow-md'
+																	href={featuredItem.href}>
+																	<div className='mt-4 mb-2 text-lg font-medium'>
+																		{featuredItem.title}
+																	</div>
+																	<p className='text-muted-foreground text-sm leading-tight'>
+																		{featuredItem.description}
+																	</p>
 																</Link>
 															</NavigationMenuLink>
-														))}
-													</li>
-												)}
+														</li>
+													))}
+												{item.content.items &&
+													(item.content.layout === 'grid' ? (
+														item.content.items.map((contentItem, contentIndex) =>
+															'description' in contentItem ? (
+																<ListItem
+																	key={contentIndex}
+																	title={contentItem.title}
+																	href={contentItem.href}>
+																	{contentItem.description}
+																</ListItem>
+															) : null,
+														)
+													) : (
+														<li>
+															{item.content.items.map((contentItem, contentIndex) => (
+																<NavigationMenuLink key={contentIndex} asChild>
+																	<Link
+																		href={contentItem.href}
+																		className={
+																			'icon' in contentItem && contentItem.icon
+																				? 'flex-row items-center gap-2'
+																				: ''
+																		}>
+																		{'icon' in contentItem && contentItem.icon}
+																		{'description' in contentItem && contentItem.description ? (
+																			<div>
+																				<div className='font-medium'>{contentItem.title}</div>
+																				<div className='text-muted-foreground'>
+																					{contentItem.description}
+																				</div>
+																			</div>
+																		) : (
+																			contentItem.title
+																		)}
+																	</Link>
+																</NavigationMenuLink>
+															))}
+														</li>
+													))}
 											</ul>
 										</NavigationMenuContent>
 									)}

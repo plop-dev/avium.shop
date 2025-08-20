@@ -39,11 +39,13 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 			content: {
 				layout: 'grid',
 				className: 'grid gap-2 p-0 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]',
-				featured: {
-					title: 'Avium Dashboard',
-					description: 'Your dashboard to manage your order history, account settings, and more.',
-					href: '/dashboard/home',
-				},
+				featured: [
+					{
+						title: 'Avium Dashboard',
+						description: 'Your dashboard to manage your order history, account settings, and more.',
+						href: '/dashboard/home',
+					},
+				],
 				items: [
 					{
 						title: 'About',
@@ -59,21 +61,27 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 			},
 		},
 		{
-			title: 'Printing',
+			title: 'Order',
 			type: 'dropdown',
 			content: {
 				layout: 'grid',
 				className: 'grid gap-2 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]',
-				featured: {
-					title: 'PLA',
-					description: 'A versatile and cheap filament perfect for general usage.',
-					href: '#?plastic=pla',
-				},
-				items: options,
+				featured: [
+					{
+						title: 'Shop',
+						description: 'Browse our complete catalog of 3D printing services.',
+						href: '#',
+					},
+					{
+						title: 'Custom Print',
+						description: 'Submit your own 3D model for printing.',
+						href: '#',
+					},
+				],
 			},
 		},
 		{
-			title: 'Order',
+			title: 'Contact',
 			type: 'link',
 			href: '#',
 		},

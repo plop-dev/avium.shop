@@ -1,6 +1,6 @@
 export default function Layout({ custom, shop }: { custom: React.ReactNode; shop: React.ReactNode }) {
 	return (
-		<div className='grid grid-cols-2 gap-x-8 max-h-screen'>
+		<div className='flex flex-col gap-y-16'>
 			{custom}
 			{shop}
 		</div>
