@@ -24,6 +24,7 @@ import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { UserMenu } from './UserMenu';
+import Basket from './Basket';
 
 export interface NavbarListItemProps {
 	title: string;
@@ -411,11 +412,14 @@ const Navbar = ({ items, user }: NavbarProps) => {
 							</Link>
 						</>
 					) : (
-						<UserMenu
-							userData={{ name: userData.name || '', image: userData.image || '#' }}
-							handleLogout={handleLogout}
-							logoutLoading={logoutLoading}
-						/>
+						<div className='h-full flex items-center gap-x-4'>
+							<Basket></Basket>
+							<UserMenu
+								userData={{ name: userData.name || '', image: userData.image || '#' }}
+								handleLogout={handleLogout}
+								logoutLoading={logoutLoading}
+							/>
+						</div>
 					)}
 
 					<ThemeToggle></ThemeToggle>
