@@ -6,7 +6,6 @@ import { SearchParams } from 'nuqs';
 import ShopProduct from '@/components/shop/ShopProduct';
 import SortBy from '@/components/shop/SortBy';
 import SearchInput from '@/components/shop/Search';
-import { Product } from '@/payload-types';
 
 export default async function Shop({ searchParams }: { searchParams: Promise<SearchParams> }) {
 	const { page, sort, search } = await loadSearchParams(searchParams);

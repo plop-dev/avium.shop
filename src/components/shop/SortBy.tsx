@@ -1,8 +1,7 @@
 'use client';
 
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@radix-ui/react-select';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { parseAsString, useQueryState } from 'nuqs';
-import { useState } from 'react';
 
 export default function SortBy() {
 	// const [selectedSort, setSelectedSort] = useState('newest');
@@ -14,10 +13,10 @@ export default function SortBy() {
 				<SelectValue placeholder='Sort by' />
 			</SelectTrigger>
 			<SelectContent>
-				<SelectItem value='createdAt'>Newest</SelectItem>
-				<SelectItem value='-price'>Price: Low to High</SelectItem>
-				<SelectItem value='price'>Price: High to Low</SelectItem>
-				<SelectItem value='orders'>Most Popular</SelectItem>
+				<SelectItem value='-createdAt'>Newest</SelectItem>
+				<SelectItem value='price'>Price: Low to High</SelectItem>
+				<SelectItem value='-price'>Price: High to Low</SelectItem>
+				<SelectItem value='-orders'>Most Popular</SelectItem>
 			</SelectContent>
 		</Select>
 	);
