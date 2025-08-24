@@ -6,32 +6,20 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import BasketItem from './BasketItem';
-
-// Mock data based on your schema
-const mockBasketData = [
-	{
-		id: '1',
-		file: { name: 'miniature.stl', size: 5 * 1024 * 1024 },
-		quantity: 2,
-		printingOptions: { preset: 'High Quality', infill: 20 },
-	},
-	{
-		id: '2',
-		file: { name: 'phone_case.obj', size: 12 * 1024 * 1024 },
-		quantity: 1,
-		printingOptions: { layerHeight: 0.2, infill: 50 },
-	},
-];
+import numToGBP from '@/utils/numToGBP';
+import { useStore } from '@nanostores/react';
+import { $basket, setItemQuantity } from '@/stores/basket';
 
 export default function Basket() {
-	const [basketItems, setBasketItems] = useState(mockBasketData);
+	// const [basketItems, setBasketItems] = useState(mockBasketData);
+	const basketItems = useStore($basket);
 
 	const handleQuantityChange = (id: string, newQuantity: number) => {
-		setBasketItems(items => items.map(item => (item.id === id ? { ...item, quantity: newQuantity } : item)));
+		setItemQuantity(id, newQuantity);
 	};
 
 	const handleRemoveItem = (id: string) => {
-		setBasketItems(items => items.filter(item => item.id !== id));
+		setItemQuantity(id, 0);
 	};
 
 	const totalItems = basketItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -65,6 +53,11 @@ export default function Basket() {
 				</div>
 
 				<DrawerFooter>
+					<div className=''>
+						<h3 className='font-bold text-xl'>Total:</h3>
+						<p>{numToGBP(basketItems.reduce((sum, item) => sum + item.price * item.quantity, 0))}</p>
+					</div>
+
 					<Button disabled={basketItems.length === 0}>
 						<ShoppingBasket className='mr-2' />
 						Checkout ({totalItems} {totalItems === 1 ? 'item' : 'items'})

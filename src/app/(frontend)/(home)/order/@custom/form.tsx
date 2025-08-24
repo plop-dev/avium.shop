@@ -8,15 +8,16 @@ import { customOrderFormSchema } from '@/schemas/customOrderForm';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ImagePlus, Loader2, PlusCircle, Printer, Trash2, Upload, X } from 'lucide-react';
+import { FilePlus2, ImagePlus, Loader2, PlusCircle, Printer, Trash2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingSwap } from '@/components/ui/loading-swap';
 import { cn } from '@/lib/utils';
 import { Input as NumberInput } from '@/components/ui/number-input';
 import { useImageUpload } from '@/hooks/use-image-upload';
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogHeader } from '@/components/ui/dialog';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 type CustomOrderFormValues = z.infer<typeof customOrderFormSchema>;
 
@@ -58,18 +59,37 @@ function PresetSelection({ onChange, value }: { onChange: (value?: string) => vo
 }
 
 function PrintItemCard({ index, remove }: { index: number; remove: (index: number) => void }) {
-	const { previewUrl, fileName, fileInputRef, handleThumbnailClick, handleFileChange, handleRemove } = useImageUpload({
-		onUpload: (url: string) => console.log('Uploaded image URL:', url),
-	});
-
 	const [isDragging, setIsDragging] = useState(false);
 
-	const { control, getValues } = useFormContext<CustomOrderFormValues>();
+	const { control, getValues, setValue } = useFormContext<CustomOrderFormValues>();
 	const presetValue = useWatch({
 		control,
 		name: `prints.${index}.printingOptions.preset`,
 	});
 	const fields = getValues().prints;
+
+	const {
+		previewUrl,
+		fileName,
+		fileInputRef,
+		handleThumbnailClick,
+		handleFileChange: originalHandleFileChange,
+		handleRemove,
+	} = useImageUpload({
+		onUpload: (url: string) => console.log('Uploaded file URL:', url),
+	});
+
+	// Custom file change handler that updates both the hook and form state
+	const handleFileChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const file = e.target.files?.[0];
+			if (file) {
+				setValue(`prints.${index}.file`, file, { shouldValidate: true });
+			}
+			originalHandleFileChange(e);
+		},
+		[originalHandleFileChange, setValue, index],
+	);
 
 	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
 		e.preventDefault();
@@ -95,23 +115,33 @@ function PrintItemCard({ index, remove }: { index: number; remove: (index: numbe
 			setIsDragging(false);
 
 			const file = e.dataTransfer.files?.[0];
-			if (file && file.type.startsWith('image/')) {
+			const allowedExtensions = ['.stl', '.3mf', '.obj'];
+			const fileExtension = file?.name.toLowerCase().split('.').pop();
+
+			if (file && fileExtension && allowedExtensions.includes(`.${fileExtension}`)) {
+				setValue(`prints.${index}.file`, file, { shouldValidate: true });
 				const fakeEvent = {
 					target: {
 						files: [file],
 					},
 				} as unknown as React.ChangeEvent<HTMLInputElement>;
-				handleFileChange(fakeEvent);
+				originalHandleFileChange(fakeEvent);
 			}
 		},
-		[handleFileChange],
+		[originalHandleFileChange, setValue, index],
 	);
 
 	return (
-		<div className='relative bg-background p-4 rounded-lg border-2 space-y-3'>
+		<div className='relative bg-background p-4 rounded-lg border-2 space-y-4'>
 			<div className='flex items-center gap-2'>
 				<Printer className='h-5 w-5 text-primary' />
 				<h3 className='text-lg font-medium'>Print #{index + 1}</h3>
+				{fields.length > 1 && (
+					<Button type='button' variant='destructive' size='sm' className='ml-auto' onClick={() => remove(index)}>
+						<Trash2 className='h-4 w-4 mr-1' />
+						Remove
+					</Button>
+				)}
 			</div>
 
 			<FormField
@@ -124,7 +154,7 @@ function PrintItemCard({ index, remove }: { index: number; remove: (index: numbe
 							<div className='relative'>
 								<div className='w-full space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm'>
 									<div className=''>
-										<h3 className='text-base font-medium'>Image Upload</h3>
+										<h3 className='text-base font-medium'>3D File Upload</h3>
 										<p className='text-sm text-muted-foreground'>Supported formats: STL, 3MF, OBJ</p>
 									</div>
 
@@ -148,7 +178,7 @@ function PrintItemCard({ index, remove }: { index: number; remove: (index: numbe
 												isDragging && 'border-primary/50 bg-primary/5',
 											)}>
 											<div className='rounded-full bg-background p-2 shadow-sm'>
-												<ImagePlus className='h-5 w-5 text-muted-foreground' />
+												<FilePlus2 className='h-5 w-5 text-muted-foreground' />
 											</div>
 											<div className='text-center'>
 												<p className='text-sm font-medium'>Click to select or drag and drop</p>
@@ -180,98 +210,89 @@ function PrintItemCard({ index, remove }: { index: number; remove: (index: numbe
 				)}
 			/>
 
+			<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+				<FormField
+					control={control}
+					name={`prints.${index}.quantity`}
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Quantity</FormLabel>
+							<FormControl>
+								<NumberInput min={1} max={1000} {...field}></NumberInput>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
+				<FormField
+					control={control}
+					name={`prints.${index}.printingOptions.infill`}
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Infill %</FormLabel>
+							<FormControl>
+								<NumberInput {...field}></NumberInput>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+			</div>
+
 			<FormField
 				control={control}
-				name={`prints.${index}.quantity`}
+				name={`prints.${index}.printingOptions.preset`}
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Quantity</FormLabel>
+						<FormLabel>Print Quality Preset</FormLabel>
 						<FormControl>
-							{/* <Input type='number' {...field}></Input> */}
-							<NumberInput min={1} max={10000} {...field}></NumberInput>
+							<PresetSelection onChange={field.onChange} value={field.value} />
 						</FormControl>
 						<FormMessage />
 					</FormItem>
 				)}
 			/>
 
-			<div className='mt-2'>
-				<h4 className='text-sm font-medium mb-2'>Printing Options</h4>
-				<div className='bg-text rounded-md p-3 border'>
+			{!presetValue && (
+				<>
+					<div className='relative my-3'>
+						<div className='absolute inset-0 flex items-center'>
+							<span className='w-full border-t' />
+						</div>
+						<div className='relative flex justify-center text-xs'>
+							<span className='bg-background px-2 text-muted-foreground'>Custom Settings</span>
+						</div>
+					</div>
+
 					<FormField
 						control={control}
-						name={`prints.${index}.printingOptions.preset`}
+						name={`prints.${index}.printingOptions.layerHeight`}
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Preset</FormLabel>
+								<FormLabel>Layer Height (mm)</FormLabel>
 								<FormControl>
-									<PresetSelection onChange={field.onChange} value={field.value} />
+									<Input type='number' step='0.01' placeholder='e.g., 0.2' {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
 						)}
 					/>
-
-					{!presetValue && (
-						<>
-							<div className='relative my-3'>
-								<div className='absolute inset-0 flex items-center'>
-									<span className='w-full border-t' />
-								</div>
-								<div className='relative flex justify-center text-xs'>
-									<span className='bg-background px-2 text-muted-foreground'>OR</span>
-								</div>
-							</div>
-
-							<FormField
-								control={control}
-								name={`prints.${index}.printingOptions.layerHeight`}
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Custom Layer Height (mm)</FormLabel>
-										<FormControl>
-											<Input type='number' step='0.01' placeholder='e.g., 0.2' {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</>
-					)}
-
-					<div className='grid grid-cols-2 gap-4 mt-3'>
-						<FormField
-							control={control}
-							name={`prints.${index}.printingOptions.infill`}
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Infill %</FormLabel>
-									<FormControl>
-										<NumberInput {...field}></NumberInput>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-					</div>
-				</div>
-			</div>
-
-			{fields.length > 1 && (
-				<Button type='button' variant='destructive' size='icon' className='absolute top-3 right-3' onClick={() => remove(index)}>
-					<Trash2 className='h-4 w-4' />
-				</Button>
+				</>
 			)}
 		</div>
 	);
 }
 
 export default function CustomPrintForm() {
+	const [isOpen, setIsOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isAddingPrint, setIsAddingPrint] = useState(false);
+	const [triggerFile, setTriggerFile] = useState<File | null>(null);
 
 	const form = useForm<CustomOrderFormValues>({
 		resolver: zodResolver(customOrderFormSchema) as Resolver<CustomOrderFormValues>,
-		mode: 'onSubmit',
+		mode: 'all',
 		defaultValues: {
 			name: '',
 			prints: [],
@@ -283,6 +304,87 @@ export default function CustomPrintForm() {
 		control: form.control,
 		name: 'prints',
 	});
+
+	// File upload hook for the trigger
+	const {
+		previewUrl: triggerPreviewUrl,
+		fileName: triggerFileName,
+		fileInputRef: triggerFileInputRef,
+		handleThumbnailClick: triggerHandleThumbnailClick,
+		handleFileChange: triggerHandleFileChange,
+		handleRemove: triggerHandleRemove,
+	} = useImageUpload({
+		onUpload: (url: string) => console.log('Uploaded file URL:', url),
+	});
+
+	// Handle file selection on trigger
+	const handleTriggerFileChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const file = e.target.files?.[0];
+			if (file) {
+				setTriggerFile(file);
+				// Ensure there's at least one print item and set the file
+				if (fields.length === 0) {
+					append({ ...defaultPrintItem, file });
+				} else {
+					form.setValue('prints.0.file', file, { shouldValidate: true });
+				}
+				setIsOpen(true); // Open the dialog
+			}
+			triggerHandleFileChange(e);
+		},
+		[triggerHandleFileChange, setTriggerFile, fields.length, append, form],
+	);
+
+	// Drag and drop handlers for trigger
+	const [isDragging, setIsDragging] = useState(false);
+
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragging(true);
+	};
+
+	const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragging(false);
+	};
+
+	const handleDrop = useCallback(
+		(e: React.DragEvent<HTMLDivElement>) => {
+			e.preventDefault();
+			e.stopPropagation();
+			setIsDragging(false);
+
+			const file = e.dataTransfer.files?.[0];
+			const allowedExtensions = ['.stl', '.3mf', '.obj'];
+			const fileExtension = file?.name.toLowerCase().split('.').pop();
+
+			if (file && fileExtension && allowedExtensions.includes(`.${fileExtension}`)) {
+				setTriggerFile(file);
+				// Ensure there's at least one print item and set the file
+				if (fields.length === 0) {
+					append({ ...defaultPrintItem, file });
+				} else {
+					form.setValue('prints.0.file', file, { shouldValidate: true });
+				}
+				setIsOpen(true); // Open the dialog
+				const fakeEvent = {
+					target: {
+						files: [file],
+					},
+				} as unknown as React.ChangeEvent<HTMLInputElement>;
+				triggerHandleFileChange(fakeEvent);
+			}
+		},
+		[triggerHandleFileChange, setTriggerFile, fields.length, append, form],
+	);
 
 	useEffect(() => {
 		if (fields.length === 0) {
@@ -302,92 +404,163 @@ export default function CustomPrintForm() {
 		}, 1000);
 	}
 
+	async function handleAddPrint() {
+		setIsAddingPrint(true);
+		// Validate current form first
+		const isValid = await form.trigger();
+		if (isValid) {
+			append(defaultPrintItem);
+			toast.success('Print item added successfully!');
+		} else {
+			toast.error('Please fix the errors above before adding another print.');
+		}
+		setIsAddingPrint(false);
+	}
+
 	return (
-		<div className='flex flex-col items-center justify-center'>
-			<div className='w-full space-y-4'>
-				{/* <div className='flex flex-col items-center text-center'>
-					<div className='bg-primary text-primary-foreground flex h-10 w-10 items-center justify-center rounded-full mb-4'>
-						<Printer className='h-5 w-5' />
+		<Dialog open={isOpen} onOpenChange={setIsOpen}>
+			<DialogTrigger asChild>
+				<div className='w-full space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm cursor-pointer'>
+					<div className=''>
+						<h3 className='text-base font-medium'>3D File Upload</h3>
+						<p className='text-sm text-muted-foreground'>Supported formats: STL, 3MF, OBJ</p>
 					</div>
-					<h1 className='text-3xl font-bold'>Custom Print Order</h1>
-					<p className='text-muted-foreground mt-2'>Submit your 3D models for custom printing</p>
-				</div> */}
 
-				<Card className='py-0'>
-					<CardContent className='p-4 pt-4 space-y-4'>
-						<Form {...form}>
-							<form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-								<div className='space-y-3'>
-									<FormField
-										control={form.control}
-										name='name'
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Order Name</FormLabel>
-												<FormControl>
-													<Input placeholder='e.g., My Custom Parts' {...field} />
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
+					<Input
+						type='file'
+						accept='.stl,.3mf,.obj'
+						className='hidden'
+						ref={triggerFileInputRef}
+						onChange={handleTriggerFileChange}
+					/>
+
+					{!triggerPreviewUrl ? (
+						<div
+							onClick={triggerHandleThumbnailClick}
+							onDragOver={handleDragOver}
+							onDragEnter={handleDragEnter}
+							onDragLeave={handleDragLeave}
+							onDrop={handleDrop}
+							className={cn(
+								'flex h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted',
+								isDragging && 'border-primary/50 bg-primary/5',
+							)}>
+							<div className='rounded-full bg-background p-2 shadow-sm'>
+								<FilePlus2 className='h-5 w-5 text-muted-foreground' />
+							</div>
+							<div className='text-center'>
+								<p className='text-sm font-medium'>Click to select or drag and drop</p>
+							</div>
+						</div>
+					) : (
+						<div className='relative'>
+							<div className='group relative h-48 overflow-hidden rounded-lg border'>
+								<h1 className='absolute top-1/2 left-1/2 -translate-1/2 opacity-50 thicc-text text-4xl'>
+									{triggerFileName?.split('.')[triggerFileName?.split('.').length - 1].toUpperCase()}
+								</h1>
+								<div className='absolute inset-0 bg-foreground/10 opacity-0 transition-opacity group-hover:opacity-50' />
+							</div>
+							{triggerFileName && (
+								<div className='mt-2 flex items-center gap-2 text-sm text-muted-foreground'>
+									<span className='truncate'>{triggerFileName}</span>
+									<button
+										onClick={e => {
+											e.stopPropagation();
+											triggerHandleRemove();
+											setTriggerFile(null);
+											if (fields.length > 0) {
+												form.setValue('prints.0.file', undefined as unknown as File, { shouldValidate: true });
+											}
+										}}
+										className='ml-auto rounded-full p-1 hover:bg-muted'>
+										<X className='h-4 w-4' />
+									</button>
 								</div>
+							)}
+						</div>
+					)}
+				</div>
+			</DialogTrigger>
+			<DialogContent className='!w-4xl !max-w-4xl overflow-y-auto max-h-[calc(100vh-12rem)] min-h-[calc(100vh-12rem)]' asChild>
+				<div className='flex flex-col items-center justify-center space-y-6 min-w-3xl'>
+					<DialogHeader className='w-full'>
+						<DialogTitle className='flex items-center gap-2'>
+							<Printer className='h-5 w-5 text-primary' />
+							Custom Print Order
+						</DialogTitle>
+						<DialogDescription>Configure your 3D printing requirements and upload your model files</DialogDescription>
+					</DialogHeader>
 
-								<div>
-									<Separator className='my-3' />
-									<div className='flex justify-between items-center mb-3'>
-										<h2 className='text-xl font-semibold'>Print Details</h2>
+					<div className='w-full space-y-6'>
+						<Form {...form}>
+							<form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
+								<FormField
+									control={form.control}
+									name='name'
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Order Name</FormLabel>
+											<FormControl>
+												<Input placeholder='e.g., My Custom Parts' {...field} />
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								<div className='space-y-4'>
+									<div className='flex items-center justify-between'>
+										<h2 className='text-xl font-semibold'>Print Items</h2>
+										<span className='text-sm text-muted-foreground'>{fields.length} item(s)</span>
 									</div>
 
-									<div className='space-y-3'>
-										{fields.map((field, index) => (
-											<PrintItemCard key={field.id} index={index} remove={remove} />
-										))}
+									{fields.map((field, index) => (
+										<PrintItemCard key={field.id} index={index} remove={remove} />
+									))}
 
+									<div className='flex gap-3'>
 										<Button
 											type='button'
-											variant='outline'
-											className='w-full mt-2 border-dashed'
-											onClick={() => append(defaultPrintItem)}>
-											<PlusCircle className='mr-2 h-4 w-4' />
-											Add another print
+											variant='secondary'
+											className='flex-1 border-dashed bg-secondary/70 hover:bg-secondary/50'
+											onClick={handleAddPrint}
+											disabled={isAddingPrint}>
+											<LoadingSwap isLoading={isAddingPrint} className='flex items-center'>
+												<PlusCircle className='mr-2 h-4 w-4' />
+												Add Print
+											</LoadingSwap>
 										</Button>
 									</div>
 								</div>
 
-								<div>
-									<Separator className='my-3' />
-									<div className='mb-3'>
-										<h2 className='text-xl font-semibold'>Additional Information</h2>
-									</div>
+								<Separator />
 
-									<FormField
-										control={form.control}
-										name='comments'
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Comments (optional)</FormLabel>
-												<FormControl>
-													<Textarea
-														placeholder='Any special instructions for your order?'
-														className='min-h-[100px]'
-														{...field}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-								</div>
+								<FormField
+									control={form.control}
+									name='comments'
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Additional Comments (Optional)</FormLabel>
+											<FormControl>
+												<Textarea
+													placeholder='Any special instructions, material preferences, or questions about your order?'
+													className='min-h-[100px]'
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-								<Button type='submit' className='w-full' disabled={isLoading}>
+								<Button type='submit' className='w-full' size='lg' disabled={isLoading}>
 									<LoadingSwap isLoading={isLoading}>Submit for Quote</LoadingSwap>
 								</Button>
 							</form>
 						</Form>
-					</CardContent>
-				</Card>
-			</div>
-		</div>
+					</div>
+				</div>
+			</DialogContent>
+		</Dialog>
 	);
 }

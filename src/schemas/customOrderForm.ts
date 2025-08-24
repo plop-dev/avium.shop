@@ -9,7 +9,7 @@ const printSchema = z
 			.instanceof(File, { message: 'A 3D model file is required.' })
 			.refine(file => file.size <= MAX_FILE_SIZE, `Max file size is 100MB.`)
 			.refine(file => ACCEPTED_FILE_TYPES.some(type => file.name.endsWith(type)), 'Only .stl, .obj, and .3mf files are accepted.'),
-		quantity: z.coerce.number().min(1, 'Quantity must be at least 1').max(10000, "that's not happening").default(1),
+		quantity: z.coerce.number().min(1, 'Quantity must be at least 1').max(1000, "that's not happening").default(1),
 		printingOptions: z.object({
 			preset: z.string().optional(),
 			layerHeight: z.coerce.number().optional(),

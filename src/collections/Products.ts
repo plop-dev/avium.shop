@@ -12,6 +12,7 @@ export const Products: CollectionConfig = {
 	admin: {
 		useAsTitle: 'name',
 		//? defaultColumns: ['name', 'customer', 'currentStatus', 'createdAt'],
+		description: 'Products available for purchase in the shop. DO NOT DELETE PRODUCTS, HIDE INSTEAD.',
 	},
 	access: {
 		read: anyoneAccess,
@@ -40,28 +41,12 @@ export const Products: CollectionConfig = {
 		},
 
 		{
-			name: 'pictures', //? make this relation to new collection? (media?)
-			type: 'array',
+			name: 'pictures',
+			type: 'relationship',
+			relationTo: 'media',
 			label: 'Product Pictures',
 			required: true,
-			fields: [
-				{
-					name: 'url', //TODO add validation for url
-					type: 'text',
-					required: true,
-					admin: {
-						description: 'The url of the product image. MAKE SURE THIS INCLUDES A VALID IMAGE FORMAT (jpg, png, etc.)',
-					},
-				},
-				{
-					name: 'alt',
-					type: 'text',
-					required: true,
-					admin: {
-						description: 'The alternative text (description) of the product image',
-					},
-				},
-			],
+			hasMany: true,
 		},
 
 		{
@@ -70,6 +55,15 @@ export const Products: CollectionConfig = {
 			required: true,
 			admin: {
 				description: 'The price of the product in GBP (£)',
+			},
+		},
+
+		{
+			name: 'orders',
+			type: 'number',
+			defaultValue: 0,
+			admin: {
+				description: 'The number of times this product has been bought',
 			},
 		},
 

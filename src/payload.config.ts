@@ -16,6 +16,7 @@ import { PrintingOptions } from '@/collections/PrintingOptions';
 import { Orders } from '@/collections/Order';
 import { Presets } from '@/collections/Presets';
 import { Products } from '@/collections/Products';
+import { Media } from '@/collections/Media';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -30,7 +31,7 @@ export default buildConfig({
 		dateFormat: 'dd/MM/yyyy',
 	},
 	globals: [PrintingOptions],
-	collections: [Users, Orders, Presets, Products],
+	collections: [Users, Orders, Presets, Products, Media],
 	editor: lexicalEditor(),
 	secret: process.env.PAYLOAD_SECRET || '',
 	typescript: {
@@ -50,7 +51,6 @@ export default buildConfig({
 		vercelBlobStorage({
 			enabled: true,
 			collections: {
-				// If you have another collection that supports uploads, you can add it below
 				media: true,
 			},
 			token: process.env.BLOB_READ_WRITE_TOKEN,

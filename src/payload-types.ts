@@ -71,6 +71,7 @@ export interface Config {
     orders: Order;
     presets: Preset;
     products: Product;
+    media: Media;
     search: Search;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,6 +83,7 @@ export interface Config {
     orders: OrdersSelect<false> | OrdersSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
     search: SearchSelect<false> | SearchSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -197,20 +199,29 @@ export interface Order {
    * The user who placed the order
    */
   customer: string | User;
-  prints?:
+  prints: (
+    | {
+        product: string | Product;
+        quantity: number;
+        /**
+         * Captured at time of order
+         */
+        snapshot?: {
+          name?: string | null;
+          unitPrice?: number | null;
+        };
+        subtotal?: number | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'ShopProduct';
+      }
     | {
         /**
-         * The 3D model(s) associated with this order
+         * The 3D model associated with this item
          */
         model: {
-          /**
-           * The name of the 3D model file (example: acb123)
-           */
           filename: string;
           filetype: 'stl' | 'obj' | '3mf';
-          /**
-           * The relative path of the 3D model file on the server (example: /files/abc123.stl)
-           */
           serverPath: string;
         };
         quantity: number;
@@ -219,11 +230,21 @@ export interface Order {
           layerHeight?: number | null;
           infill?: number | null;
         };
+        /**
+         * Set after quote acceptance
+         */
+        unitPrice?: number | null;
+        subtotal?: number | null;
         id?: string | null;
-      }[]
-    | null;
+        blockName?: string | null;
+        blockType: 'customPrint';
+      }
+  )[];
   payment: {};
-  quote?: {};
+  /**
+   * The total price of the order. Calculated from the prints subtotals. After quote if order has any custom prints.
+   */
+  total?: number | null;
   status?: {
     statuses?:
       | {
@@ -271,27 +292,8 @@ export interface Order {
   createdAt: string;
 }
 /**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "presets".
- */
-export interface Preset {
-  id: string;
-  /**
-   * The name of the preset
-   */
-  name: string;
-  /**
-   * A brief description of the preset
-   */
-  description?: string | null;
-  /**
-   * The name of the preset in Bambu Lab
-   */
-  bambulabName?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
+ * Products available for purchase in the shop. DO NOT DELETE PRODUCTS, HIDE INSTEAD.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
  */
@@ -305,21 +307,15 @@ export interface Product {
    * A detailed description of the product
    */
   description: string;
-  pictures: {
-    /**
-     * The url of the product image. MAKE SURE THIS INCLUDES A VALID IMAGE FORMAT (jpg, png, etc.)
-     */
-    url: string;
-    /**
-     * The alternative text (description) of the product image
-     */
-    alt: string;
-    id?: string | null;
-  }[];
+  pictures: (string | Media)[];
   /**
    * The price of the product in GBP (£)
    */
   price: number;
+  /**
+   * The number of times this product has been bought
+   */
+  orders?: number | null;
   printingOptions: {
     plastic?:
       | {
@@ -351,6 +347,49 @@ export interface Product {
      */
     infill?: number | null;
   };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string;
+  /**
+   * Alt text for images / caption for videos
+   */
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "presets".
+ */
+export interface Preset {
+  id: string;
+  /**
+   * The name of the preset
+   */
+  name: string;
+  /**
+   * A brief description of the preset
+   */
+  description?: string | null;
+  /**
+   * The name of the preset in Bambu Lab
+   */
+  bambulabName?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -393,6 +432,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'products';
         value: string | Product;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: string | Media;
       } | null)
     | ({
         relationTo: 'search';
@@ -511,25 +554,47 @@ export interface OrdersSelect<T extends boolean = true> {
   prints?:
     | T
     | {
-        model?:
+        ShopProduct?:
           | T
           | {
-              filename?: T;
-              filetype?: T;
-              serverPath?: T;
+              product?: T;
+              quantity?: T;
+              snapshot?:
+                | T
+                | {
+                    name?: T;
+                    unitPrice?: T;
+                  };
+              subtotal?: T;
+              id?: T;
+              blockName?: T;
             };
-        quantity?: T;
-        printingOptions?:
+        customPrint?:
           | T
           | {
-              preset?: T;
-              layerHeight?: T;
-              infill?: T;
+              model?:
+                | T
+                | {
+                    filename?: T;
+                    filetype?: T;
+                    serverPath?: T;
+                  };
+              quantity?: T;
+              printingOptions?:
+                | T
+                | {
+                    preset?: T;
+                    layerHeight?: T;
+                    infill?: T;
+                  };
+              unitPrice?: T;
+              subtotal?: T;
+              id?: T;
+              blockName?: T;
             };
-        id?: T;
       };
   payment?: T | {};
-  quote?: T | {};
+  total?: T;
   status?:
     | T
     | {
@@ -571,14 +636,9 @@ export interface PresetsSelect<T extends boolean = true> {
 export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   description?: T;
-  pictures?:
-    | T
-    | {
-        url?: T;
-        alt?: T;
-        id?: T;
-      };
+  pictures?: T;
   price?: T;
+  orders?: T;
   printingOptions?:
     | T
     | {
@@ -605,6 +665,24 @@ export interface ProductsSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
