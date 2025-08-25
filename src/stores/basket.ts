@@ -1,9 +1,12 @@
 import { Product } from '@/payload-types';
-import { atom } from 'nanostores';
+import { persistentAtom } from '@nanostores/persistent';
 
 export type BasketItem = Product & { quantity: number };
 
-export const $basket = atom<BasketItem[]>([]);
+export const $basket = persistentAtom<BasketItem[]>('basket', [], {
+	encode: JSON.stringify,
+	decode: JSON.parse,
+});
 
 export const resetBasket = () => {
 	$basket.set([]);
