@@ -10,40 +10,59 @@ type Props = {
 	max?: number;
 	onChange?: (value: number) => void;
 	className?: string;
+	defaultValue?: number;
 };
 
-export function Input({ value = 0, min = -Infinity, max = Infinity, onChange, className }: Props) {
-	const defaultValue = React.useRef(value);
+export function NumberInput({ value, min = -Infinity, max = Infinity, onChange, className, defaultValue }: Props) {
+	const isControlled = value !== undefined;
+	const [internalValue, setInternalValue] = React.useState<number>(defaultValue ?? 0);
+	const currentValue = isControlled ? (value as number) : internalValue;
+
+	const clamp = React.useCallback((v: number) => Math.min(Math.max(v, min), max), [min, max]);
+
 	const inputRef = React.useRef<HTMLInputElement>(null);
 	const [animated, setAnimated] = React.useState(true);
 	// Hide the caret during transitions so you can't see it shifting around:
 	const [showCaret, setShowCaret] = React.useState(true);
+
+	const setValue = React.useCallback(
+		(next: number) => {
+			const clamped = clamp(next);
+			if (!isControlled) setInternalValue(clamped);
+			onChange?.(clamped);
+		},
+		[clamp, isControlled, onChange],
+	);
+
 	const handleInput: React.ChangeEventHandler<HTMLInputElement> = ({ currentTarget: el }) => {
 		setAnimated(false);
 		if (el.value === '') {
-			onChange?.(min ?? 0); // Use min if defined, else 0
+			const fallback = Number.isFinite(min) ? min : 0; // Use min if defined, else 0
+			setValue(fallback);
 			return;
 		}
 		const num = parseInt(el.value);
 		if (isNaN(num) || (min != null && num < min) || (max != null && num > max)) {
 			// Revert input's value:
-			el.value = String(value);
+			el.value = String(currentValue);
 		} else {
 			// Manually update value in case they e.g. start with a "0" or end with a "."
 			// which won't trigger a DOM update (because the number is the same):
 			el.value = String(num);
-			onChange?.(num);
+			setValue(num);
 		}
 	};
+
 	const handlePointerDown = (diff: number) => (event: React.PointerEvent<HTMLButtonElement>) => {
 		setAnimated(true);
 		if (event.pointerType === 'mouse') {
 			event?.preventDefault();
 			inputRef.current?.focus();
 		}
-		const newVal = Math.min(Math.max(value + diff, min), max);
-		onChange?.(newVal);
+		const newVal = clamp(currentValue + diff);
+		setValue(newVal);
 	};
+
 	return (
 		<div
 			className={cn(
@@ -54,7 +73,7 @@ export function Input({ value = 0, min = -Infinity, max = Infinity, onChange, cl
 				aria-hidden
 				tabIndex={-1}
 				className='flex items-center rounded-l-md px-2.5 hover:bg-accent/50 disabled:pointer-events-none disabled:opacity-50'
-				disabled={value <= min}
+				disabled={currentValue <= min}
 				onPointerDown={handlePointerDown(-1)}>
 				<Minus className='size-4' strokeWidth={2.5} />
 			</button>
@@ -68,16 +87,16 @@ export function Input({ value = 0, min = -Infinity, max = Infinity, onChange, cl
 					// Make sure to disable kerning, to match NumberFlow:
 					style={{ fontKerning: 'none' }}
 					type='number'
-					min={min}
+					min={Number.isFinite(min) ? min : undefined}
 					step={1}
 					autoComplete='off'
 					inputMode='numeric'
-					max={max}
-					value={value}
+					max={Number.isFinite(max) ? max : undefined}
+					value={currentValue}
 					onInput={handleInput}
 				/>
 				<NumberFlow
-					value={value}
+					value={currentValue}
 					format={{ useGrouping: false }}
 					aria-hidden
 					animated={animated}
@@ -91,7 +110,7 @@ export function Input({ value = 0, min = -Infinity, max = Infinity, onChange, cl
 				aria-hidden
 				tabIndex={-1}
 				className='flex items-center rounded-r-md px-2.5 hover:bg-accent/50 disabled:pointer-events-none disabled:opacity-50'
-				disabled={value >= max}
+				disabled={currentValue >= max}
 				onPointerDown={handlePointerDown(1)}>
 				<Plus className='size-4' strokeWidth={2.5} />
 			</button>
@@ -99,4 +118,4 @@ export function Input({ value = 0, min = -Infinity, max = Infinity, onChange, cl
 	);
 }
 
-export default { Input };
+export default { Input: NumberInput };
