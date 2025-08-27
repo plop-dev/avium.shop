@@ -2,7 +2,7 @@ import '@/app/styles/globals.css';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 import React, { Suspense } from 'react';
-import { Toaster } from 'sonner';
+import { Toaster, ToasterProps } from 'sonner';
 import NextTopLoader from 'nextjs-toploader';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { Metadata } from 'next';
@@ -11,6 +11,7 @@ import { DM_Sans } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { auth } from '@/auth';
 import { MessageToaster } from '@/components/MessageToaster';
+import { useTheme } from 'next-themes';
 
 export const metadata: Metadata = {
 	title: 'Avium',
@@ -25,6 +26,7 @@ const dmSans = DM_Sans({
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
 	// const cookieStore = await cookies();
+	const { resolvedTheme } = useTheme();
 	const session = await auth();
 
 	return (
@@ -36,7 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 					<Analytics></Analytics>
 					<NuqsAdapter>
 						<SessionProvider session={session}>
-							<Toaster richColors theme='system'></Toaster>
+							<Toaster richColors theme={resolvedTheme as ToasterProps['theme']} position='top-right'></Toaster>
 							<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange enableColorScheme>
 								<Suspense>
 									<MessageToaster></MessageToaster>
