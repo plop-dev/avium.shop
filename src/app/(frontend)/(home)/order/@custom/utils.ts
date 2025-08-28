@@ -10,6 +10,21 @@ export type UploadChunk = {
 	data: string; // base64
 };
 
+export type UploadedChunkResponse = {
+	received: number;
+	total: number;
+	complete: false;
+};
+
+export type UploadedFileResponse = {
+	id: string;
+	filename: string;
+	size: number;
+	filetype: string;
+	url: string;
+	complete: true;
+};
+
 async function uploadChunk(chunk: UploadChunk, serverUrl: string) {
 	const response = await fetch(`${serverUrl}upload`, {
 		method: 'POST',
@@ -24,7 +39,7 @@ async function uploadChunk(chunk: UploadChunk, serverUrl: string) {
 		throw new Error(`Chunk upload failed: ${response.statusText}`);
 	}
 
-	return response.json();
+	return response.json() as Promise<UploadedFileResponse | UploadedChunkResponse>;
 }
 
 export async function uploadFile(
@@ -35,6 +50,7 @@ export async function uploadFile(
 ) {
 	const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 	const uploadId = crypto.randomUUID();
+	let uploadResponse: UploadedFileResponse | undefined = undefined;
 
 	console.log(`Uploading ${file.name} in ${totalChunks} chunks`);
 
@@ -55,7 +71,10 @@ export async function uploadFile(
 			data: base64Data as string,
 		};
 
-		await uploadChunk(chunkPayload, serverUrl);
+		const res = await uploadChunk(chunkPayload, serverUrl);
+		if ('complete' in res && res.complete) {
+			uploadResponse = res;
+		}
 
 		const currentChunk = chunkIndex + 1;
 		// Report progress
@@ -64,8 +83,9 @@ export async function uploadFile(
 			onProgress(progress, currentChunk, totalChunks);
 		}
 
+		//! TESTING
 		await new Promise(res => setTimeout(res, 1000));
 	}
 
-	return uploadId;
+	return uploadResponse;
 }

@@ -23,6 +23,9 @@ export default function Basket() {
 	};
 
 	useEffect(() => {
+		basketItems.forEach(item => {
+			console.log(item);
+		});
 		setTotalItems(basketItems.reduce((sum, item) => sum + item.quantity, 0));
 	}, [basketItems]);
 

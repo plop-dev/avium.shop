@@ -213,7 +213,7 @@ export interface Order {
         subtotal?: number | null;
         id?: string | null;
         blockName?: string | null;
-        blockType: 'ShopProduct';
+        blockType: 'shopProduct';
       }
     | {
         /**
@@ -233,7 +233,7 @@ export interface Order {
         /**
          * Set after quote acceptance
          */
-        unitPrice?: number | null;
+        price?: number | null;
         subtotal?: number | null;
         id?: string | null;
         blockName?: string | null;
@@ -317,35 +317,33 @@ export interface Product {
    */
   orders?: number | null;
   printingOptions: {
-    plastic?:
-      | {
-          /**
-           * The name of the plastic type
-           */
-          name: string;
-          /**
-           * A brief description of the plastic type
-           */
-          description?: string | null;
-          colours?:
-            | {
-                color: string;
-                id?: string | null;
-              }[]
-            | null;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'plastic';
-        }[]
-      | null;
+    plastic: {
+      /**
+       * The name of the plastic type
+       */
+      name: string;
+      /**
+       * A brief description of the plastic type
+       */
+      description?: string | null;
+      colours?:
+        | {
+            colour: string;
+            id?: string | null;
+          }[]
+        | null;
+      id?: string | null;
+      blockName?: string | null;
+      blockType: 'plastic';
+    }[];
     /**
      * The layer height of the product. This is set by the preset and cannot be changed by the user.
      */
-    layerHeight?: number | null;
+    layerHeight: number;
     /**
      * The infill percentage of the product. This is set by the preset and cannot be changed by the user.
      */
-    infill?: number | null;
+    infill: number;
   };
   updatedAt: string;
   createdAt: string;
@@ -554,7 +552,7 @@ export interface OrdersSelect<T extends boolean = true> {
   prints?:
     | T
     | {
-        ShopProduct?:
+        shopProduct?:
           | T
           | {
               product?: T;
@@ -587,7 +585,7 @@ export interface OrdersSelect<T extends boolean = true> {
                     layerHeight?: T;
                     infill?: T;
                   };
-              unitPrice?: T;
+              price?: T;
               subtotal?: T;
               id?: T;
               blockName?: T;
@@ -653,7 +651,7 @@ export interface ProductsSelect<T extends boolean = true> {
                     colours?:
                       | T
                       | {
-                          color?: T;
+                          colour?: T;
                           id?: T;
                         };
                     id?: T;
@@ -745,7 +743,7 @@ export interface PrintingOption {
         description?: string | null;
         colours?:
           | {
-              color: string;
+              colour: string;
               id?: string | null;
             }[]
           | null;
@@ -781,7 +779,7 @@ export interface PrintingOptionsSelect<T extends boolean = true> {
               colours?:
                 | T
                 | {
-                    color?: T;
+                    colour?: T;
                     id?: T;
                   };
               id?: T;

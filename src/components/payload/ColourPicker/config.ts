@@ -8,7 +8,7 @@ export const validateHexColour = (value: string | null | undefined) => {
 };
 
 const colourField: Field = {
-	name: 'color',
+	name: 'colour',
 	type: 'text',
 	label: 'Colour',
 	validate: validateHexColour,

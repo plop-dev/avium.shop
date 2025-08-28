@@ -56,7 +56,7 @@ export const Orders: CollectionConfig = {
 			labels: { singular: 'Print', plural: 'Prints' },
 			blocks: [
 				{
-					slug: 'ShopProduct',
+					slug: 'shopProduct',
 					labels: { singular: 'Shop Product', plural: 'Shop Product' },
 					fields: [
 						{ name: 'product', type: 'relationship', relationTo: 'products', required: true },
@@ -108,7 +108,7 @@ export const Orders: CollectionConfig = {
 						},
 
 						// price for this custom print line (after quote)
-						{ name: 'unitPrice', type: 'number', admin: { description: 'Set after quote acceptance' } },
+						{ name: 'price', type: 'number', admin: { description: 'Set after quote acceptance' } },
 						{ name: 'subtotal', type: 'number', admin: { readOnly: true } },
 					],
 				},

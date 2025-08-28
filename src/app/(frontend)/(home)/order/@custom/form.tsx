@@ -20,7 +20,8 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, D
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Preset } from '@/payload-types';
 import { Progress } from '@/components/ui/progress';
-import { uploadFile } from './utils';
+import { UploadedFileResponse, uploadFile } from './utils';
+import { addToBasket } from '@/stores/basket';
 
 type CustomOrderFormValues = z.infer<typeof customOrderFormSchema>;
 
@@ -441,6 +442,9 @@ export default function CustomPrintForm({ presets }: { presets: Preset[] }) {
 	async function onSubmit(data: CustomOrderFormValues) {
 		setIsLoading(true);
 		console.log(data);
+		let uploadResponse: UploadedFileResponse | undefined = undefined;
+
+		//#region upload
 		const files = data.prints.map(p => p.file);
 
 		const toastId = toast.loading('Preparing upload...', {
@@ -453,7 +457,7 @@ export default function CustomPrintForm({ presets }: { presets: Preset[] }) {
 		try {
 			for (const file of files) {
 				console.log('Uploading file:', file.name);
-				await uploadFile(
+				uploadResponse = await uploadFile(
 					file,
 					(progress, currentChunk, totalChunks) => {
 						setUploadProgress({ progress, currentChunk, chunkTotal: totalChunks });
@@ -461,6 +465,7 @@ export default function CustomPrintForm({ presets }: { presets: Preset[] }) {
 					process.env.NEXT_PUBLIC_AVIUM_API_URL as string,
 					CHUNK_SIZE,
 				);
+
 				console.log('Finished uploading file:', file.name);
 			}
 
@@ -470,8 +475,55 @@ export default function CustomPrintForm({ presets }: { presets: Preset[] }) {
 			console.error('File upload error:', error);
 		} finally {
 			setUploadToastId(null);
-			setIsLoading(false);
 		}
+
+		//#endregion
+
+		//TODO: Redo flow (ui/ux) for custom orders -> submit for quote
+		//#region get quote for each print
+
+		//#endregion
+
+		//#region add to basket
+
+		// every print will be a separate item in the basket (order name chosen in form is irrelevant for now)
+
+		if (!uploadResponse) {
+			toast.error('An error occurred during file upload.');
+			console.error('No upload response available.');
+			setIsLoading(false);
+			return;
+		}
+
+		try {
+			console.log('Adding to basket with upload response:', uploadResponse);
+
+			for (const print of data.prints) {
+				for (let i = 0; i < print.quantity; i++) {
+					addToBasket({
+						id: crypto.randomUUID(),
+						model: {
+							filename: print.file.name,
+							filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | 'obj' | '3mf',
+							serverPath: uploadResponse.url,
+						},
+						printingOptions: print.printingOptions,
+						price: 0, // TODO: calculate price based on options
+					});
+				}
+			}
+			form.reset();
+			triggerHandleRemove();
+			setTriggerFile(null);
+		} catch (error) {
+			toast.error('An error occurred adding items to basket.');
+			console.error('Add to basket error:', error);
+		}
+
+		//#endregion
+
+		setIsOpen(false);
+		setIsLoading(false);
 	}
 
 	async function handleAddPrint() {

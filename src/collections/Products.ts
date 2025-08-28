@@ -83,6 +83,7 @@ export const Products: CollectionConfig = {
 					},
 					type: 'blocks',
 					blocks: [Plastic],
+					required: true,
 				},
 
 				{
@@ -92,6 +93,7 @@ export const Products: CollectionConfig = {
 						description: 'The layer height of the product. This is set by the preset and cannot be changed by the user.',
 					},
 					type: 'number',
+					required: true,
 				},
 
 				{
@@ -101,6 +103,7 @@ export const Products: CollectionConfig = {
 						description: 'The infill percentage of the product. This is set by the preset and cannot be changed by the user.',
 					},
 					type: 'number',
+					required: true,
 				},
 			],
 		},

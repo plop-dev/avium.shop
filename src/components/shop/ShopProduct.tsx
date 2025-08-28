@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Product } from '@/payload-types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PrintingOption, Product } from '@/payload-types';
 import { addToBasket } from '@/stores/basket';
 import numToGBP from '@/utils/numToGBP';
 import Image from 'next/image';
@@ -16,30 +17,42 @@ import { toast } from 'sonner';
 export default function ShopProduct({ key, product }: { key: number; product: Product }) {
 	const [open, setOpen] = useState(false);
 	const [qty, setQty] = useState(1);
+	const [selectedColour, setSelectedColour] = useState<string>('');
+
+	const availableColours = useMemo(() => {
+		console.log(product.printingOptions);
+		return product.printingOptions.plastic[0].colours || [{ colour: '#eee', id: 'default' }];
+	}, []);
+
+	// Set default colour when dialog opens
+	const handleDialogOpen = (isOpen: boolean) => {
+		setOpen(isOpen);
+		if (isOpen && availableColours.length > 0 && !selectedColour) {
+			setSelectedColour(availableColours[0].colour);
+		}
+	};
 
 	const handleAddToCart = (product: Product, quantity = 1) => {
-		toast.success(`Added ${quantity} x ${product.name} to basket`);
+		const colourName = availableColours.find(c => c.colour === selectedColour) || 'Default';
+		toast.success(`Added ${quantity} x ${product.name} (${colourName}) to basket`);
 		for (let i = 0; i < Math.max(1, quantity); i++) addToBasket(product);
 	};
 
 	const pic = product.pictures?.[0];
 	const pictures = useMemo(() => (Array.isArray(product.pictures) ? product.pictures : []).filter(Boolean), [product.pictures]);
 
-	const incQty = () => setQty(q => Math.min(99, q + 1));
-	const decQty = () => setQty(q => Math.max(1, q - 1));
-
 	return (
 		<>
 			<div
 				key={key}
 				className='h-auto min-w-48 rounded-lg border shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col cursor-pointer'
-				onClick={() => setOpen(true)}
+				onClick={() => handleDialogOpen(true)}
 				role='button'
 				tabIndex={0}
 				onKeyDown={e => {
 					if (e.key === 'Enter' || e.key === ' ') {
 						e.preventDefault();
-						setOpen(true);
+						handleDialogOpen(true);
 					}
 				}}>
 				<div className='h-48 flex items-center justify-center rounded-t-lg'>
@@ -60,20 +73,14 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 					<p className='text-sm text-muted-foreground mt-1 line-clamp-2'>{product.description}</p>
 					<div className='mt-auto pt-3 flex items-center justify-between'>
 						<span className='font-medium'>{numToGBP(product.price)}</span>
-						<Button
-							variant='default'
-							size='sm'
-							onClick={e => {
-								e.stopPropagation();
-								handleAddToCart(product, 1);
-							}}>
+						<Button variant='default' size='sm'>
 							Add to cart
 						</Button>
 					</div>
 				</div>
 			</div>
 
-			<Dialog open={open} onOpenChange={setOpen}>
+			<Dialog open={open} onOpenChange={handleDialogOpen}>
 				<DialogContent className='xl:!max-w-6xl xl:!w-6xl p-0 !max-w-2xl !w-2xl'>
 					<div className='flex gap-x-8 p-6 overflow-auto'>
 						<div className='relative'>
@@ -164,26 +171,66 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 
 							<hr className='my-4 border-muted/40' />
 
-							<div className='mt-2 mb-2 grid grid-cols-1 sm:grid-cols-2 items-end gap-4'>
-								<div className='flex flex-col gap-2'>
-									<label className='text-xs font-medium text-muted-foreground'>Quantity</label>
-									<div className='flex items-center gap-2'>
-										<NumberInput
-											min={1}
-											max={100000}
-											className='w-28'
-											value={qty}
-											onChange={(e: any) => {
-												const raw = (e?.target?.value ?? e?.value ?? e) as any;
-												const v = Number(raw);
-												const n = Number.isFinite(v) ? v : 1;
-												setQty(Math.min(100000, Math.max(1, n)));
-											}}
-										/>
+							<div className='mt-2 mb-2 grid grid-cols-1 sm:grid-cols-2 items-start gap-4'>
+								<div className='flex flex-col gap-4'>
+									<div className='flex flex-col gap-2'>
+										<label className='text-xs font-medium text-muted-foreground'>Quantity</label>
+										<div className='flex items-center gap-2'>
+											<NumberInput
+												min={1}
+												max={100000}
+												className='w-28'
+												value={qty}
+												onChange={(e: any) => {
+													const raw = (e?.target?.value ?? e?.value ?? e) as any;
+													const v = Number(raw);
+													const n = Number.isFinite(v) ? v : 1;
+													setQty(Math.min(100000, Math.max(1, n)));
+												}}
+											/>
+										</div>
 									</div>
+
+									{availableColours.length > 0 && (
+										<div className='flex flex-col gap-2'>
+											<label className='text-xs font-medium text-muted-foreground'>Colour</label>
+											<Select value={selectedColour} onValueChange={setSelectedColour}>
+												<SelectTrigger className='w-full'>
+													<SelectValue placeholder='Select a colour'>
+														{selectedColour && (
+															<div className='flex items-center gap-2'>
+																<div
+																	className='w-4 h-4 rounded-full border border-border'
+																	style={{
+																		backgroundColor: availableColours.find(
+																			c => c.colour === selectedColour,
+																		)?.colour,
+																	}}
+																/>
+																{availableColours.find(c => c.colour === selectedColour)?.colour}
+															</div>
+														)}
+													</SelectValue>
+												</SelectTrigger>
+												<SelectContent>
+													{availableColours.map(colour => (
+														<SelectItem key={colour.id} value={colour.colour}>
+															<div className='flex items-center gap-2'>
+																<div
+																	className='w-4 h-4 rounded-full border border-border'
+																	style={{ backgroundColor: colour.colour }}
+																/>
+																{colour.colour}
+															</div>
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</div>
+									)}
 								</div>
 
-								<div className='flex flex-col gap-2 sm:items-end'>
+								<div className='flex flex-col gap-2 mt-auto sm:items-end'>
 									<span className='text-xs font-medium text-muted-foreground'>Total</span>
 									<div className='inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-semibold bg-background shadow-sm'>
 										{numToGBP((product.price || 0) * qty)}
@@ -191,7 +238,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 								</div>
 							</div>
 
-							<DialogFooter className='mt-auto flex gap-x-2'>
+							<div className='flex gap-2 sm:justify-end'>
 								<Button variant='secondary' onClick={() => setOpen(false)}>
 									Close
 								</Button>
@@ -199,10 +246,11 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 									onClick={() => {
 										handleAddToCart(product, qty);
 										setOpen(false);
-									}}>
+									}}
+									disabled={availableColours.length > 0 && !selectedColour}>
 									Add {qty} to cart
 								</Button>
-							</DialogFooter>
+							</div>
 						</div>
 					</div>
 				</DialogContent>
