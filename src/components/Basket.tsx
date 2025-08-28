@@ -4,14 +4,14 @@ import { ShoppingBasket } from 'lucide-react';
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from './ui/drawer';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BasketItem from './BasketItem';
 import numToGBP from '@/utils/numToGBP';
 import { useStore } from '@nanostores/react';
 import { $basket, setItemQuantity } from '@/stores/basket';
 
 export default function Basket() {
-	// const [basketItems, setBasketItems] = useState(mockBasketData);
+	const [totalItems, setTotalItems] = useState(0);
 	const basketItems = useStore($basket);
 
 	const handleQuantityChange = (id: string, newQuantity: number) => {
@@ -22,7 +22,9 @@ export default function Basket() {
 		setItemQuantity(id, 0);
 	};
 
-	const totalItems = basketItems.reduce((sum, item) => sum + item.quantity, 0);
+	useEffect(() => {
+		setTotalItems(basketItems.reduce((sum, item) => sum + item.quantity, 0));
+	}, [basketItems]);
 
 	return (
 		<Drawer direction='right' autoFocus={true}>

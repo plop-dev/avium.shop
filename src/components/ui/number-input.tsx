@@ -1,8 +1,9 @@
 import NumberFlow from '@number-flow/react';
 import clsx from 'clsx';
-import { Minus, Plus } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from './button';
+import { Minus, Plus } from 'lucide-react';
 
 type Props = {
 	value?: number;
@@ -66,7 +67,7 @@ export function NumberInput({ value, min = -Infinity, max = Infinity, onChange, 
 	return (
 		<div
 			className={cn(
-				'group flex h-9 items-stretch rounded-md border border-input bg-transparent text-sm font-medium shadow-xs transition-all',
+				'group flex h-10 items-stretch rounded-md border border-input bg-transparent text-sm font-medium shadow-xs transition-all',
 				className,
 			)}>
 			<button
@@ -77,7 +78,16 @@ export function NumberInput({ value, min = -Infinity, max = Infinity, onChange, 
 				onPointerDown={handlePointerDown(-1)}>
 				<Minus className='size-4' strokeWidth={2.5} />
 			</button>
-			<div className="relative grid w-8 items-center justify-items-center text-center [grid-template-areas:'overlap'] *:[grid-area:overlap]">
+			{/* <Button
+				aria-hidden
+				size={'icon'}
+				variant={'ghost'}
+				tabIndex={-1}
+				disabled={currentValue <= min}
+				onClick={handlePointerDown(-1)}>
+				-
+			</Button> */}
+			<div className="relative grid w-auto items-center justify-items-center text-center [grid-template-areas:'overlap'] *:[grid-area:overlap]">
 				<input
 					ref={inputRef}
 					className={clsx(
@@ -106,6 +116,9 @@ export function NumberInput({ value, min = -Infinity, max = Infinity, onChange, 
 					willChange
 				/>
 			</div>
+			{/* <Button aria-hidden size={'icon'} variant={'ghost'} tabIndex={-1} disabled={currentValue >= max} onClick={handlePointerDown(1)}>
+				+
+			</Button> */}
 			<button
 				aria-hidden
 				tabIndex={-1}

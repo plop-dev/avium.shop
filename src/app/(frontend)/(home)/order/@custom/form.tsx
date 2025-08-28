@@ -14,10 +14,13 @@ import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingSwap } from '@/components/ui/loading-swap';
 import { cn } from '@/lib/utils';
-import { Input as NumberInput } from '@/components/ui/number-input';
+import { NumberInput } from '@/components/ui/number-input';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogHeader } from '@/components/ui/dialog';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Preset } from '@/payload-types';
+import { Progress } from '@/components/ui/progress';
+import { uploadFile } from './utils';
 
 type CustomOrderFormValues = z.infer<typeof customOrderFormSchema>;
 
@@ -29,16 +32,12 @@ const defaultPrintItem = {
 	},
 };
 
-const mockPresets = [
-	{ id: 'preset-1', name: 'Standard Quality', description: 'A balance of speed and detail.' },
-	{ id: 'preset-2', name: 'High Detail', description: 'For intricate models requiring high precision.' },
-	{ id: 'preset-3', name: 'Fast Draft', description: 'Quick prints for prototyping.' },
-];
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5mb
 
-function PresetSelection({ onChange, value }: { onChange: (value?: string) => void; value?: string }) {
+function PresetSelection({ onChange, value, presets }: { onChange: (value?: string) => void; value?: string; presets: Preset[] }) {
 	return (
 		<div className='grid grid-cols-1 gap-2 sm:grid-cols-3'>
-			{mockPresets.map(preset => (
+			{presets.map(preset => (
 				<Card
 					key={preset.id}
 					onClick={() => onChange(value === preset.id ? undefined : preset.id)}
@@ -58,13 +57,17 @@ function PresetSelection({ onChange, value }: { onChange: (value?: string) => vo
 	);
 }
 
-function PrintItemCard({ index, remove }: { index: number; remove: (index: number) => void }) {
+function PrintItemCard({ index, remove, presets }: { index: number; remove: (index: number) => void; presets: Preset[] }) {
 	const [isDragging, setIsDragging] = useState(false);
 
 	const { control, getValues, setValue } = useFormContext<CustomOrderFormValues>();
 	const presetValue = useWatch({
 		control,
 		name: `prints.${index}.printingOptions.preset`,
+	});
+	const fileValue = useWatch({
+		control,
+		name: `prints.${index}.file`,
 	});
 	const fields = getValues().prints;
 
@@ -131,6 +134,10 @@ function PrintItemCard({ index, remove }: { index: number; remove: (index: numbe
 		[originalHandleFileChange, setValue, index],
 	);
 
+	// Get the display file (either from form state or image upload hook)
+	const displayFile = fileValue || (fileName ? { name: fileName } : null);
+	const hasFile = displayFile || previewUrl;
+
 	return (
 		<div className='relative bg-background p-4 rounded-lg border-2 space-y-4'>
 			<div className='flex items-center gap-2'>
@@ -166,7 +173,7 @@ function PrintItemCard({ index, remove }: { index: number; remove: (index: numbe
 										onChange={handleFileChange}
 									/>
 
-									{!previewUrl ? (
+									{!hasFile ? (
 										<div
 											onClick={handleThumbnailClick}
 											onDragOver={handleDragOver}
@@ -188,14 +195,21 @@ function PrintItemCard({ index, remove }: { index: number; remove: (index: numbe
 										<div className='relative'>
 											<div className='group relative h-28 overflow-hidden rounded-lg border'>
 												<h1 className='absolute top-1/2 left-1/2 -translate-1/2 opacity-50 thicc-text text-4xl'>
-													{fileName?.split('.')[fileName?.split('.').length - 1].toUpperCase()}
+													{(displayFile?.name || fileName)?.split('.').pop()?.toUpperCase()}
 												</h1>
 												<div className='absolute inset-0 bg-foreground/10 opacity-0 transition-opacity group-hover:opacity-50' />
 											</div>
-											{fileName && (
+											{(displayFile?.name || fileName) && (
 												<div className='mt-2 flex items-center gap-2 text-sm text-muted-foreground'>
-													<span className='truncate'>{fileName}</span>
-													<button onClick={handleRemove} className='ml-auto rounded-full p-1 hover:bg-muted'>
+													<span className='truncate'>{displayFile?.name || fileName}</span>
+													<button
+														onClick={() => {
+															handleRemove();
+															setValue(`prints.${index}.file`, undefined as unknown as File, {
+																shouldValidate: false,
+															});
+														}}
+														className='ml-auto rounded-full p-1 hover:bg-muted'>
 														<X className='h-4 w-4' />
 													</button>
 												</div>
@@ -218,7 +232,7 @@ function PrintItemCard({ index, remove }: { index: number; remove: (index: numbe
 						<FormItem>
 							<FormLabel>Quantity</FormLabel>
 							<FormControl>
-								<NumberInput min={1} max={1000} {...field}></NumberInput>
+								<NumberInput min={1} max={100000} {...field}></NumberInput>
 							</FormControl>
 							<FormMessage />
 						</FormItem>
@@ -247,7 +261,7 @@ function PrintItemCard({ index, remove }: { index: number; remove: (index: numbe
 					<FormItem>
 						<FormLabel>Print Quality Preset</FormLabel>
 						<FormControl>
-							<PresetSelection onChange={field.onChange} value={field.value} />
+							<PresetSelection onChange={field.onChange} value={field.value} presets={presets} />
 						</FormControl>
 						<FormMessage />
 					</FormItem>
@@ -284,15 +298,22 @@ function PrintItemCard({ index, remove }: { index: number; remove: (index: numbe
 	);
 }
 
-export default function CustomPrintForm() {
+export default function CustomPrintForm({ presets }: { presets: Preset[] }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isAddingPrint, setIsAddingPrint] = useState(false);
+	const [uploadProgress, setUploadProgress] = useState({
+		progress: 0,
+		currentChunk: 0,
+		chunkTotal: 0,
+	});
 	const [triggerFile, setTriggerFile] = useState<File | null>(null);
+	const [uploadToastId, setUploadToastId] = useState<string | number | null>(null);
 
 	const form = useForm<CustomOrderFormValues>({
 		resolver: zodResolver(customOrderFormSchema) as Resolver<CustomOrderFormValues>,
-		mode: 'all',
+		//! resolver: (() => ({ values: {}, errors: {} })) as Resolver<CustomOrderFormValues>, USE THIS TO DISABLE VALIDATION
+		mode: 'onSubmit',
 		defaultValues: {
 			name: '',
 			prints: [],
@@ -327,9 +348,9 @@ export default function CustomPrintForm() {
 				if (fields.length === 0) {
 					append({ ...defaultPrintItem, file });
 				} else {
-					form.setValue('prints.0.file', file, { shouldValidate: true });
+					form.setValue('prints.0.file', file, { shouldValidate: false });
 				}
-				setIsOpen(true); // Open the dialog
+				setIsOpen(true);
 			}
 			triggerHandleFileChange(e);
 		},
@@ -372,9 +393,9 @@ export default function CustomPrintForm() {
 				if (fields.length === 0) {
 					append({ ...defaultPrintItem, file });
 				} else {
-					form.setValue('prints.0.file', file, { shouldValidate: true });
+					form.setValue('prints.0.file', file, { shouldValidate: false });
 				}
-				setIsOpen(true); // Open the dialog
+				setIsOpen(true);
 				const fakeEvent = {
 					target: {
 						files: [file],
@@ -392,16 +413,65 @@ export default function CustomPrintForm() {
 		}
 	}, [append, fields.length]);
 
+	// Update toast when upload progress changes
+	useEffect(() => {
+		if (uploadToastId !== null && uploadProgress.chunkTotal > 0) {
+			toast.loading(
+				<div className='w-full'>
+					<div className='flex gap-x-2 justify-between w-full items-center'>
+						<p>Uploading {uploadProgress.progress.toFixed(0)}%</p>
+						<span className='text-muted-foreground text-xs'>
+							File: {uploadProgress.currentChunk}/{uploadProgress.chunkTotal}
+						</span>
+					</div>
+					<Progress
+						value={uploadProgress.progress}
+						className='absolute -bottom-[1px] left-0 w-full rounded-t-none h-1'></Progress>
+				</div>,
+				{
+					id: uploadToastId,
+					dismissible: false,
+					closeButton: false,
+					duration: Infinity,
+				},
+			);
+		}
+	}, [uploadProgress, uploadToastId]);
+
 	async function onSubmit(data: CustomOrderFormValues) {
 		setIsLoading(true);
 		console.log(data);
-		toast.info('Form data logged to console. No backend interaction is implemented.');
-		// NOTE: No backend/Payload interaction as per instructions.
-		// In a real scenario, you would probably upload files and then submit the form data.
-		setTimeout(() => {
+		const files = data.prints.map(p => p.file);
+
+		const toastId = toast.loading('Preparing upload...', {
+			dismissible: false,
+			closeButton: false,
+			duration: Infinity,
+		});
+		setUploadToastId(toastId);
+
+		try {
+			for (const file of files) {
+				console.log('Uploading file:', file.name);
+				await uploadFile(
+					file,
+					(progress, currentChunk, totalChunks) => {
+						setUploadProgress({ progress, currentChunk, chunkTotal: totalChunks });
+					},
+					process.env.NEXT_PUBLIC_AVIUM_API_URL as string,
+					CHUNK_SIZE,
+				);
+				console.log('Finished uploading file:', file.name);
+			}
+
+			toast.success('Files uploaded successfully!', { id: toastId, dismissible: true, duration: 2000 });
+		} catch (error) {
+			toast.error('An error occurred during file upload.', { id: toastId });
+			console.error('File upload error:', error);
+		} finally {
+			setUploadToastId(null);
 			setIsLoading(false);
-			toast.success('Form submitted successfully (simulated).');
-		}, 1000);
+		}
 	}
 
 	async function handleAddPrint() {
@@ -418,69 +488,67 @@ export default function CustomPrintForm() {
 	}
 
 	return (
-		<Dialog open={isOpen} onOpenChange={setIsOpen}>
-			<DialogTrigger asChild>
-				<div className='w-full space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm cursor-pointer'>
-					<div className=''>
-						<h3 className='text-base font-medium'>3D File Upload</h3>
-						<p className='text-sm text-muted-foreground'>Supported formats: STL, 3MF, OBJ</p>
-					</div>
-
-					<Input
-						type='file'
-						accept='.stl,.3mf,.obj'
-						className='hidden'
-						ref={triggerFileInputRef}
-						onChange={handleTriggerFileChange}
-					/>
-
-					{!triggerPreviewUrl ? (
-						<div
-							onClick={triggerHandleThumbnailClick}
-							onDragOver={handleDragOver}
-							onDragEnter={handleDragEnter}
-							onDragLeave={handleDragLeave}
-							onDrop={handleDrop}
-							className={cn(
-								'flex h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted',
-								isDragging && 'border-primary/50 bg-primary/5',
-							)}>
-							<div className='rounded-full bg-background p-2 shadow-sm'>
-								<FilePlus2 className='h-5 w-5 text-muted-foreground' />
-							</div>
-							<div className='text-center'>
-								<p className='text-sm font-medium'>Click to select or drag and drop</p>
-							</div>
-						</div>
-					) : (
-						<div className='relative'>
-							<div className='group relative h-48 overflow-hidden rounded-lg border'>
-								<h1 className='absolute top-1/2 left-1/2 -translate-1/2 opacity-50 thicc-text text-4xl'>
-									{triggerFileName?.split('.')[triggerFileName?.split('.').length - 1].toUpperCase()}
-								</h1>
-								<div className='absolute inset-0 bg-foreground/10 opacity-0 transition-opacity group-hover:opacity-50' />
-							</div>
-							{triggerFileName && (
-								<div className='mt-2 flex items-center gap-2 text-sm text-muted-foreground'>
-									<span className='truncate'>{triggerFileName}</span>
-									<button
-										onClick={e => {
-											e.stopPropagation();
-											triggerHandleRemove();
-											setTriggerFile(null);
-											if (fields.length > 0) {
-												form.setValue('prints.0.file', undefined as unknown as File, { shouldValidate: true });
-											}
-										}}
-										className='ml-auto rounded-full p-1 hover:bg-muted'>
-										<X className='h-4 w-4' />
-									</button>
-								</div>
-							)}
-						</div>
-					)}
+		<Dialog open={isOpen} onOpenChange={setIsOpen} modal={true}>
+			<div className='w-full space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm cursor-pointer'>
+				<div className=''>
+					<h3 className='text-base font-medium'>3D File Upload</h3>
+					<p className='text-sm text-muted-foreground'>Supported formats: STL, 3MF, OBJ</p>
 				</div>
-			</DialogTrigger>
+
+				<Input
+					type='file'
+					accept='.stl,.3mf,.obj'
+					className='hidden'
+					ref={triggerFileInputRef}
+					onChange={handleTriggerFileChange}
+				/>
+
+				{!triggerPreviewUrl ? (
+					<div
+						onClick={triggerHandleThumbnailClick}
+						onDragOver={handleDragOver}
+						onDragEnter={handleDragEnter}
+						onDragLeave={handleDragLeave}
+						onDrop={handleDrop}
+						className={cn(
+							'flex h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted',
+							isDragging && 'border-primary/50 bg-primary/5',
+						)}>
+						<div className='rounded-full bg-background p-2 shadow-sm'>
+							<FilePlus2 className='h-5 w-5 text-muted-foreground' />
+						</div>
+						<div className='text-center'>
+							<p className='text-sm font-medium'>Click to select or drag and drop</p>
+						</div>
+					</div>
+				) : (
+					<div className='relative'>
+						<div className='group relative h-48 overflow-hidden rounded-lg border' onClick={() => setIsOpen(true)}>
+							<h1 className='absolute top-1/2 left-1/2 -translate-1/2 opacity-50 thicc-text text-4xl'>
+								{triggerFileName?.split('.')[triggerFileName?.split('.').length - 1].toUpperCase()}
+							</h1>
+							<div className='absolute inset-0 bg-foreground/10 opacity-0 transition-opacity group-hover:opacity-50' />
+						</div>
+						{triggerFileName && (
+							<div className='mt-2 flex items-center gap-2 text-sm text-muted-foreground'>
+								<span className='truncate'>{triggerFileName}</span>
+								<button
+									onClick={e => {
+										e.stopPropagation();
+										triggerHandleRemove();
+										setTriggerFile(null);
+										if (fields.length > 0) {
+											form.setValue('prints.0.file', undefined as unknown as File, { shouldValidate: false });
+										}
+									}}
+									className='ml-auto rounded-full p-1 hover:bg-muted'>
+									<X className='h-4 w-4' />
+								</button>
+							</div>
+						)}
+					</div>
+				)}
+			</div>
 			<DialogContent className='!w-4xl !max-w-4xl overflow-y-auto max-h-[calc(100vh-12rem)] min-h-[calc(100vh-12rem)]' asChild>
 				<div className='flex flex-col items-center justify-center space-y-6 min-w-3xl'>
 					<DialogHeader className='w-full'>
@@ -515,7 +583,7 @@ export default function CustomPrintForm() {
 									</div>
 
 									{fields.map((field, index) => (
-										<PrintItemCard key={field.id} index={index} remove={remove} />
+										<PrintItemCard key={field.id} index={index} remove={remove} presets={presets} />
 									))}
 
 									<div className='flex gap-3'>

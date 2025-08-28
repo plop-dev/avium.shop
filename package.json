@@ -17,6 +17,7 @@
 		"@dnd-kit/sortable": "^10.0.0",
 		"@dnd-kit/utilities": "^3.2.2",
 		"@hookform/resolvers": "^5.1.1",
+		"@nanostores/persistent": "^1.1.0",
 		"@nanostores/react": "^1.0.0",
 		"@number-flow/react": "^0.5.10",
 		"@payloadcms/db-mongodb": "^3.50.0",

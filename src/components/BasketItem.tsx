@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BasketItem as BasketItemType } from '@/stores/basket';
+import { NumberInput } from './ui/number-input';
 
 export default function BasketItem({
 	print,
@@ -13,9 +14,8 @@ export default function BasketItem({
 	onQuantityChange: (id: string, newQuantity: number) => void;
 	onRemove: (id: string) => void;
 }) {
-	const handleQuantityChange = (delta: number) => {
-		const newQuantity = Math.max(1, Math.min(1000, print.quantity + delta));
-		onQuantityChange(print.id, newQuantity);
+	const handleQuantityChange = (value: number) => {
+		onQuantityChange(print.id, value);
 	};
 
 	return (
@@ -57,15 +57,7 @@ export default function BasketItem({
 				</div>
 
 				<div className='flex items-center justify-between mt-3 pt-3 border-t'>
-					<div className='flex items-center space-x-2'>
-						<Button variant='outline' size='sm' onClick={() => handleQuantityChange(-1)} disabled={print.quantity <= 1}>
-							<Minus className='h-3 w-3' />
-						</Button>
-						<span className='font-medium min-w-[2rem] text-center'>{print.quantity}</span>
-						<Button variant='outline' size='sm' onClick={() => handleQuantityChange(1)} disabled={print.quantity >= 1000}>
-							<Plus className='h-3 w-3' />
-						</Button>
-					</div>
+					<NumberInput min={1} max={100000} value={print.quantity} onChange={handleQuantityChange}></NumberInput>
 					<p className='text-sm text-muted-foreground'>{print.quantity > 1 ? `${print.quantity} prints` : '1 print'}</p>
 				</div>
 			</CardContent>
