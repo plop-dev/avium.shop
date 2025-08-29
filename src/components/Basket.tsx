@@ -1,14 +1,24 @@
 'use client';
 
-import { ShoppingBasket } from 'lucide-react';
+import { ShoppingBasket, FileText, Package } from 'lucide-react';
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from './ui/drawer';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import BasketItem from './BasketItem';
 import numToGBP from '@/utils/numToGBP';
 import { useStore } from '@nanostores/react';
-import { $basket, setItemQuantity } from '@/stores/basket';
+import { $basket, setItemQuantity, CustomPrint, ShopProduct, BasketItem as BasketItemType } from '@/stores/basket';
+
+// Type guards
+const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
+	return 'model' in item;
+};
+
+const isShopProduct = (item: BasketItemType): item is ShopProduct => {
+	return 'product' in item;
+};
 
 export default function Basket() {
 	const [totalItems, setTotalItems] = useState(0);
@@ -24,10 +34,15 @@ export default function Basket() {
 
 	useEffect(() => {
 		basketItems.forEach(item => {
+			console.log(`Basket item:`);
 			console.log(item);
 		});
 		setTotalItems(basketItems.reduce((sum, item) => sum + item.quantity, 0));
 	}, [basketItems]);
+
+	// Separate items by type
+	const customPrints = basketItems.filter(isCustomPrint);
+	const shopProducts = basketItems.filter(isShopProduct);
 
 	return (
 		<Drawer direction='right' autoFocus={true}>
@@ -38,7 +53,7 @@ export default function Basket() {
 					<p className='font-bold'>{totalItems}</p>
 				</div>
 			</DrawerTrigger>
-			<DrawerContent className='max-w-md'>
+			<DrawerContent className='!max-w-md'>
 				<DrawerHeader>
 					<DrawerTitle>Your Basket</DrawerTitle>
 					<DrawerDescription>View the custom prints or shop products you've added to your basket.</DrawerDescription>
@@ -46,9 +61,43 @@ export default function Basket() {
 
 				<div className='px-4 flex-1 overflow-y-auto'>
 					{basketItems.length > 0 ? (
-						basketItems.map(item => (
-							<BasketItem key={item.id} print={item} onQuantityChange={handleQuantityChange} onRemove={handleRemoveItem} />
-						))
+						<div className='space-y-4'>
+							{customPrints.length > 0 && (
+								<div>
+									<div className='flex items-center gap-2 mb-3'>
+										<FileText className='h-4 w-4' />
+										<h3 className='font-semibold text-sm'>Custom Prints</h3>
+									</div>
+									{customPrints.map(item => (
+										<BasketItem
+											key={item.id}
+											item={item}
+											onQuantityChange={handleQuantityChange}
+											onRemove={handleRemoveItem}
+										/>
+									))}
+								</div>
+							)}
+
+							{customPrints.length > 0 && shopProducts.length > 0 && <Separator />}
+
+							{shopProducts.length > 0 && (
+								<div>
+									<div className='flex items-center gap-2 mb-3'>
+										<Package className='h-4 w-4' />
+										<h3 className='font-semibold text-sm'>Shop Products</h3>
+									</div>
+									{shopProducts.map(item => (
+										<BasketItem
+											key={item.id}
+											item={item}
+											onQuantityChange={handleQuantityChange}
+											onRemove={handleRemoveItem}
+										/>
+									))}
+								</div>
+							)}
+						</div>
 					) : (
 						<div className='text-center py-8 text-muted-foreground'>
 							<ShoppingBasket className='h-12 w-12 mx-auto mb-2 opacity-50' />

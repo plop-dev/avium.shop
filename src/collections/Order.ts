@@ -61,17 +61,8 @@ export const Orders: CollectionConfig = {
 					fields: [
 						{ name: 'product', type: 'relationship', relationTo: 'products', required: true },
 						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
-						// snapshot product data to protect from catalog changes
-						{
-							name: 'snapshot',
-							type: 'group',
-							admin: { description: 'Captured at time of order' },
-							fields: [
-								{ name: 'name', type: 'text' },
-								{ name: 'unitPrice', type: 'number' },
-							],
-						},
-						{ name: 'subtotal', type: 'number', admin: { readOnly: true } },
+
+						{ name: 'price', type: 'number' },
 					],
 				},
 				{

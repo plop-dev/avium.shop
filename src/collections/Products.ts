@@ -64,6 +64,7 @@ export const Products: CollectionConfig = {
 			defaultValue: 0,
 			admin: {
 				description: 'The number of times this product has been bought',
+				readOnly: true,
 			},
 		},
 

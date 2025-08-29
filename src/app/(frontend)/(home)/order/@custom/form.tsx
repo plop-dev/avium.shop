@@ -21,7 +21,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Preset } from '@/payload-types';
 import { Progress } from '@/components/ui/progress';
 import { UploadedFileResponse, uploadFile } from './utils';
-import { addToBasket } from '@/stores/basket';
+import { addCustomPrintToBasket } from '@/stores/basket';
 
 type CustomOrderFormValues = z.infer<typeof customOrderFormSchema>;
 
@@ -233,7 +233,9 @@ function PrintItemCard({ index, remove, presets }: { index: number; remove: (ind
 						<FormItem>
 							<FormLabel>Quantity</FormLabel>
 							<FormControl>
-								<NumberInput min={1} max={100000} {...field}></NumberInput>
+								<div onClick={e => e.stopPropagation()}>
+									<NumberInput min={1} max={100000} {...field} />
+								</div>
 							</FormControl>
 							<FormMessage />
 						</FormItem>
@@ -247,7 +249,9 @@ function PrintItemCard({ index, remove, presets }: { index: number; remove: (ind
 						<FormItem>
 							<FormLabel>Infill %</FormLabel>
 							<FormControl>
-								<NumberInput {...field}></NumberInput>
+								<div onClick={e => e.stopPropagation()}>
+									<NumberInput {...field} />
+								</div>
 							</FormControl>
 							<FormMessage />
 						</FormItem>
@@ -313,7 +317,7 @@ export default function CustomPrintForm({ presets }: { presets: Preset[] }) {
 
 	const form = useForm<CustomOrderFormValues>({
 		resolver: zodResolver(customOrderFormSchema) as Resolver<CustomOrderFormValues>,
-		//! resolver: (() => ({ values: {}, errors: {} })) as Resolver<CustomOrderFormValues>, USE THIS TO DISABLE VALIDATION
+		//* resolver: (() => ({ values: {}, errors: {} })) as Resolver<CustomOrderFormValues>, USE THIS TO DISABLE VALIDATION
 		mode: 'onSubmit',
 		defaultValues: {
 			name: '',
@@ -441,7 +445,6 @@ export default function CustomPrintForm({ presets }: { presets: Preset[] }) {
 
 	async function onSubmit(data: CustomOrderFormValues) {
 		setIsLoading(true);
-		console.log(data);
 		let uploadResponse: UploadedFileResponse | undefined = undefined;
 
 		//#region upload
@@ -471,7 +474,7 @@ export default function CustomPrintForm({ presets }: { presets: Preset[] }) {
 
 			toast.success('Files uploaded successfully!', { id: toastId, dismissible: true, duration: 2000 });
 		} catch (error) {
-			toast.error('An error occurred during file upload.', { id: toastId });
+			toast.error('An error occurred during file upload.', { id: toastId, dismissible: true });
 			console.error('File upload error:', error);
 		} finally {
 			setUploadToastId(null);
@@ -490,7 +493,7 @@ export default function CustomPrintForm({ presets }: { presets: Preset[] }) {
 
 		if (!uploadResponse) {
 			toast.error('An error occurred during file upload.');
-			console.error('No upload response available.');
+			console.error('No upload response available.', { dismissible: true });
 			setIsLoading(false);
 			return;
 		}
@@ -499,24 +502,23 @@ export default function CustomPrintForm({ presets }: { presets: Preset[] }) {
 			console.log('Adding to basket with upload response:', uploadResponse);
 
 			for (const print of data.prints) {
-				for (let i = 0; i < print.quantity; i++) {
-					addToBasket({
-						id: crypto.randomUUID(),
-						model: {
-							filename: print.file.name,
-							filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | 'obj' | '3mf',
-							serverPath: uploadResponse.url,
-						},
-						printingOptions: print.printingOptions,
-						price: 0, // TODO: calculate price based on options
-					});
-				}
+				addCustomPrintToBasket({
+					id: crypto.randomUUID(),
+					model: {
+						filename: print.file.name,
+						filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | 'obj' | '3mf',
+						serverPath: uploadResponse.url,
+					},
+					printingOptions: print.printingOptions,
+					price: 0, // TODO: calculate price based on options
+					quantity: print.quantity,
+				});
 			}
 			form.reset();
 			triggerHandleRemove();
 			setTriggerFile(null);
 		} catch (error) {
-			toast.error('An error occurred adding items to basket.');
+			toast.error('An error occurred adding items to basket.', { dismissible: true });
 			console.error('Add to basket error:', error);
 		}
 

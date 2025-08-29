@@ -203,14 +203,7 @@ export interface Order {
     | {
         product: string | Product;
         quantity: number;
-        /**
-         * Captured at time of order
-         */
-        snapshot?: {
-          name?: string | null;
-          unitPrice?: number | null;
-        };
-        subtotal?: number | null;
+        price?: number | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'shopProduct';
@@ -557,13 +550,7 @@ export interface OrdersSelect<T extends boolean = true> {
           | {
               product?: T;
               quantity?: T;
-              snapshot?:
-                | T
-                | {
-                    name?: T;
-                    unitPrice?: T;
-                  };
-              subtotal?: T;
+              price?: T;
               id?: T;
               blockName?: T;
             };

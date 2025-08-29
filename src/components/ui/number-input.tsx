@@ -75,6 +75,7 @@ export function NumberInput({ value, min = -Infinity, max = Infinity, onChange, 
 				tabIndex={-1}
 				className='flex items-center rounded-l-md px-2.5 hover:bg-accent/50 disabled:pointer-events-none disabled:opacity-50'
 				disabled={currentValue <= min}
+				type='button'
 				onPointerDown={handlePointerDown(-1)}>
 				<Minus className='size-4' strokeWidth={2.5} />
 			</button>
@@ -124,6 +125,7 @@ export function NumberInput({ value, min = -Infinity, max = Infinity, onChange, 
 				tabIndex={-1}
 				className='flex items-center rounded-r-md px-2.5 hover:bg-accent/50 disabled:pointer-events-none disabled:opacity-50'
 				disabled={currentValue >= max}
+				type='button'
 				onPointerDown={handlePointerDown(1)}>
 				<Plus className='size-4' strokeWidth={2.5} />
 			</button>

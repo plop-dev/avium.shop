@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PrintingOption, Product } from '@/payload-types';
-import { addToBasket } from '@/stores/basket';
+import { addShopProductToBasket, addToBasket } from '@/stores/basket';
 import numToGBP from '@/utils/numToGBP';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -20,7 +20,6 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 	const [selectedColour, setSelectedColour] = useState<string>('');
 
 	const availableColours = useMemo(() => {
-		console.log(product.printingOptions);
 		return product.printingOptions.plastic[0].colours || [{ colour: '#eee', id: 'default' }];
 	}, []);
 
@@ -33,9 +32,25 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 	};
 
 	const handleAddToCart = (product: Product, quantity = 1) => {
-		const colourName = availableColours.find(c => c.colour === selectedColour) || 'Default';
-		toast.success(`Added ${quantity} x ${product.name} (${colourName}) to basket`);
-		for (let i = 0; i < Math.max(1, quantity); i++) addToBasket(product);
+		toast.success(`Added ${quantity} x ${product.name} to basket`);
+		addShopProductToBasket({
+			id: crypto.randomUUID(),
+			price: product.price,
+			quantity: quantity,
+			product: {
+				name: product.name,
+				description: product.description,
+				pictures: product.pictures,
+				price: product.price,
+				orders: product.orders,
+				printingOptions: {
+					plastic: product.printingOptions.plastic[0].name,
+					colour: selectedColour,
+					layerHeight: product.printingOptions.layerHeight,
+					infill: product.printingOptions.infill,
+				},
+			},
+		});
 	};
 
 	const pic = product.pictures?.[0];
