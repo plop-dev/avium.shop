@@ -10,6 +10,10 @@ const printSchema = z
 			.refine(file => file.size <= MAX_FILE_SIZE, `Max file size is 100MB.`)
 			.refine(file => ACCEPTED_FILE_TYPES.some(type => file.name.endsWith(type)), 'Only .stl, .obj, and .3mf files are accepted.'),
 		quantity: z.coerce.number().min(1, 'Quantity must be at least 1').max(1000, "that's not happening").default(1),
+		material: z.object({
+			plastic: z.string().min(1, 'Please select a plastic type'),
+			color: z.string().min(1, 'Please select a colour'),
+		}),
 		printingOptions: z.object({
 			preset: z.string().optional(),
 			layerHeight: z.coerce.number().optional(),
@@ -22,7 +26,5 @@ const printSchema = z
 	});
 
 export const customOrderFormSchema = z.object({
-	name: z.string().min(3, 'Order name must be at least 3 characters long.'),
 	prints: z.array(printSchema).min(1, 'At least one print is required.'),
-	comments: z.string().optional(),
 });

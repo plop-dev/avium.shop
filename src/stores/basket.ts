@@ -12,9 +12,11 @@ export type CustomPrint = {
 		preset?: string; // relationship to presets
 		layerHeight?: number;
 		infill?: number;
+		plastic: string;
+		colour: string;
 	};
-	price: number;
 	quantity: number;
+	price: number;
 };
 
 export type ShopProduct = {

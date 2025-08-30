@@ -1,9 +1,13 @@
+'use client';
+
 import { Minus, Plus, Trash2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BasketItem as BasketItemType, CustomPrint, ShopProduct } from '@/stores/basket';
 import { NumberInput } from './ui/number-input';
+import { Preset, PrintingOption } from '@/payload-types';
+import useSWR, { Fetcher } from 'swr';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -23,36 +27,71 @@ export default function BasketItem({
 	onQuantityChange: (id: string, newQuantity: number) => void;
 	onRemove: (id: string) => void;
 }) {
+	function getPreset(id: string) {
+		const fetcher: Fetcher<Preset, string> = (url: string) => fetch(url).then(res => res.json());
+		return useSWR(`/api/presets/${id}`, fetcher);
+	}
+	function getPlastic(id: string) {
+		const fetcher: Fetcher<PrintingOption, string> = (url: string) => fetch(url).then(res => res.json());
+		return useSWR(`/api/globals/printing-options`, fetcher);
+	}
+
 	const handleQuantityChange = (value: number) => {
 		onQuantityChange(item.id, value);
 	};
 
-	const renderCustomPrint = (print: CustomPrint) => (
-		<>
-			<div>
-				<h4 className='font-medium text-sm'>{print.model.filename}</h4>
-				<p className='text-xs text-muted-foreground'>{print.id}</p>
-			</div>
+	const renderCustomPrint = (print: CustomPrint) => {
+		const {
+			data: presetData,
+			isLoading: presetLoading,
+			error,
+		} = print.printingOptions.preset ? getPreset(print.printingOptions.preset) : { data: null, isLoading: false, error: null };
+		const { data: plasticData, isLoading: plasticLoading } = print.printingOptions.plastic
+			? getPlastic(print.printingOptions.plastic)
+			: { data: null, isLoading: false };
 
-			<div className='flex flex-wrap gap-1'>
-				{print.printingOptions.layerHeight && (
-					<Badge variant='default' className='text-xs'>
-						{print.printingOptions.layerHeight}mm layer
+		return (
+			<>
+				<div>
+					<h4 className='font-medium text-sm'>{print.model.filename}</h4>
+					<p className='text-xs text-muted-foreground'>{print.id}</p>
+				</div>
+
+				<div className='flex flex-wrap gap-1'>
+					{print.printingOptions.plastic && (
+						<Badge variant='default' className='text-xs'>
+							{plasticLoading
+								? 'Loading...'
+								: plasticData
+								? plasticData.plastic?.find(p => p.id === print.printingOptions.plastic)?.name
+								: 'Preset not found'}
+						</Badge>
+					)}
+					{print.printingOptions.layerHeight && (
+						<Badge variant='default' className='text-xs'>
+							{print.printingOptions.layerHeight}mm layer
+						</Badge>
+					)}
+					{print.printingOptions.infill && (
+						<Badge variant='outline' className='text-xs'>
+							{print.printingOptions.infill}% infill
+						</Badge>
+					)}
+
+					{print.printingOptions.preset && (
+						<Badge variant='secondary' className='text-xs'>
+							{presetLoading ? 'Loading...' : presetData ? presetData.name : 'Preset not found'}
+						</Badge>
+					)}
+					<Badge variant='secondary' style={{ backgroundColor: print.printingOptions.colour }} className='text-xs'>
+						<p className='contrast-[9000] invert grayscale brightness-[1.5]' style={{ color: print.printingOptions.colour }}>
+							{print.printingOptions.colour}
+						</p>
 					</Badge>
-				)}
-				{print.printingOptions.infill && (
-					<Badge variant='outline' className='text-xs'>
-						{print.printingOptions.infill}% infill
-					</Badge>
-				)}
-				{print.printingOptions.preset && (
-					<Badge variant='secondary' className='text-xs'>
-						{print.printingOptions.preset}
-					</Badge>
-				)}
-			</div>
-		</>
-	);
+				</div>
+			</>
+		);
+	};
 
 	const renderShopProduct = (product: ShopProduct) => (
 		<>

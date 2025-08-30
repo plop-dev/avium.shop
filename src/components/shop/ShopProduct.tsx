@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PrintingOption, Product } from '@/payload-types';
-import { addShopProductToBasket, addToBasket } from '@/stores/basket';
+import { addShopProductToBasket, addToBasket, ShopProduct as ShopProductType } from '@/stores/basket';
 import numToGBP from '@/utils/numToGBP';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -31,10 +31,23 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 		}
 	};
 
-	const handleAddToCart = (product: Product, quantity = 1) => {
+	async function generateShopProductId(product: ShopProductType['product']) {
+		const res = await crypto.subtle.digest(
+			'SHA-1',
+			new TextEncoder().encode([...Object.values(product), ...Object.values(product.printingOptions)].join('')),
+		);
+		return Array.from(new Uint8Array(res))
+			.map(b => b.toString(36))
+			.join('')
+			.replace(/[^a-zA-Z0-9]/g, '');
+	}
+
+	const handleAddToCart = async (product: ShopProductType['product'], quantity = 1) => {
 		toast.success(`Added ${quantity} x ${product.name} to basket`);
+		const id = await generateShopProductId(product);
+
 		addShopProductToBasket({
-			id: crypto.randomUUID(),
+			id,
 			price: product.price,
 			quantity: quantity,
 			product: {
@@ -44,7 +57,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 				price: product.price,
 				orders: product.orders,
 				printingOptions: {
-					plastic: product.printingOptions.plastic[0].name,
+					plastic: product.printingOptions.plastic,
 					colour: selectedColour,
 					layerHeight: product.printingOptions.layerHeight,
 					infill: product.printingOptions.infill,
@@ -259,7 +272,22 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 								</Button>
 								<Button
 									onClick={() => {
-										handleAddToCart(product, qty);
+										handleAddToCart(
+											{
+												name: product.name,
+												description: product.description,
+												pictures: product.pictures,
+												price: product.price,
+												orders: product.orders,
+												printingOptions: {
+													plastic: product.printingOptions.plastic[0]?.name ?? '',
+													layerHeight: product.printingOptions.layerHeight,
+													infill: product.printingOptions.infill,
+													colour: selectedColour,
+												},
+											},
+											qty,
+										);
 										setOpen(false);
 									}}
 									disabled={availableColours.length > 0 && !selectedColour}>

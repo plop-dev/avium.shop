@@ -1,6 +1,6 @@
 'use client';
 
-import { ShoppingBasket, FileText, Package } from 'lucide-react';
+import { ShoppingBasket, FileText, Package, AlertCircle } from 'lucide-react';
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from './ui/drawer';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -10,6 +10,7 @@ import BasketItem from './BasketItem';
 import numToGBP from '@/utils/numToGBP';
 import { useStore } from '@nanostores/react';
 import { $basket, setItemQuantity, CustomPrint, ShopProduct, BasketItem as BasketItemType } from '@/stores/basket';
+import { $orderValidation } from '@/stores/order';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -23,6 +24,7 @@ const isShopProduct = (item: BasketItemType): item is ShopProduct => {
 export default function Basket() {
 	const [totalItems, setTotalItems] = useState(0);
 	const basketItems = useStore($basket);
+	const orderValidation = useStore($orderValidation);
 
 	const handleQuantityChange = (id: string, newQuantity: number) => {
 		setItemQuantity(id, newQuantity);
@@ -33,16 +35,16 @@ export default function Basket() {
 	};
 
 	useEffect(() => {
-		basketItems.forEach(item => {
-			console.log(`Basket item:`);
-			console.log(item);
-		});
 		setTotalItems(basketItems.reduce((sum, item) => sum + item.quantity, 0));
 	}, [basketItems]);
 
 	// Separate items by type
 	const customPrints = basketItems.filter(isCustomPrint);
 	const shopProducts = basketItems.filter(isShopProduct);
+
+	// Check if we have any custom prints that need a valid order name
+	const hasCustomPrints = customPrints.length > 0;
+	const isCheckoutDisabled = basketItems.length === 0 || (hasCustomPrints && !orderValidation.orderNameValid);
 
 	return (
 		<Drawer direction='right' autoFocus={true}>
@@ -112,7 +114,14 @@ export default function Basket() {
 						<p>{numToGBP(basketItems.reduce((sum, item) => sum + item.price * item.quantity, 0))}</p>
 					</div>
 
-					<Button disabled={basketItems.length === 0}>
+					{hasCustomPrints && !orderValidation.orderNameValid && (
+						<div className='flex items-center gap-2 text-amber-500 text-sm mb-2'>
+							<AlertCircle className='h-4 w-4' />
+							<p>Please provide a valid order name for your custom prints</p>
+						</div>
+					)}
+
+					<Button disabled={isCheckoutDisabled}>
 						<ShoppingBasket className='mr-2' />
 						Checkout ({totalItems} {totalItems === 1 ? 'item' : 'items'})
 					</Button>

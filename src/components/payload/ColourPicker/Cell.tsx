@@ -5,7 +5,7 @@ interface ColourPickerCellProps {
 }
 
 const ColourPickerCell: React.FC<ColourPickerCellProps> = ({ cellData }) => {
-	if (!cellData) return <span className='text-muted-foreground'>No color</span>;
+	if (!cellData) return <span className='text-muted-foreground'>No colour</span>;
 
 	return (
 		<div className='flex items-center gap-2'>

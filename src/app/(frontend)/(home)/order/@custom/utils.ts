@@ -72,6 +72,7 @@ export async function uploadFile(
 		};
 
 		const res = await uploadChunk(chunkPayload, serverUrl);
+		console.log(`Chunk ${chunkIndex + 1}/${totalChunks} upload response:`, res);
 		if ('complete' in res && res.complete) {
 			uploadResponse = res;
 		}
