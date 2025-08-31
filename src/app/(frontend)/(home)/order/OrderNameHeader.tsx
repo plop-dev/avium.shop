@@ -21,7 +21,6 @@ export default function OrderNameHeader() {
 
 	return (
 		<div className='mb-12'>
-			{/* Clean step indicator */}
 			<div className='flex items-center mb-4 justify-center'>
 				<div className='inline-flex items-center'>
 					<div
@@ -31,24 +30,21 @@ export default function OrderNameHeader() {
 						)}>
 						1
 					</div>
-					<h2 className='ml-2 text-lg font-medium'>Name your order</h2>
+					<h2 className='ml-2 text-lg font-medium !p-0'>Name your order</h2>
 				</div>
 			</div>
 
-			{/* Order name card */}
 			<div
 				className={cn(
-					'rounded-lg border p-6 transition-all max-w-xl mx-auto',
+					'rounded-lg border-2 p-6 transition-all max-w-xl mx-auto',
 					isValid ? 'border-primary/30 bg-primary/5' : 'border-border',
 				)}>
 				<div className='space-y-4'>
-					{/* Instructions */}
 					<p className='text-sm text-muted-foreground'>
 						Give your order a name so you can easily identify it later. Your order can include custom prints, shop products, or
 						both.
 					</p>
 
-					{/* Input field */}
 					<div>
 						<div className='flex items-center justify-between'>
 							<label htmlFor='orderName' className='text-sm font-medium mb-2'>
@@ -67,7 +63,6 @@ export default function OrderNameHeader() {
 							)}
 						/>
 
-						{/* Status message */}
 						<div className='mt-2'>
 							{!orderName ? (
 								<p className='text-xs text-muted-foreground'>Enter a name with at least 3 characters</p>
