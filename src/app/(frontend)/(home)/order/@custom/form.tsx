@@ -284,7 +284,7 @@ function PrintItemCard({
 				)}
 			</div>
 
-			<Accordion type='multiple' defaultValue={['file', 'material']} className='w-full'>
+			<Accordion type='single' defaultValue={'file'} className='w-full'>
 				<AccordionItem value='file'>
 					<AccordionTrigger>
 						<div className={cn('flex items-center gap-2', fileErrors && 'text-red-500')}>
