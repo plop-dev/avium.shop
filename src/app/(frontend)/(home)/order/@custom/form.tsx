@@ -23,7 +23,6 @@ import { Progress } from '@/components/ui/progress';
 import { UploadedFileResponse, uploadFile } from './utils';
 import { addCustomPrintToBasket, CustomPrint } from '@/stores/basket';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { $orderValidation, setOrderNameValid } from '@/stores/order';
 import { useStore } from '@nanostores/react';
 
@@ -583,9 +582,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 	// Update order name validation whenever it changes
 	useEffect(() => {
-		const isValid = orderComments.trim().length >= 3;
-		setOrderNameValid(isValid, orderComments);
-	}, [orderComments]);
+		const isValid = orderValidation.orderName.trim().length >= 3;
+		setOrderNameValid(isValid, orderValidation.orderName);
+	}, [orderValidation.orderName]);
 
 	// Update toast when upload progress changes
 	useEffect(() => {
@@ -625,7 +624,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		// Use the persistent order name and comments
 		const orderData = {
 			...data,
-			name: orderValidation.orderNameValid,
+			name: orderValidation.orderName,
 			comments: orderComments,
 		};
 
