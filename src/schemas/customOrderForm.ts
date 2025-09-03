@@ -12,7 +12,7 @@ const printSchema = z
 		quantity: z.coerce.number().min(1, 'Quantity must be at least 1').max(1000, "that's not happening").default(1),
 		material: z.object({
 			plastic: z.string().min(1, 'Please select a plastic type'),
-			color: z.string().min(1, 'Please select a colour'),
+			colour: z.string().min(1, 'Please select a colour'),
 		}),
 		printingOptions: z.object({
 			preset: z.string().optional(),

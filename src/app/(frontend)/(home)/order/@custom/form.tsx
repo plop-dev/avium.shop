@@ -25,6 +25,7 @@ import { addCustomPrintToBasket, CustomPrint } from '@/stores/basket';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { $orderValidation, setOrderNameValid } from '@/stores/order';
 import { useStore } from '@nanostores/react';
+import BasketItem from '@/components/BasketItem';
 
 type CustomOrderFormValues = z.infer<typeof customOrderFormSchema>;
 
@@ -33,7 +34,7 @@ const defaultPrintItem = {
 	quantity: 1,
 	material: {
 		plastic: '',
-		color: '',
+		colour: '',
 	},
 	printingOptions: {
 		infill: 10,
@@ -71,9 +72,9 @@ function MaterialSelection({ index, printingOptions }: { index: number; printing
 		control,
 		name: `prints.${index}.material.plastic`,
 	});
-	const selectedColor = useWatch({
+	const selectedColour = useWatch({
 		control,
-		name: `prints.${index}.material.color`,
+		name: `prints.${index}.material.colour`,
 	});
 
 	// Find the selected plastic block to get its colours
@@ -82,13 +83,13 @@ function MaterialSelection({ index, printingOptions }: { index: number; printing
 
 	// Reset colour when plastic changes
 	useEffect(() => {
-		if (selectedPlastic && selectedColor) {
-			const isColorAvailable = availableColours.some(c => c.colour === selectedColor);
-			if (!isColorAvailable) {
-				setValue(`prints.${index}.material.color`, '', { shouldValidate: false });
+		if (selectedPlastic && selectedColour) {
+			const isColourAvailable = availableColours.some(c => c.colour === selectedColour);
+			if (!isColourAvailable) {
+				setValue(`prints.${index}.material.colour`, '', { shouldValidate: false });
 			}
 		}
-	}, [selectedPlastic, selectedColor, availableColours, setValue, index]);
+	}, [selectedPlastic, selectedColour, availableColours, setValue, index]);
 
 	return (
 		<div className='space-y-6'>
@@ -125,10 +126,10 @@ function MaterialSelection({ index, printingOptions }: { index: number; printing
 
 			<FormField
 				control={control}
-				name={`prints.${index}.material.color`}
+				name={`prints.${index}.material.colour`}
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Color</FormLabel>
+						<FormLabel>Colour</FormLabel>
 						<FormControl>
 							{!selectedPlastic ? (
 								<div className='text-center py-8 text-muted-foreground'>
@@ -469,6 +470,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	const [isOpen, setIsOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isAddingPrint, setIsAddingPrint] = useState(false);
+	// NEW: quote view state and snapshot of prints
+	const [isQuoteView, setIsQuoteView] = useState(false);
+	const [quoteItems, setQuoteItems] = useState<CustomOrderFormValues['prints']>([]);
 	const [uploadProgress, setUploadProgress] = useState({
 		progress: 0,
 		currentChunk: 0,
@@ -477,6 +481,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	const [triggerFile, setTriggerFile] = useState<File | null>(null);
 	const [uploadToastId, setUploadToastId] = useState<string | number | null>(null);
 	const [orderComments, setOrderComments] = useState('');
+	const [orderData, setOrderData] = useState<CustomOrderFormValues | null>();
 	const orderValidation = useStore($orderValidation);
 
 	const form = useForm<CustomOrderFormValues>({
@@ -492,6 +497,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		control: form.control,
 		name: 'prints',
 	});
+
+	//#region file upload
 
 	// File upload hook for the trigger
 	const {
@@ -580,6 +587,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		}
 	}, [append, fields.length]);
 
+	//#endregion
+
 	// Update order name validation whenever it changes
 	useEffect(() => {
 		const isValid = orderValidation.orderName.trim().length >= 3;
@@ -612,24 +621,37 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	}, [uploadProgress, uploadToastId]);
 
 	async function onSubmit(data: CustomOrderFormValues) {
+		setOrderData(data);
 		// Validate order name before proceeding
 		if (!orderValidation.orderNameValid) {
 			toast.error('Please enter a valid order name (at least 3 characters)');
 			return;
 		}
 
+		// NEW: switch to quote view instead of uploading now
+		setQuoteItems(data.prints);
+		setIsQuoteView(true);
+		// TODO: In the future, kick off upload and pricing here, then populate quotes instead of 'loading'
+	}
+
+	async function handleAddToBasket() {
 		setIsLoading(true);
 		let uploadResponse: UploadedFileResponse | undefined = undefined;
 
-		// Use the persistent order name and comments
-		const orderData = {
-			...data,
+		const data = {
+			...orderData,
 			name: orderValidation.orderName,
 			comments: orderComments,
 		};
 
+		if (!data.prints) {
+			toast.error('No prints to process. Please try again.', { dismissible: true });
+			setIsLoading(false);
+			return;
+		}
+
 		//#region upload
-		const files = orderData.prints.map(p => p.file);
+		const files = data.prints.map(p => p.file);
 
 		const toastId = toast.loading('Preparing upload...', {
 			dismissible: false,
@@ -670,8 +692,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		//#region add to basket
 
-		// every print will be a separate item in the basket (order name chosen in form is irrelevant for now)
-
 		if (!uploadResponse) {
 			toast.error('An error occurred during file upload. Please try again.', { dismissible: true });
 			console.error('No upload response available.');
@@ -682,7 +702,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		try {
 			console.log('Adding to basket with upload response:', uploadResponse);
 
-			for (const print of orderData.prints) {
+			for (const print of data.prints) {
 				addCustomPrintToBasket({
 					id: crypto.randomUUID(),
 					model: {
@@ -692,7 +712,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					},
 					printingOptions: {
 						...print.printingOptions,
-						colour: print.material.color,
+						colour: print.material.colour,
 						plastic: print.material.plastic,
 					},
 					price: 0, // TODO: calculate price based on options
@@ -732,7 +752,13 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 	return (
 		<div className='space-y-4'>
-			<Dialog open={isOpen} onOpenChange={setIsOpen} modal={true}>
+			<Dialog
+				open={isOpen}
+				onOpenChange={o => {
+					setIsOpen(o);
+					if (!o) setIsQuoteView(false); // NEW: reset slider when closing
+				}}
+				modal={true}>
 				<div className='w-full space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm cursor-pointer'>
 					<div className=''>
 						<h3 className='text-base font-medium'>3D File Upload</h3>
@@ -808,79 +834,158 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 						</div>
 					)}
 				</div>
-				<DialogContent className='!w-4xl !max-w-4xl overflow-y-auto max-h-[calc(100vh-12rem)]' asChild>
-					<div className='flex flex-col items-center justify-center space-y-6 min-w-3xl'>
-						<DialogHeader className='w-full'>
-							<DialogTitle className='flex items-center gap-2'>
-								<Printer className='h-5 w-5 text-primary' />
-								Add a Custom Print to Your Order
-							</DialogTitle>
-							<DialogDescription>Configure your 3D printing requirements and upload your model files</DialogDescription>
-						</DialogHeader>
 
-						<div className='w-full space-y-6'>
-							<Form {...form}>
-								<form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
-									<div className='space-y-4'>
-										<div className='flex items-center justify-between'>
-											<h2 className='text-xl font-semibold'>Print Items</h2>
-											<span className='text-sm text-muted-foreground'>{fields.length} item(s)</span>
+				{/* REPLACED: DialogContent with sliding two-panel layout */}
+				<DialogContent className='!w-4xl !max-w-4xl max-h-[calc(100vh-8rem)] overflow-hidden' asChild>
+					<div className='relative w-full h-[calc(100vh-12rem)] overflow-hidden'>
+						<div
+							className='flex w-[200%] h-full transition-transform duration-500 ease-out'
+							style={{ transform: isQuoteView ? 'translateX(-50%)' : 'translateX(0%)' }}>
+							{/* Left panel: original form */}
+							<div className='w-1/2 flex-none px-4 h-full'>
+								<div className='flex flex-col space-y-6 h-full overflow-y-auto'>
+									<DialogHeader className='w-full'>
+										<DialogTitle className='flex items-center gap-2'>
+											<Printer className='h-5 w-5 text-primary' />
+											Add a Custom Print to Your Order
+										</DialogTitle>
+										<DialogDescription>
+											Configure your 3D printing requirements and upload your model files
+										</DialogDescription>
+									</DialogHeader>
+
+									<div className='w-full space-y-6'>
+										<Form {...form}>
+											<form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
+												<div className='space-y-4'>
+													<div className='flex items-center justify-between'>
+														<h2 className='text-xl font-semibold'>Print Items</h2>
+														<span className='text-sm text-muted-foreground'>{fields.length} item(s)</span>
+													</div>
+
+													{fields.map((field, index) => (
+														<PrintItemCard
+															key={field.id}
+															index={index}
+															remove={remove}
+															presets={presets}
+															printingOptions={printingOptions}
+														/>
+													))}
+
+													<div className='flex gap-3'>
+														<Button
+															type='button'
+															variant='secondary'
+															className='flex-1 border-dashed bg-secondary/70 hover:bg-secondary/50'
+															onClick={handleAddPrint}
+															disabled={isAddingPrint}>
+															<LoadingSwap isLoading={isAddingPrint} className='flex items-center'>
+																<PlusCircle className='mr-2 h-4 w-4' />
+																Add Print
+															</LoadingSwap>
+														</Button>
+													</div>
+												</div>
+
+												<Separator />
+
+												<div className='space-y-2'>
+													<label
+														htmlFor='orderComments'
+														className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
+														Order Comments (Optional)
+													</label>
+													<Textarea
+														id='orderComments'
+														placeholder='Any special instructions, material preferences, or questions about your order?'
+														value={orderComments}
+														onChange={e => setOrderComments(e.target.value)}
+														className='min-h-[100px] w-full'
+													/>
+													<p className='text-sm text-muted-foreground'>
+														These comments will apply to the entire order
+													</p>
+												</div>
+
+												<Button
+													type='submit'
+													className='w-full'
+													size='lg'
+													disabled={isLoading || !orderValidation.orderNameValid}>
+													<LoadingSwap isLoading={isLoading}>
+														{!orderValidation.orderNameValid
+															? 'Please enter a valid order name'
+															: 'Submit for Quote'}
+													</LoadingSwap>
+												</Button>
+											</form>
+										</Form>
+									</div>
+								</div>
+							</div>
+
+							{/* Right panel: quote view */}
+							<div className='w-1/2 flex-none px-4 h-full'>
+								<div className='flex flex-col gap-4 h-full overflow-y-auto'>
+									<div className='flex items-center justify-between'>
+										<div>
+											<h2 className='text-xl font-semibold flex items-center gap-2'>
+												<Printer className='h-5 w-5 text-primary' />
+												Your Quote
+											</h2>
+											<p className='text-sm text-muted-foreground'>
+												Review your prints while we calculate the quote.
+											</p>
 										</div>
-
-										{fields.map((field, index) => (
-											<PrintItemCard
-												key={field.id}
-												index={index}
-												remove={remove}
-												presets={presets}
-												printingOptions={printingOptions}
-											/>
-										))}
-
-										<div className='flex gap-3'>
-											<Button
-												type='button'
-												variant='secondary'
-												className='flex-1 border-dashed bg-secondary/70 hover:bg-secondary/50'
-												onClick={handleAddPrint}
-												disabled={isAddingPrint}>
-												<LoadingSwap isLoading={isAddingPrint} className='flex items-center'>
-													<PlusCircle className='mr-2 h-4 w-4' />
-													Add Print
-												</LoadingSwap>
-											</Button>
-										</div>
+										<Button type='button' variant='ghost' onClick={() => setIsQuoteView(false)}>
+											Back to form
+										</Button>
 									</div>
 
-									<Separator />
+									<div className='flex flex-col gap-3'>
+										{quoteItems.map((p, i) => {
+											const preset = p.printingOptions.preset
+												? presets.find(pr => pr.id === p.printingOptions.preset)
+												: undefined;
+											const plasticName =
+												printingOptions.plastic?.find(pl => pl.id === p.material.plastic)?.name || '—';
+											const filename = p.file?.name || 'No file selected';
 
-									<div className='space-y-2'>
-										<label
-											htmlFor='orderComments'
-											className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
-											Order Comments (Optional)
-										</label>
-										<Textarea
-											id='orderComments'
-											placeholder='Any special instructions, material preferences, or questions about your order?'
-											value={orderComments}
-											onChange={e => setOrderComments(e.target.value)}
-											className='min-h-[100px] w-full'
-										/>
-										<p className='text-sm text-muted-foreground'>These comments will apply to the entire order</p>
+											return (
+												<BasketItem
+													item={{
+														id: `print-${i}`,
+														model: {
+															filename: (() => {
+																const parts = filename.split('.');
+																parts.pop();
+																return parts.join('.');
+															})(),
+															filetype: (filename.split('.').pop() || 'stl') as 'stl' | 'obj' | '3mf',
+															serverPath: '', // not uploaded to order server yet
+														},
+														price: null, // get quote
+														printingOptions: {
+															colour: p.material.colour,
+															plastic: p.material.plastic,
+															infill: p.printingOptions.infill,
+															layerHeight: p.printingOptions.layerHeight,
+															preset: p.printingOptions.preset,
+														},
+														quantity: p.quantity,
+													}}></BasketItem>
+											);
+										})}
+
+										{quoteItems.length === 0 && <p className='text-sm text-muted-foreground'>No prints found.</p>}
 									</div>
 
-									<Button
-										type='submit'
-										className='w-full'
-										size='lg'
-										disabled={isLoading || !orderValidation.orderNameValid}>
-										<LoadingSwap isLoading={isLoading}>
-											{!orderValidation.orderNameValid ? 'Please enter a valid order name' : 'Submit for Quote'}
-										</LoadingSwap>
+									<Button className='mt-auto w-full' onClick={() => handleAddToBasket()}>
+										Add {quoteItems.length} Print{quoteItems.length > 1 && 's'} To Basket
 									</Button>
-								</form>
-							</Form>
+								</div>
+							</div>
 						</div>
 					</div>
 				</DialogContent>

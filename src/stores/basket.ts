@@ -16,7 +16,7 @@ export type CustomPrint = {
 		colour: string;
 	};
 	quantity: number;
-	price: number;
+	price: number | null;
 };
 
 export type ShopProduct = {
@@ -36,7 +36,6 @@ export type ShopProduct = {
 		};
 	};
 	quantity: number;
-	price: number;
 };
 
 export type BasketItem = ShopProduct | CustomPrint;

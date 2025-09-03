@@ -8,6 +8,7 @@ import { BasketItem as BasketItemType, CustomPrint, ShopProduct } from '@/stores
 import { NumberInput } from './ui/number-input';
 import { Preset, PrintingOption } from '@/payload-types';
 import useSWR, { Fetcher } from 'swr';
+import numToGBP from '@/utils/numToGBP';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -22,10 +23,12 @@ export default function BasketItem({
 	item,
 	onQuantityChange,
 	onRemove,
+	price,
 }: {
 	item: BasketItemType;
-	onQuantityChange: (id: string, newQuantity: number) => void;
-	onRemove: (id: string) => void;
+	onQuantityChange?: (id: string, newQuantity: number) => void;
+	onRemove?: (id: string) => void;
+	price?: number | null;
 }) {
 	function getPreset(id: string) {
 		const fetcher: Fetcher<Preset, string> = (url: string) => fetch(url).then(res => res.json());
@@ -37,7 +40,7 @@ export default function BasketItem({
 	}
 
 	const handleQuantityChange = (value: number) => {
-		onQuantityChange(item.id, value);
+		onQuantityChange?.(item.id, value);
 	};
 
 	const renderCustomPrint = (print: CustomPrint) => {
@@ -132,14 +135,23 @@ export default function BasketItem({
 						</div>
 					</div>
 
-					<Button variant='ghost' size='sm' onClick={() => onRemove(item.id)} className='text-destructive hover:text-destructive'>
+					<Button
+						variant='ghost'
+						size='sm'
+						onClick={() => onRemove?.(item.id)}
+						className='text-destructive hover:text-destructive'>
 						<Trash2 className='h-4 w-4' />
 					</Button>
 				</div>
 
 				<div className='flex items-center justify-between mt-3 pt-3 border-t'>
 					<NumberInput min={1} max={100000} value={item.quantity} onChange={handleQuantityChange}></NumberInput>
-					<p className='text-sm text-muted-foreground'>{item.quantity > 1 ? `${item.quantity} prints` : '1 print'}</p>
+					<div className='flex items-center gap-4'>
+						<p className='text-sm text-muted-foreground'>{item.quantity > 1 ? `${item.quantity} prints` : '1 print'}</p>
+						<p className='text-sm font-medium'>
+							{price === null ? 'Loading...' : price !== undefined ? `${numToGBP(price)}` : ''}
+						</p>
+					</div>
 				</div>
 			</CardContent>
 		</Card>
