@@ -208,8 +208,8 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 												max={100000}
 												className='w-28'
 												value={qty}
-												onChange={(e: any) => {
-													const raw = (e?.target?.value ?? e?.value ?? e) as any;
+												onChange={(e: React.ChangeEvent<HTMLInputElement> | number) => {
+													const raw = typeof e === 'number' ? e : e.target.value;
 													const v = Number(raw);
 													const n = Number.isFinite(v) ? v : 1;
 													setQty(Math.min(100000, Math.max(1, n)));
