@@ -647,6 +647,11 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			return;
 		}
 
+		if (!userData) {
+			toast.error('You must be logged in to submit an order. Please log in and try again.', { dismissible: true });
+			return;
+		}
+
 		setQuoteItems(data.prints);
 		setIsQuoteView(true);
 
@@ -676,7 +681,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				},
 				body: JSON.stringify({
 					printHash,
-					user: user.data?.user?.id,
+					user: userData.id,
 					quantity: print.quantity,
 					printingOptions: {
 						...print.printingOptions,
@@ -692,20 +697,19 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			}).then(res => res.json());
 
 			// get filament details from payloadcms (json file)
-			const fetcher: Fetcher<Filament, string> = (url: string) => fetch(url).then(res => res.json());
-			const query = stringify(
-				{
-					where: {
-						name: print.material.plastic,
-					},
-					limit: 1,
-				},
-				{ addQueryPrefix: true },
-			);
-
 			try {
-				const filamentResponse = await fetch(`/api/filaments${query}`);
-				const filamentJSON = await filamentResponse.json();
+				const query = stringify(
+					{
+						where: {
+							name: print.material.plastic,
+						},
+						limit: 1,
+					},
+					{ addQueryPrefix: true },
+				);
+
+				const filamentRes = await fetch(`/api/filaments${query}`);
+				const filamentJSON = await filamentRes.json();
 
 				if (filamentJSON.totalDocs === 0) {
 					toast.error(`No filament profile found for ${print.material.plastic}. Please contact support.`, { dismissible: true });
@@ -749,9 +753,19 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				};
 
 				if (print.printingOptions.preset) {
+					// get preset from payloadcms to get exact name (not just display name)
+					const query = stringify({
+						where: {
+							name: print.printingOptions.preset,
+						},
+						limit: 1,
+					});
+					const presetRes = await fetch(`/api/presets${query}`);
+					const presetJSON = await presetRes.json();
+
 					body = {
 						name: quoteRes.doc.id,
-						preset: print.printingOptions.preset,
+						preset: presetJSON.docs[0].bambulabName,
 					};
 				}
 
