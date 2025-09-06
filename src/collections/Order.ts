@@ -151,7 +151,7 @@ export const Orders: CollectionConfig = {
 						// compute line subtotals and order total
 						if (Array.isArray(data?.prints)) {
 							let total = 0;
-							data.prints = data.prints.map((p: any) => {
+							data.prints = data.prints.map(p => {
 								const qty = Number(p?.quantity ?? 0);
 
 								if (p?.blockType === 'ShopProduct') {
