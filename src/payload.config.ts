@@ -17,6 +17,8 @@ import { Orders } from '@/collections/Order';
 import { Presets } from '@/collections/Presets';
 import { Products } from '@/collections/Products';
 import { Media } from '@/collections/Media';
+import { Quotes } from './collections/Quotes';
+import { Filaments } from './collections/Filaments';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -31,7 +33,7 @@ export default buildConfig({
 		dateFormat: 'dd/MM/yyyy',
 	},
 	globals: [PrintingOptions],
-	collections: [Users, Orders, Presets, Products, Media],
+	collections: [Users, Orders, Presets, Products, Media, Quotes, Filaments],
 	editor: lexicalEditor(),
 	secret: process.env.PAYLOAD_SECRET || '',
 	typescript: {

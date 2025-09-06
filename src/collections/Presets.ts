@@ -30,7 +30,8 @@ export const Presets: CollectionConfig = {
 			label: 'Bambu Lab Preset Name',
 			type: 'text',
 			admin: {
-				description: 'The name of the preset in Bambu Lab',
+				description:
+					'The filename of the profile of the preset (process) in Bambu Studio/Orca Slicer. DO NOT INCLUDE FILE EXTENSION. See C:\\Program Files\\OrcaSlicer\\resources\\profiles\\BBL\\process',
 			},
 		},
 	],

@@ -72,6 +72,8 @@ export interface Config {
     presets: Preset;
     products: Product;
     media: Media;
+    quotes: Quote;
+    filaments: Filament;
     search: Search;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -84,6 +86,8 @@ export interface Config {
     presets: PresetsSelect<false> | PresetsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    quotes: QuotesSelect<false> | QuotesSelect<true>;
+    filaments: FilamentsSelect<false> | FilamentsSelect<true>;
     search: SearchSelect<false> | SearchSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -222,12 +226,10 @@ export interface Order {
           preset?: (string | null) | Preset;
           layerHeight?: number | null;
           infill?: number | null;
+          plastic: string;
+          colour: string;
         };
-        /**
-         * Set after quote acceptance
-         */
         price?: number | null;
-        subtotal?: number | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'customPrint';
@@ -378,9 +380,71 @@ export interface Preset {
    */
   description?: string | null;
   /**
-   * The name of the preset in Bambu Lab
+   * The filename of the profile of the preset (process) in Bambu Studio/Orca Slicer. DO NOT INCLUDE FILE EXTENSION. See C:\Program Files\OrcaSlicer\resources\profiles\BBL\process
    */
   bambulabName?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes".
+ */
+export interface Quote {
+  id: string;
+  /**
+   * The 3D model associated with this item
+   */
+  model: {
+    filename: string;
+    filetype: 'stl' | 'obj' | '3mf';
+    serverPath?: string | null;
+  };
+  quantity: number;
+  printingOptions: {
+    preset?: (string | null) | Preset;
+    layerHeight?: number | null;
+    infill?: number | null;
+    /**
+     * The plastic/material ID
+     */
+    plastic: string;
+    /**
+     * The colour ID
+     */
+    colour: string;
+  };
+  printHash: string;
+  /**
+   * The user who requested the quote
+   */
+  user: string | User;
+  price?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "filaments".
+ */
+export interface Filament {
+  id: string;
+  /**
+   * The name of the filament/material. USE THIS FORMAT: PLA, PETG, ABS, etc.
+   */
+  name: string;
+  /**
+   * JSON data from filament folder in Bambu Labs or Orca Slicer. Path: C:/Program Files/OrcaSlicer/resources/profiles/BBL
+   */
+  data:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -427,6 +491,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'quotes';
+        value: string | Quote;
+      } | null)
+    | ({
+        relationTo: 'filaments';
+        value: string | Filament;
       } | null)
     | ({
         relationTo: 'search';
@@ -571,9 +643,10 @@ export interface OrdersSelect<T extends boolean = true> {
                     preset?: T;
                     layerHeight?: T;
                     infill?: T;
+                    plastic?: T;
+                    colour?: T;
                   };
               price?: T;
-              subtotal?: T;
               id?: T;
               blockName?: T;
             };
@@ -668,6 +741,44 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes_select".
+ */
+export interface QuotesSelect<T extends boolean = true> {
+  model?:
+    | T
+    | {
+        filename?: T;
+        filetype?: T;
+        serverPath?: T;
+      };
+  quantity?: T;
+  printingOptions?:
+    | T
+    | {
+        preset?: T;
+        layerHeight?: T;
+        infill?: T;
+        plastic?: T;
+        colour?: T;
+      };
+  printHash?: T;
+  user?: T;
+  price?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "filaments_select".
+ */
+export interface FilamentsSelect<T extends boolean = true> {
+  name?: T;
+  data?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

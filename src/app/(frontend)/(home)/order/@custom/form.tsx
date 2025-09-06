@@ -18,7 +18,7 @@ import { NumberInput } from '@/components/ui/number-input';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogHeader } from '@/components/ui/dialog';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Preset, PrintingOption } from '@/payload-types';
+import { Filament, Preset, PrintingOption } from '@/payload-types';
 import { Progress } from '@/components/ui/progress';
 import { UploadedFileResponse, uploadFile } from './utils';
 import { addCustomPrintToBasket, CustomPrint } from '@/stores/basket';
@@ -26,6 +26,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { $orderValidation, setOrderNameValid } from '@/stores/order';
 import { useStore } from '@nanostores/react';
 import BasketItem from '@/components/BasketItem';
+import useSWR, { Fetcher } from 'swr';
+import { stringify } from 'qs-esm';
+import { User } from 'next-auth';
+import { useSession } from 'next-auth/react';
 
 type CustomOrderFormValues = z.infer<typeof customOrderFormSchema>;
 
@@ -450,8 +454,14 @@ function PrintItemCard({
 									render={({ field }) => (
 										<FormItem>
 											<FormLabel>Layer Height (mm)</FormLabel>
-											<FormControl>
-												<Input type='number' step='0.01' placeholder='e.g., 0.2' {...field} />
+											<FormControl className='!px-4'>
+												<Input
+													type='number'
+													className='mx-0.5 !w-[calc(100%-0.5rem)]'
+													step='0.01'
+													placeholder='e.g., 0.2'
+													{...field}
+												/>
 											</FormControl>
 											<FormMessage />
 										</FormItem>
@@ -470,7 +480,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	const [isOpen, setIsOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isAddingPrint, setIsAddingPrint] = useState(false);
-	// NEW: quote view state and snapshot of prints
 	const [isQuoteView, setIsQuoteView] = useState(false);
 	const [quoteItems, setQuoteItems] = useState<CustomOrderFormValues['prints']>([]);
 	const [uploadProgress, setUploadProgress] = useState({
@@ -482,6 +491,10 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	const [uploadToastId, setUploadToastId] = useState<string | number | null>(null);
 	const [orderComments, setOrderComments] = useState('');
 	const [orderData, setOrderData] = useState<CustomOrderFormValues | null>();
+	const [userData, setUserData] = useState<User | null>(null);
+
+	const user = useSession();
+
 	const orderValidation = useStore($orderValidation);
 
 	const form = useForm<CustomOrderFormValues>({
@@ -497,6 +510,12 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		control: form.control,
 		name: 'prints',
 	});
+
+	useEffect(() => {
+		if (user.status === 'authenticated') {
+			setUserData(user.data.user || null);
+		}
+	}, [user]);
 
 	//#region file upload
 
@@ -628,13 +647,177 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			return;
 		}
 
-		// NEW: switch to quote view instead of uploading now
 		setQuoteItems(data.prints);
 		setIsQuoteView(true);
-		// TODO: In the future, kick off upload and pricing here, then populate quotes instead of 'loading'
+
+		// query api for a quote for each prints then add to Quotes collection (payloadcms)
+		for (const print of data.prints) {
+			// create new quote in payloadcms
+			const printHash = Array.from(
+				new Uint8Array(
+					await crypto.subtle.digest(
+						'SHA-1',
+						new TextEncoder().encode(
+							[...Object.values(print.material), ...Object.values(print.printingOptions), print.quantity, print.file].join(
+								'',
+							),
+						),
+					),
+				),
+			)
+				.map(b => b.toString(36))
+				.join('')
+				.replace(/[^a-zA-Z0-9]/g, '');
+
+			const quoteRes = await fetch('/api/quotes', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					printHash,
+					user: user.data?.user?.id,
+					quantity: print.quantity,
+					printingOptions: {
+						...print.printingOptions,
+						colour: print.material.colour,
+						plastic: print.material.plastic,
+					},
+					model: {
+						filename: print.file.name,
+						filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | 'obj' | '3mf',
+						serverPath: '', // will be updated after upload OR NOT: if quote is accepted, then this quote object will be discarded
+					},
+				}),
+			}).then(res => res.json());
+
+			// get filament details from payloadcms (json file)
+			const fetcher: Fetcher<Filament, string> = (url: string) => fetch(url).then(res => res.json());
+			const query = stringify(
+				{
+					where: {
+						name: print.material.plastic,
+					},
+					limit: 1,
+				},
+				{ addQueryPrefix: true },
+			);
+
+			try {
+				const filamentResponse = await fetch(`/api/filaments${query}`);
+				const filamentJSON = await filamentResponse.json();
+
+				if (filamentJSON.totalDocs === 0) {
+					toast.error(`No filament profile found for ${print.material.plastic}. Please contact support.`, { dismissible: true });
+					setIsLoading(false);
+					return;
+				}
+
+				// upload filament details (json profile from payloadcms) to api
+				const filamentRequestData = new FormData();
+				filamentRequestData.append('name', `${quoteRes.doc.id}`);
+				filamentRequestData.append(
+					'file',
+					new Blob([JSON.stringify(filamentJSON.docs[0].data)], { type: 'application/json' }),
+					'filament.json',
+				);
+				console.log('filamentJSON', filamentJSON);
+
+				await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/filaments`, {
+					method: 'POST',
+					body: filamentRequestData,
+				});
+			} catch (error) {
+				console.error('Error fetching filament data:', error);
+				toast.error('An error occurred fetching filament data. Please try again.', { dismissible: true });
+				setIsLoading(false);
+				return;
+			}
+
+			// get presets profile 'ready' on the server (generate new preset (process) profile from template)
+			//* only works if a preset is not used
+			try {
+				let body: {
+					name: string;
+					layerHeight?: number;
+					infill?: number;
+					preset?: string;
+				} = {
+					name: quoteRes.doc.id,
+					layerHeight: print.printingOptions.layerHeight || 0.2,
+					infill: print.printingOptions.infill || 10,
+				};
+
+				if (print.printingOptions.preset) {
+					body = {
+						name: quoteRes.doc.id,
+						preset: print.printingOptions.preset,
+					};
+				}
+
+				await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/generate/presets`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(body),
+				});
+			} catch (error) {
+				console.error('Error generating preset profile:', error);
+				toast.error('An error occurred generating preset profile. Please try again.', { dismissible: true });
+				setIsLoading(false);
+				return;
+			}
+
+			// upload all data to api to slice and get quote
+			try {
+				const data = new FormData();
+				data.append('orient', 'false');
+				data.append('arrange', 'false');
+				data.append('exportType', 'gcode');
+				data.append('filament', `${quoteRes.doc.id}`);
+				data.append('plate', `0`);
+				data.append('printer', `machine`); // 'machine' default printer profile (bbl p1s .4 nozzle)
+				data.append('multicolorOnePlate', 'false');
+				data.append('preset', quoteRes.doc.id); // 'preset' is the final JSON profile that will be used for the printer
+				data.append('file', print.file);
+
+				const res = await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice`, {
+					headers: {
+						accept: 'application/octet-stream',
+						'Access-Control-Request-Headers': 'X-Slice-Metadata',
+					},
+					method: 'POST',
+					body: data,
+				});
+
+				if (!res.ok) {
+					toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
+					console.error('Quote request error:', res.statusText);
+					setIsLoading(false);
+					return;
+				}
+
+				const sliceMetadata = res.headers.get('X-Slice-Metadata');
+
+				if (sliceMetadata) {
+					const sliceData = atob(sliceMetadata);
+					console.log('Quote response received for print:', quoteRes.doc.id);
+					console.log(sliceData);
+				} else {
+					console.warn('X-Slice-Metadata header not accessible');
+					console.log('Quote response received for print:', quoteRes.doc.id);
+				}
+			} catch (error) {
+				toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
+				console.error('Quote request error:', error);
+				setIsLoading(false);
+				return;
+			}
+		}
 	}
 
-	async function handleAddToBasket() {
+	async function confirmQuote() {
 		setIsLoading(true);
 		let uploadResponse: UploadedFileResponse | undefined = undefined;
 
@@ -650,7 +833,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			return;
 		}
 
-		//#region upload
+		//#region upload prints to server
 		const files = data.prints.map(p => p.file);
 
 		const toastId = toast.loading('Preparing upload...', {
@@ -685,7 +868,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		//#endregion
 
-		//TODO: Redo flow (ui/ux) for custom orders -> submit for quote
 		//#region get quote for each print
 
 		//#endregion
@@ -715,7 +897,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 						colour: print.material.colour,
 						plastic: print.material.plastic,
 					},
-					price: 0, // TODO: calculate price based on options
+					price: null, // TODO: get from quote collection (payloadcms) NOT FROM CLIENT SIDE
 					quantity: print.quantity,
 				});
 			}
@@ -901,7 +1083,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 														placeholder='Any special instructions, material preferences, or questions about your order?'
 														value={orderComments}
 														onChange={e => setOrderComments(e.target.value)}
-														className='min-h-[100px] w-full'
+														className='min-h-[100px] w-[calc(100%-0.5rem)] mx-0.5'
 													/>
 													<p className='text-sm text-muted-foreground'>
 														These comments will apply to the entire order
@@ -974,14 +1156,15 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 															preset: p.printingOptions.preset,
 														},
 														quantity: p.quantity,
-													}}></BasketItem>
+													}}
+													key={i}></BasketItem>
 											);
 										})}
 
 										{quoteItems.length === 0 && <p className='text-sm text-muted-foreground'>No prints found.</p>}
 									</div>
 
-									<Button className='mt-auto w-full' onClick={() => handleAddToBasket()}>
+									<Button className='mt-auto w-full' onClick={() => confirmQuote()}>
 										Add {quoteItems.length} Print{quoteItems.length > 1 && 's'} To Basket
 									</Button>
 								</div>

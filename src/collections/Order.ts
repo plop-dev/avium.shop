@@ -95,12 +95,13 @@ export const Orders: CollectionConfig = {
 								// if layerHeight is set, treat as custom; otherwise preset applies
 								{ name: 'layerHeight', label: 'Layer Height', type: 'number' },
 								{ name: 'infill', label: 'Infill Percentage', type: 'number' },
+								{ name: 'plastic', type: 'text', required: true },
+								{ name: 'colour', type: 'text', required: true },
 							],
 						},
 
 						// price for this custom print line (after quote)
-						{ name: 'price', type: 'number', admin: { description: 'Set after quote acceptance' } },
-						{ name: 'subtotal', type: 'number', admin: { readOnly: true } },
+						{ name: 'price', type: 'number', admin: { readOnly: true } },
 					],
 				},
 			],
