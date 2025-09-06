@@ -822,6 +822,14 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					console.warn('X-Slice-Metadata header not accessible');
 					console.log('Quote response received for print:', quoteRes.doc.id);
 				}
+
+				// delete uploaded files, not needed anymore
+				try {
+					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/presets/${quoteRes.doc.id}`, { method: 'DELETE' });
+					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/filaments/${quoteRes.doc.id}`, { method: 'DELETE' });
+				} catch (error) {
+					console.error('Error deleting temporary files:', error);
+				}
 			} catch (error) {
 				toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
 				console.error('Quote request error:', error);
