@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
-const ACCEPTED_FILE_TYPES = ['.stl', '.obj', '.3mf'];
+const ACCEPTED_FILE_TYPES = ['.stl', '.3mf'];
 
 const printSchema = z
 	.object({
 		file: z
 			.instanceof(File, { message: 'A 3D model file is required.' })
 			.refine(file => file.size <= MAX_FILE_SIZE, `Max file size is 100MB.`)
-			.refine(file => ACCEPTED_FILE_TYPES.some(type => file.name.endsWith(type)), 'Only .stl, .obj, and .3mf files are accepted.'),
+			.refine(file => ACCEPTED_FILE_TYPES.some(type => file.name.endsWith(type)), 'Only .stl and .3mf files are accepted.'),
 		quantity: z.coerce.number().min(1, 'Quantity must be at least 1').max(1000, "that's not happening").default(1),
 		material: z.object({
 			plastic: z.string().min(1, 'Please select a plastic type'),

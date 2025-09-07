@@ -8,25 +8,54 @@ export type UploadChunk = {
 	totalChunks: number;
 	filetype: string;
 	data: string; // base64
+	settings?: SlicingSettings; // For slicing settings when used with slice upload
 };
 
 export type UploadedChunkResponse = {
 	received: number;
 	total: number;
-	complete: false;
+	complete: boolean;
 };
 
-export type UploadedFileResponse = {
+export type FilamentInfo = {
+	used_mm?: string;
+	used_cm3?: string;
+	used_g?: string;
+	cost?: string;
+};
+
+export type SlicingResult = {
 	id: string;
-	filename: string;
-	size: number;
-	filetype: string;
-	url: string;
-	complete: true;
+	modelFilename: string;
+	gcodeFilename: string;
+	modelSize: number;
+	gcodeSize: number;
+	modelUrl: string;
+	gcodeUrl: string;
+	complete: boolean;
+	times: {
+		model: string;
+		total: string;
+	};
+	filament: FilamentInfo;
 };
 
-async function uploadChunk(chunk: UploadChunk, serverUrl: string) {
-	const response = await fetch(`${serverUrl}upload`, {
+export interface SlicingSettings {
+	printer?: string;
+	preset?: string;
+	filament?: string;
+	bedType?: string;
+	plate?: string;
+	multicolorOnePlate?: boolean;
+	arrange?: boolean;
+	orient?: boolean;
+	exportType?: 'gcode' | '3mf';
+}
+
+export type Category = 'printers' | 'presets' | 'filaments';
+
+async function uploadChunk(chunk: UploadChunk, baseServerUrl: string) {
+	const response = await fetch(`${baseServerUrl}slice`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -39,18 +68,19 @@ async function uploadChunk(chunk: UploadChunk, serverUrl: string) {
 		throw new Error(`Chunk upload failed: ${response.statusText}`);
 	}
 
-	return response.json() as Promise<UploadedFileResponse | UploadedChunkResponse>;
+	return response.json() as Promise<SlicingResult | UploadedChunkResponse>;
 }
 
 export async function uploadFile(
 	file: File,
 	onProgress: (progress: number, currentChunk: number, totalChunks: number) => void,
-	serverUrl: string,
+	baseServerUrl: string,
 	CHUNK_SIZE = 5 * 1024 * 1024,
+	slicerSettings: SlicingSettings,
 ) {
 	const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 	const uploadId = crypto.randomUUID();
-	let uploadResponse: UploadedFileResponse | undefined = undefined;
+	let uploadResponse: SlicingResult | undefined = undefined;
 
 	console.log(`Uploading ${file.name} in ${totalChunks} chunks`);
 
@@ -62,19 +92,21 @@ export async function uploadFile(
 		// Convert chunk to base64
 		const base64Data = await fileToBase64(chunk as File);
 
-		const chunkPayload = {
+		const chunkData: UploadChunk = {
 			id: uploadId,
 			chunkIndex,
 			currentChunk: chunkIndex + 1,
 			totalChunks: totalChunks,
 			filetype: file.name.split('.').pop() || 'bin',
 			data: base64Data as string,
+			...(chunkIndex === 0 && { settings: slicerSettings }),
 		};
 
-		const res = await uploadChunk(chunkPayload, serverUrl);
+		const res = await uploadChunk(chunkData, baseServerUrl);
 		console.log(`Chunk ${chunkIndex + 1}/${totalChunks} upload response:`, res);
-		if ('complete' in res && res.complete) {
-			uploadResponse = res;
+
+		if ('complete' in res && res.complete && 'url' in res && 'id' in res) {
+			uploadResponse = res as SlicingResult;
 		}
 
 		const currentChunk = chunkIndex + 1;

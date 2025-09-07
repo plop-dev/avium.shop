@@ -2,11 +2,11 @@ import { Order, Product } from '@/payload-types';
 import { persistentAtom } from '@nanostores/persistent';
 
 export type CustomPrint = {
+	// <- not the same as Order
 	id: string; //* to differentiate each custom print NOT TO STORE IN DB
 	model: {
 		filename: string;
-		filetype: 'stl' | 'obj' | '3mf';
-		serverPath: string;
+		filetype: 'stl' | '3mf';
 	};
 	printingOptions: {
 		preset?: string; // relationship to presets

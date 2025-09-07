@@ -218,8 +218,15 @@ export interface Order {
          */
         model: {
           filename: string;
-          filetype: 'stl' | 'obj' | '3mf';
-          serverPath: string;
+          filetype: 'stl' | '3mf';
+          /**
+           * The unique download URL to the model
+           */
+          modelUrl: string;
+          /**
+           * The unique download URL to the G-code file
+           */
+          gcodeUrl: string;
         };
         quantity: number;
         printingOptions: {
@@ -229,6 +236,14 @@ export interface Order {
           plastic: string;
           colour: string;
         };
+        /**
+         * Estimated print time as returned by the slicer (total)
+         */
+        time?: string | null;
+        /**
+         * Estimated filament usage in grams as returned by the slicer
+         */
+        filament?: number | null;
         price?: number | null;
         id?: string | null;
         blockName?: string | null;
@@ -397,8 +412,15 @@ export interface Quote {
    */
   model: {
     filename: string;
-    filetype: 'stl' | 'obj' | '3mf';
-    serverPath?: string | null;
+    filetype: 'stl' | '3mf';
+    /**
+     * The unique download URL to the model
+     */
+    modelUrl: string;
+    /**
+     * The unique download URL to the G-code file
+     */
+    gcodeUrl: string;
   };
   quantity: number;
   printingOptions: {
@@ -419,6 +441,14 @@ export interface Quote {
    * The user who requested the quote
    */
   user: string | User;
+  /**
+   * Estimated filament usage in grams as returned by the slicer
+   */
+  filament?: number | null;
+  /**
+   * Estimated print time as returned by the slicer (total)
+   */
+  time?: string | null;
   price?: number | null;
   updatedAt: string;
   createdAt: string;
@@ -634,7 +664,8 @@ export interface OrdersSelect<T extends boolean = true> {
                 | {
                     filename?: T;
                     filetype?: T;
-                    serverPath?: T;
+                    modelUrl?: T;
+                    gcodeUrl?: T;
                   };
               quantity?: T;
               printingOptions?:
@@ -646,6 +677,8 @@ export interface OrdersSelect<T extends boolean = true> {
                     plastic?: T;
                     colour?: T;
                   };
+              time?: T;
+              filament?: T;
               price?: T;
               id?: T;
               blockName?: T;
@@ -752,7 +785,8 @@ export interface QuotesSelect<T extends boolean = true> {
     | {
         filename?: T;
         filetype?: T;
-        serverPath?: T;
+        modelUrl?: T;
+        gcodeUrl?: T;
       };
   quantity?: T;
   printingOptions?:
@@ -766,6 +800,8 @@ export interface QuotesSelect<T extends boolean = true> {
       };
   printHash?: T;
   user?: T;
+  filament?: T;
+  time?: T;
   price?: T;
   updatedAt?: T;
   createdAt?: T;

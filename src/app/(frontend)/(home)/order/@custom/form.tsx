@@ -18,9 +18,9 @@ import { NumberInput } from '@/components/ui/number-input';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogHeader } from '@/components/ui/dialog';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Filament, Preset, PrintingOption } from '@/payload-types';
+import { Filament, Preset, PrintingOption, Quote } from '@/payload-types';
 import { Progress } from '@/components/ui/progress';
-import { UploadedFileResponse, uploadFile } from './utils';
+import { SlicingResult, SlicingSettings, uploadFile } from './utils';
 import { addCustomPrintToBasket, CustomPrint } from '@/stores/basket';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { $orderValidation, setOrderNameValid } from '@/stores/order';
@@ -256,7 +256,7 @@ function PrintItemCard({
 			setIsDragging(false);
 
 			const file = e.dataTransfer.files?.[0];
-			const allowedExtensions = ['.stl', '.3mf', '.obj'];
+			const allowedExtensions = ['.stl', '.3mf'];
 			const fileExtension = file?.name.toLowerCase().split('.').pop();
 
 			if (file && fileExtension && allowedExtensions.includes(`.${fileExtension}`)) {
@@ -310,7 +310,7 @@ function PrintItemCard({
 
 												<Input
 													type='file'
-													accept='.stl,.3mf,.obj'
+													accept='.stl,.3mf'
 													className='hidden'
 													ref={fileInputRef}
 													onChange={handleFileChange}
@@ -492,6 +492,17 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	const [orderComments, setOrderComments] = useState('');
 	const [orderData, setOrderData] = useState<CustomOrderFormValues | null>();
 	const [userData, setUserData] = useState<User | null>(null);
+	const [sliceData, setSliceData] = useState<Record<number, SlicingResult>>();
+
+	//* debug -------------------------
+	useEffect(() => {
+		console.log('Slice Data:', sliceData);
+	}, [sliceData]);
+
+	useEffect(() => {
+		console.log('Quote view:', isQuoteView);
+	}, [isQuoteView]);
+	//* -------------------------------
 
 	const user = useSession();
 
@@ -499,7 +510,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 	const form = useForm<CustomOrderFormValues>({
 		resolver: zodResolver(customOrderFormSchema) as Resolver<CustomOrderFormValues>,
-		//* resolver: (() => ({ values: {}, errors: {} })) as Resolver<CustomOrderFormValues>, USE THIS TO DISABLE VALIDATION
+		// resolver: (() => ({ values: {}, errors: {} })) as Resolver<CustomOrderFormValues> UNCOMMENT THIS TO DISABLE VALIDATION
 		mode: 'onSubmit',
 		defaultValues: {
 			prints: [],
@@ -577,7 +588,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			setIsDragging(false);
 
 			const file = e.dataTransfer.files?.[0];
-			const allowedExtensions = ['.stl', '.3mf', '.obj'];
+			const allowedExtensions = ['.stl', '.3mf'];
 			const fileExtension = file?.name.toLowerCase().split('.').pop();
 
 			if (file && fileExtension && allowedExtensions.includes(`.${fileExtension}`)) {
@@ -674,7 +685,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				.join('')
 				.replace(/[^a-zA-Z0-9]/g, '');
 
-			const quoteRes = await fetch('/api/quotes', {
+			const quoteRes: { doc: Quote } = await fetch('/api/quotes', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -690,7 +701,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					},
 					model: {
 						filename: print.file.name,
-						filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | 'obj' | '3mf',
+						filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | '3mf',
 						serverPath: '', // will be updated after upload OR NOT: if quote is accepted, then this quote object will be discarded
 					},
 				}),
@@ -785,48 +796,101 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 			// upload all data to api to slice and get quote
 			try {
-				const data = new FormData();
-				data.append('orient', 'false');
-				data.append('arrange', 'false');
-				data.append('exportType', 'gcode');
-				data.append('filament', `${quoteRes.doc.id}`);
-				data.append('plate', `0`);
-				data.append('printer', `machine`); // 'machine' default printer profile (bbl p1s .4 nozzle)
-				data.append('multicolorOnePlate', 'false');
-				data.append('preset', quoteRes.doc.id); // 'preset' is the final JSON profile that will be used for the printer
-				data.append('file', print.file);
+				const slicerSettings: SlicingSettings = {
+					orient: false,
+					arrange: false,
+					exportType: 'gcode',
+					filament: quoteRes.doc.id,
+					plate: '0',
+					printer: 'machine', // 'machine' default printer profile (bbl p1s .4 nozzle)
+					multicolorOnePlate: false,
+					preset: quoteRes.doc.id, // 'preset' is the final JSON profile that will be used for the printer
+				};
 
-				const res = await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice`, {
-					headers: {
-						accept: 'application/octet-stream',
-						'Access-Control-Request-Headers': 'X-Slice-Metadata',
+				//! ADD QUANTITY (loop for /slice)
+
+				const res = await uploadFile(
+					print.file,
+					(progress, currentChunk, totalChunks) => {
+						setUploadProgress({ progress, currentChunk, chunkTotal: totalChunks });
 					},
-					method: 'POST',
-					body: data,
-				});
+					process.env.NEXT_PUBLIC_AVIUM_API_URL as string,
+					CHUNK_SIZE,
+					slicerSettings,
+				);
 
-				if (!res.ok) {
+				// ------------------------------------------------------------------
+
+				// const data = new FormData();
+				// data.append('orient', 'false');
+				// data.append('arrange', 'false');
+				// data.append('exportType', 'gcode');
+				// data.append('filament', `${quoteRes.doc.id}`);
+				// data.append('plate', `0`);
+				// data.append('printer', `machine`); // 'machine' default printer profile (bbl p1s .4 nozzle)
+				// data.append('multicolorOnePlate', 'false');
+				// data.append('preset', quoteRes.doc.id); // 'preset' is the final JSON profile that will be used for the printer
+				// data.append('file', print.file);
+
+				// const res = await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice`, {
+				// 	headers: {
+				// 		accept: 'application/octet-stream',
+				// 		'Access-Control-Request-Headers': 'X-Slice-Metadata',
+				// 	},
+				// 	method: 'POST',
+				// 	body: data,
+				// });
+
+				// if (!res.ok) {
+				// 	toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
+				// 	console.error('Quote request error:', res.statusText);
+				// 	setIsLoading(false);
+				// 	return;
+				// }
+
+				if (res) {
+					console.log('Quote response received for print:', quoteRes.doc.id);
+					console.log(res);
+
+					// upload Quote document with price, times and serverURL
+					const cost = Number(res.filament?.['cost']) || 0;
+					const price = parseFloat((cost * print.quantity).toFixed(2));
+
+					const req = await fetch(`/api/quotes/${quoteRes.doc.id}`, {
+						method: 'PATCH',
+						credentials: 'include',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							price,
+							model: {
+								modelUrl: res.modelUrl,
+								gcodeUrl: res.gcodeUrl,
+							},
+							time: res.times.total,
+						}),
+					});
+					if (!req.ok) {
+						toast.error('An error occurred updating quote data. Please try again.', { dismissible: true });
+						console.error('Error updating quote:', req.statusText);
+						setIsLoading(false);
+						return;
+					}
+
+					setSliceData(prev => ({ ...prev, [printHash]: res }));
+				} else {
 					toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
-					console.error('Quote request error:', res.statusText);
+					console.error('No response from slicing API');
 					setIsLoading(false);
 					return;
 				}
 
-				const sliceMetadata = res.headers.get('X-Slice-Metadata');
-
-				if (sliceMetadata) {
-					const sliceData = atob(sliceMetadata);
-					console.log('Quote response received for print:', quoteRes.doc.id);
-					console.log(sliceData);
-				} else {
-					console.warn('X-Slice-Metadata header not accessible');
-					console.log('Quote response received for print:', quoteRes.doc.id);
-				}
-
-				// delete uploaded files, not needed anymore
+				// delete uploaded files, not needed anymore (including 3d model file)
 				try {
 					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/presets/${quoteRes.doc.id}`, { method: 'DELETE' });
 					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/filaments/${quoteRes.doc.id}`, { method: 'DELETE' });
+					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteRes.doc.id}`, { method: 'DELETE' });
 				} catch (error) {
 					console.error('Error deleting temporary files:', error);
 				}
@@ -841,7 +905,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 	async function confirmQuote() {
 		setIsLoading(true);
-		let uploadResponse: UploadedFileResponse | undefined = undefined;
 
 		const data = {
 			...orderData,
@@ -855,64 +918,15 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			return;
 		}
 
-		//#region upload prints to server
-		const files = data.prints.map(p => p.file);
-
-		const toastId = toast.loading('Preparing upload...', {
-			dismissible: false,
-			closeButton: false,
-			duration: Infinity,
-		});
-		setUploadToastId(toastId);
-
-		try {
-			for (const file of files) {
-				console.log('Uploading file:', file.name);
-				uploadResponse = await uploadFile(
-					file,
-					(progress, currentChunk, totalChunks) => {
-						setUploadProgress({ progress, currentChunk, chunkTotal: totalChunks });
-					},
-					process.env.NEXT_PUBLIC_AVIUM_API_URL as string,
-					CHUNK_SIZE,
-				);
-
-				console.log('Finished uploading file:', file.name);
-			}
-
-			toast.success('Files uploaded successfully!', { id: toastId, dismissible: true, duration: 2000 });
-		} catch (error) {
-			toast.error('An error occurred during file upload.', { id: toastId, dismissible: true });
-			console.error('File upload error:', error);
-		} finally {
-			setUploadToastId(null);
-		}
-
-		//#endregion
-
-		//#region get quote for each print
-
-		//#endregion
-
 		//#region add to basket
 
-		if (!uploadResponse) {
-			toast.error('An error occurred during file upload. Please try again.', { dismissible: true });
-			console.error('No upload response available.');
-			setIsLoading(false);
-			return;
-		}
-
 		try {
-			console.log('Adding to basket with upload response:', uploadResponse);
-
 			for (const print of data.prints) {
 				addCustomPrintToBasket({
 					id: crypto.randomUUID(),
 					model: {
 						filename: print.file.name,
-						filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | 'obj' | '3mf',
-						serverPath: uploadResponse.url,
+						filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | '3mf',
 					},
 					printingOptions: {
 						...print.printingOptions,
@@ -969,13 +983,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 						<p className='text-sm text-muted-foreground'>Supported formats: STL, 3MF, OBJ</p>
 					</div>
 
-					<Input
-						type='file'
-						accept='.stl,.3mf,.obj'
-						className='hidden'
-						ref={triggerFileInputRef}
-						onChange={handleTriggerFileChange}
-					/>
+					<Input type='file' accept='.stl,.3mf' className='hidden' ref={triggerFileInputRef} onChange={handleTriggerFileChange} />
 
 					{!triggerPreviewUrl ? (
 						<div
@@ -1166,8 +1174,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 																parts.pop();
 																return parts.join('.');
 															})(),
-															filetype: (filename.split('.').pop() || 'stl') as 'stl' | 'obj' | '3mf',
-															serverPath: '', // not uploaded to order server yet
+															filetype: (filename.split('.').pop() || 'stl') as 'stl' | '3mf',
 														},
 														price: null, // get quote
 														printingOptions: {

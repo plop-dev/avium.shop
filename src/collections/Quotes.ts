@@ -17,11 +17,23 @@ export const Quotes: CollectionConfig = {
 				{
 					name: 'filetype',
 					type: 'select',
-					options: ['stl', 'obj', '3mf'],
+					options: ['stl', '3mf'],
 					required: true,
 					admin: { readOnly: true },
 				},
-				{ name: 'serverPath', type: 'text', required: false, admin: { readOnly: true } },
+
+				{
+					name: 'modelUrl',
+					type: 'text',
+					required: true,
+					admin: { readOnly: true, description: 'The unique download URL to the model' },
+				},
+				{
+					name: 'gcodeUrl',
+					type: 'text',
+					required: true,
+					admin: { readOnly: true, description: 'The unique download URL to the G-code file' },
+				},
 			],
 		},
 		{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
@@ -52,6 +64,16 @@ export const Quotes: CollectionConfig = {
 				description: 'The user who requested the quote',
 			},
 		},
-		{ name: 'price', type: 'number', admin: { readOnly: true } },
+		{
+			name: 'filament',
+			type: 'number',
+			admin: { description: 'Estimated filament usage in grams as returned by the slicer' },
+		},
+		{
+			name: 'time',
+			type: 'text',
+			admin: { description: 'Estimated print time as returned by the slicer (total)' },
+		},
+		{ name: 'price', type: 'number' },
 	],
 };
