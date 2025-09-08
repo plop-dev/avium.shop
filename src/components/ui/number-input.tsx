@@ -12,9 +12,10 @@ type Props = {
 	onChange?: (value: number) => void;
 	className?: string;
 	defaultValue?: number;
+	borderColour?: 'input' | 'border';
 };
 
-export function NumberInput({ value, min = -Infinity, max = Infinity, onChange, className, defaultValue }: Props) {
+export function NumberInput({ value, min = -Infinity, max = Infinity, onChange, className, defaultValue, borderColour }: Props) {
 	const isControlled = value !== undefined;
 	const [internalValue, setInternalValue] = React.useState<number>(defaultValue ?? 0);
 	const currentValue = isControlled ? (value as number) : internalValue;
@@ -67,8 +68,11 @@ export function NumberInput({ value, min = -Infinity, max = Infinity, onChange, 
 	return (
 		<div
 			className={cn(
-				'group flex h-10 items-stretch rounded-md border border-input bg-transparent text-sm font-medium shadow-xs transition-all',
+				'group flex h-10 items-stretch rounded-md border bg-transparent text-sm font-medium shadow-xs transition-all',
 				className,
+				{
+					'border-input': borderColour === 'input',
+				},
 			)}>
 			<button
 				aria-hidden
