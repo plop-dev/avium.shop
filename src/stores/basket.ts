@@ -35,6 +35,7 @@ export type ShopProduct = {
 			colour: string; //* USER ONLY CHOOSES THIS
 		};
 	};
+	price: Product['price'];
 	quantity: number;
 };
 

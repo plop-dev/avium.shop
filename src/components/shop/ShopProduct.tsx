@@ -48,6 +48,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 
 		addShopProductToBasket({
 			id,
+			price: product.price,
 			quantity: quantity,
 			product: {
 				name: product.name,

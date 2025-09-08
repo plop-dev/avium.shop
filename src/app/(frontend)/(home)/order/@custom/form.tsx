@@ -492,7 +492,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	const [orderComments, setOrderComments] = useState('');
 	const [orderData, setOrderData] = useState<CustomOrderFormValues | null>();
 	const [userData, setUserData] = useState<User | null>(null);
-	const [sliceData, setSliceData] = useState<Record<number, SlicingResult>>();
+	const [sliceData, setSliceData] = useState<Record<string, SlicingResult>>();
+	const [quoteIds, setQuoteIds] = useState<string[]>([]);
 
 	//* debug -------------------------
 	useEffect(() => {
@@ -650,6 +651,26 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		}
 	}, [uploadProgress, uploadToastId]);
 
+	async function makeQuoteHash(prints: CustomOrderFormValues, index: number) {
+		const print = prints.prints[index];
+
+		return Array.from(
+			new Uint8Array(
+				await crypto.subtle.digest(
+					'SHA-1',
+					new TextEncoder().encode(
+						[...Object.values(print.material), ...Object.values(print.printingOptions), print.quantity, print.file, index].join(
+							'',
+						),
+					),
+				),
+			),
+		)
+			.map(b => b.toString(36))
+			.join('')
+			.replace(/[^a-zA-Z0-9]/g, '');
+	}
+
 	async function onSubmit(data: CustomOrderFormValues) {
 		setOrderData(data);
 		// Validate order name before proceeding
@@ -667,23 +688,11 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		setIsQuoteView(true);
 
 		// query api for a quote for each prints then add to Quotes collection (payloadcms)
-		for (const print of data.prints) {
+		for (let i = 0; i < data.prints.length; i++) {
+			const print = data.prints[i];
+
+			const quoteHash = await makeQuoteHash(data, i);
 			// create new quote in payloadcms
-			const printHash = Array.from(
-				new Uint8Array(
-					await crypto.subtle.digest(
-						'SHA-1',
-						new TextEncoder().encode(
-							[...Object.values(print.material), ...Object.values(print.printingOptions), print.quantity, print.file].join(
-								'',
-							),
-						),
-					),
-				),
-			)
-				.map(b => b.toString(36))
-				.join('')
-				.replace(/[^a-zA-Z0-9]/g, '');
 
 			const quoteRes: { doc: Quote } = await fetch('/api/quotes', {
 				method: 'POST',
@@ -691,7 +700,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify({
-					printHash,
+					quoteHash,
 					user: userData.id,
 					quantity: print.quantity,
 					printingOptions: {
@@ -878,7 +887,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 						return;
 					}
 
-					setSliceData(prev => ({ ...prev, [printHash]: res }));
+					setSliceData(prev => ({ ...prev, [quoteHash]: res }));
 				} else {
 					toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
 					console.error('No response from slicing API');
@@ -886,11 +895,12 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					return;
 				}
 
-				// delete uploaded files, not needed anymore (including 3d model file)
+				setQuoteIds(prev => [...prev, quoteRes.doc.id]);
+
+				// delete uploaded files, not needed anymore (NOT including 3d model file)
 				try {
 					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/presets/${quoteRes.doc.id}`, { method: 'DELETE' });
 					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/filaments/${quoteRes.doc.id}`, { method: 'DELETE' });
-					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteRes.doc.id}`, { method: 'DELETE' });
 				} catch (error) {
 					console.error('Error deleting temporary files:', error);
 				}
@@ -955,6 +965,20 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		setIsLoading(false);
 	}
 
+	async function cancelQuote() {
+		for (const quoteId of quoteIds) {
+			try {
+				await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' });
+			} catch (error) {
+				console.error('Error deleting slice data:', error);
+			}
+		}
+		setQuoteIds([]);
+		setSliceData({});
+		setIsLoading(false);
+		setIsQuoteView(false);
+	}
+
 	async function handleAddPrint() {
 		setIsAddingPrint(true);
 		// Validate current form first
@@ -974,7 +998,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				open={isOpen}
 				onOpenChange={o => {
 					setIsOpen(o);
-					if (!o) setIsQuoteView(false); // NEW: reset slider when closing
 				}}
 				modal={true}>
 				<div className='w-full space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm cursor-pointer'>
@@ -1150,8 +1173,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 												Review your prints while we calculate the quote.
 											</p>
 										</div>
-										<Button type='button' variant='ghost' onClick={() => setIsQuoteView(false)}>
-											Back to form
+										<Button variant={'destructive'} onClick={() => cancelQuote()}>
+											Cancel & Back to Form
 										</Button>
 									</div>
 

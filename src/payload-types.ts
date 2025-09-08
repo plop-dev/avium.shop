@@ -436,7 +436,7 @@ export interface Quote {
      */
     colour: string;
   };
-  printHash: string;
+  quoteHash: string;
   /**
    * The user who requested the quote
    */
@@ -798,7 +798,7 @@ export interface QuotesSelect<T extends boolean = true> {
         plastic?: T;
         colour?: T;
       };
-  printHash?: T;
+  quoteHash?: T;
   user?: T;
   filament?: T;
   time?: T;

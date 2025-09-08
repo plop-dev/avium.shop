@@ -51,7 +51,7 @@ export const Quotes: CollectionConfig = {
 			],
 		},
 		{
-			name: 'printHash',
+			name: 'quoteHash',
 			type: 'text',
 			required: true,
 		},

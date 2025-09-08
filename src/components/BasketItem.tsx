@@ -1,6 +1,6 @@
 'use client';
 
-import { Minus, Plus, Trash2, FileText } from 'lucide-react';
+import { Minus, Plus, Trash2, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,8 @@ import { NumberInput } from './ui/number-input';
 import { Preset, PrintingOption } from '@/payload-types';
 import useSWR, { Fetcher } from 'swr';
 import numToGBP from '@/utils/numToGBP';
+import { Progress } from './ui/progress';
+import { LoadingSwap } from './ui/loading-swap';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -24,17 +26,19 @@ export default function BasketItem({
 	onQuantityChange,
 	onRemove,
 	price,
+	progress,
 }: {
 	item: BasketItemType;
 	onQuantityChange?: (id: string, newQuantity: number) => void;
 	onRemove?: (id: string) => void;
-	price?: number | null;
+	price?: number;
+	progress?: number; // used for print upload in quotes
 }) {
 	function getPreset(id: string) {
 		const fetcher: Fetcher<Preset, string> = (url: string) => fetch(url).then(res => res.json());
 		return useSWR(`/api/presets/${id}`, fetcher);
 	}
-	function getPlastic(id: string) {
+	function getPlastic() {
 		const fetcher: Fetcher<PrintingOption, string> = (url: string) => fetch(url).then(res => res.json());
 		return useSWR(`/api/globals/printing-options`, fetcher);
 	}
@@ -50,7 +54,7 @@ export default function BasketItem({
 			error,
 		} = print.printingOptions.preset ? getPreset(print.printingOptions.preset) : { data: null, isLoading: false, error: null };
 		const { data: plasticData, isLoading: plasticLoading } = print.printingOptions.plastic
-			? getPlastic(print.printingOptions.plastic)
+			? getPlastic()
 			: { data: null, isLoading: false };
 
 		return (
@@ -125,7 +129,7 @@ export default function BasketItem({
 	);
 
 	return (
-		<Card className='mb-3 py-0'>
+		<Card className='mb-3 py-0 relative overflow-hidden !border-none'>
 			<CardContent className='p-4'>
 				<div className='flex items-start justify-between'>
 					<div className='flex items-start space-x-3 flex-1'>
@@ -147,13 +151,20 @@ export default function BasketItem({
 				<div className='flex items-center justify-between mt-3 pt-3 border-t'>
 					<NumberInput min={1} max={100000} value={item.quantity} onChange={handleQuantityChange}></NumberInput>
 					<div className='flex items-center gap-4'>
-						<p className='text-sm text-muted-foreground'>{item.quantity > 1 ? `${item.quantity} prints` : '1 print'}</p>
-						<p className='text-sm font-medium'>
-							{price === null ? 'Loading...' : price !== undefined ? `${numToGBP(price)}` : ''}
-						</p>
+						{/* <p className='text-sm text-muted-foreground'>{item.quantity > 1 ? `${item.quantity} prints` : '1 print'}</p> */}
+
+						<Badge variant={'outline'} className='text-md'>
+							<span className='text-sm text-muted-foreground'>
+								{/* {price ? numToGBP(price) : <Loader2 className='size-4 my-1 mx-2 animate-spin'></Loader2>} */}
+								<LoadingSwap isLoading={!price} loaderClassName='size-4 my-1 mx-2'>
+									{numToGBP(price || 0)}
+								</LoadingSwap>
+							</span>
+						</Badge>
 					</div>
 				</div>
 			</CardContent>
+			{progress && <Progress value={progress} className='absolute inset-x-0 bottom-0 h-1' />}
 		</Card>
 	);
 }
