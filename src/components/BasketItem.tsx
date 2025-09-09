@@ -25,13 +25,11 @@ export default function BasketItem({
 	item,
 	onQuantityChange,
 	onRemove,
-	price,
 	progress,
 }: {
 	item: BasketItemType;
 	onQuantityChange?: (id: string, newQuantity: number) => void;
 	onRemove?: (id: string) => void;
-	price?: number;
 	progress?: number; // used for print upload in quotes
 }) {
 	function getPreset(id: string) {
@@ -156,8 +154,8 @@ export default function BasketItem({
 						<Badge variant={'outline'} className='text-md'>
 							<span className='text-sm text-muted-foreground'>
 								{/* {price ? numToGBP(price) : <Loader2 className='size-4 my-1 mx-2 animate-spin'></Loader2>} */}
-								<LoadingSwap isLoading={!price} loaderClassName='size-4 my-1 mx-2'>
-									{numToGBP(price || 0)}
+								<LoadingSwap isLoading={!item.price} loaderClassName='size-4 my-1 mx-2'>
+									{numToGBP((item.price || 0) * item.quantity)}
 								</LoadingSwap>
 							</span>
 						</Badge>

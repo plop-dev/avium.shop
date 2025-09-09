@@ -416,11 +416,11 @@ export interface Quote {
     /**
      * The unique download URL to the model
      */
-    modelUrl: string;
+    modelUrl?: string | null;
     /**
      * The unique download URL to the G-code file
      */
-    gcodeUrl: string;
+    gcodeUrl?: string | null;
   };
   quantity: number;
   printingOptions: {

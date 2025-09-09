@@ -461,6 +461,7 @@ function PrintItemCard({
 													step='0.01'
 													placeholder='e.g., 0.2'
 													{...field}
+													value={field.value || ''}
 												/>
 											</FormControl>
 											<FormMessage />
@@ -492,7 +493,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	const [orderComments, setOrderComments] = useState('');
 	const [orderData, setOrderData] = useState<CustomOrderFormValues | null>();
 	const [userData, setUserData] = useState<User | null>(null);
-	const [sliceData, setSliceData] = useState<Record<string, SlicingResult>>();
+	const [sliceData, setSliceData] = useState<Record<number, SlicingResult & { price: number }>>();
 	const [quoteIds, setQuoteIds] = useState<string[]>([]);
 
 	//* debug -------------------------
@@ -711,7 +712,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					model: {
 						filename: print.file.name,
 						filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | '3mf',
-						serverPath: '', // will be updated after upload OR NOT: if quote is accepted, then this quote object will be discarded
+						modelUrl: '', // will be updated after upload OR NOT: if quote is accepted, then this quote object will be discarded
+						gcodeUrl: '',
 					},
 				}),
 			}).then(res => res.json());
@@ -733,6 +735,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 				if (filamentJSON.totalDocs === 0) {
 					toast.error(`No filament profile found for ${print.material.plastic}. Please contact support.`, { dismissible: true });
+					cancelQuote();
 					setIsLoading(false);
 					return;
 				}
@@ -754,6 +757,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			} catch (error) {
 				console.error('Error fetching filament data:', error);
 				toast.error('An error occurred fetching filament data. Please try again.', { dismissible: true });
+				cancelQuote();
 				setIsLoading(false);
 				return;
 			}
@@ -774,12 +778,15 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 				if (print.printingOptions.preset) {
 					// get preset from payloadcms to get exact name (not just display name)
-					const query = stringify({
-						where: {
-							name: print.printingOptions.preset,
+					const query = stringify(
+						{
+							where: {
+								name: print.printingOptions.preset,
+							},
+							limit: 1,
 						},
-						limit: 1,
-					});
+						{ addQueryPrefix: true },
+					);
 					const presetRes = await fetch(`/api/presets${query}`);
 					const presetJSON = await presetRes.json();
 
@@ -799,6 +806,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			} catch (error) {
 				console.error('Error generating preset profile:', error);
 				toast.error('An error occurred generating preset profile. Please try again.', { dismissible: true });
+				cancelQuote();
 				setIsLoading(false);
 				return;
 			}
@@ -806,8 +814,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			// upload all data to api to slice and get quote
 			try {
 				const slicerSettings: SlicingSettings = {
-					orient: false,
-					arrange: false,
 					exportType: 'gcode',
 					filament: quoteRes.doc.id,
 					plate: '0',
@@ -816,7 +822,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					preset: quoteRes.doc.id, // 'preset' is the final JSON profile that will be used for the printer
 				};
 
-				//! ADD QUANTITY (loop for /slice)
+				//! don't forget quantity (what to do?)
 
 				const res = await uploadFile(
 					print.file,
@@ -826,6 +832,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					process.env.NEXT_PUBLIC_AVIUM_API_URL as string,
 					CHUNK_SIZE,
 					slicerSettings,
+					quoteRes.doc.id,
 				);
 
 				// ------------------------------------------------------------------
@@ -883,14 +890,16 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					if (!req.ok) {
 						toast.error('An error occurred updating quote data. Please try again.', { dismissible: true });
 						console.error('Error updating quote:', req.statusText);
+						cancelQuote();
 						setIsLoading(false);
 						return;
 					}
 
-					setSliceData(prev => ({ ...prev, [quoteHash]: res }));
+					setSliceData(prev => ({ ...prev, [i]: { ...res, price } }));
 				} else {
 					toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
 					console.error('No response from slicing API');
+					cancelQuote();
 					setIsLoading(false);
 					return;
 				}
@@ -899,14 +908,15 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 				// delete uploaded files, not needed anymore (NOT including 3d model file)
 				try {
-					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/presets/${quoteRes.doc.id}`, { method: 'DELETE' });
-					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/filaments/${quoteRes.doc.id}`, { method: 'DELETE' });
+					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/presets/${quoteRes.doc.id}`, { method: 'DELETE' });
+					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/filaments/${quoteRes.doc.id}`, { method: 'DELETE' });
 				} catch (error) {
 					console.error('Error deleting temporary files:', error);
 				}
 			} catch (error) {
 				toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
 				console.error('Quote request error:', error);
+				cancelQuote();
 				setIsLoading(false);
 				return;
 			}
@@ -924,6 +934,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		if (!data.prints) {
 			toast.error('No prints to process. Please try again.', { dismissible: true });
+			cancelQuote();
 			setIsLoading(false);
 			return;
 		}
@@ -1180,26 +1191,18 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 									<div className='flex flex-col gap-3'>
 										{quoteItems.map((p, i) => {
-											const preset = p.printingOptions.preset
-												? presets.find(pr => pr.id === p.printingOptions.preset)
-												: undefined;
-											const plasticName =
-												printingOptions.plastic?.find(pl => pl.id === p.material.plastic)?.name || '—';
 											const filename = p.file?.name || 'No file selected';
+											const sliceResult = sliceData?.[i];
 
 											return (
 												<BasketItem
 													item={{
-														id: `print-${i}`,
+														id: quoteIds[i],
 														model: {
-															filename: (() => {
-																const parts = filename.split('.');
-																parts.pop();
-																return parts.join('.');
-															})(),
+															filename,
 															filetype: (filename.split('.').pop() || 'stl') as 'stl' | '3mf',
 														},
-														price: null, // get quote
+														price: sliceResult?.price || null,
 														printingOptions: {
 															colour: p.material.colour,
 															plastic: p.material.plastic,

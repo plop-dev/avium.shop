@@ -25,13 +25,11 @@ export const Quotes: CollectionConfig = {
 				{
 					name: 'modelUrl',
 					type: 'text',
-					required: true,
 					admin: { readOnly: true, description: 'The unique download URL to the model' },
 				},
 				{
 					name: 'gcodeUrl',
 					type: 'text',
-					required: true,
 					admin: { readOnly: true, description: 'The unique download URL to the G-code file' },
 				},
 			],

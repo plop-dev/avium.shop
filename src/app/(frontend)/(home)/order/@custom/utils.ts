@@ -55,7 +55,7 @@ export interface SlicingSettings {
 export type Category = 'printers' | 'presets' | 'filaments';
 
 async function uploadChunk(chunk: UploadChunk, baseServerUrl: string) {
-	const response = await fetch(`${baseServerUrl}slice`, {
+	const response = await fetch(`${baseServerUrl}${!baseServerUrl.endsWith('/') && '/'}slice`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -77,9 +77,9 @@ export async function uploadFile(
 	baseServerUrl: string,
 	CHUNK_SIZE = 5 * 1024 * 1024,
 	slicerSettings: SlicingSettings,
+	uploadId: string,
 ) {
 	const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-	const uploadId = crypto.randomUUID();
 	let uploadResponse: SlicingResult | undefined = undefined;
 
 	console.log(`Uploading ${file.name} in ${totalChunks} chunks`);
@@ -105,7 +105,7 @@ export async function uploadFile(
 		const res = await uploadChunk(chunkData, baseServerUrl);
 		console.log(`Chunk ${chunkIndex + 1}/${totalChunks} upload response:`, res);
 
-		if ('complete' in res && res.complete && 'url' in res && 'id' in res) {
+		if ('complete' in res && res.complete) {
 			uploadResponse = res as SlicingResult;
 		}
 
