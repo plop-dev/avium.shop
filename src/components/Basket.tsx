@@ -58,7 +58,7 @@ export default function Basket() {
 			<DrawerContent className='!max-w-md'>
 				<DrawerHeader>
 					<DrawerTitle>Your Basket</DrawerTitle>
-					<DrawerDescription>View the custom prints or shop products you've added to your basket.</DrawerDescription>
+					<DrawerDescription>View the custom prints or shop products you&apos;ve added to your basket.</DrawerDescription>
 				</DrawerHeader>
 
 				<div className='px-4 flex-1 overflow-y-auto'>
@@ -111,7 +111,7 @@ export default function Basket() {
 				<DrawerFooter>
 					<div className=''>
 						<h3 className='font-bold text-xl'>Total:</h3>
-						<p>{numToGBP(basketItems.reduce((sum, item) => sum + item.price * item.quantity, 0))}</p>
+						<p>{numToGBP(basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0))}</p>
 					</div>
 
 					{hasCustomPrints && !orderValidation.orderNameValid && (

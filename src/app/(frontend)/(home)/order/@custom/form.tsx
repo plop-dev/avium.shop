@@ -765,7 +765,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			// get presets profile 'ready' on the server (generate new preset (process) profile from template)
 			//* only works if a preset is not used
 			try {
-				let body: {
+				const body: {
 					name: string;
 					layerHeight?: number;
 					infill?: number;
@@ -793,7 +793,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 			// upload all data to api to slice and get quote
 			try {
-				let slicerSettings: SlicingSettings = {
+				const slicerSettings: SlicingSettings = {
 					exportType: 'gcode',
 					filament: quoteRes.doc.id,
 					plate: '0',

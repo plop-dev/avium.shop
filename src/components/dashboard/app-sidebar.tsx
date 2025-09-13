@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import logo from '@/assets/logo.png';
 import { LayoutDashboard, List, Settings, UserLock } from 'lucide-react';
+import Link from 'next/link';
 
 export type SidebarData = {
 	navMain: {
@@ -78,10 +79,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild className='!p-1.5'>
-							<a href='/'>
+							<Link href='/'>
 								<Image priority src={logo} alt='Avium' height={28} width={28}></Image>
 								<span className='font-semibold text-xl'>Avium</span>
-							</a>
+							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>

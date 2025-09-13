@@ -23,6 +23,17 @@ const isShopProduct = (item: BasketItemType): item is ShopProduct => {
 	return 'product' in item;
 };
 
+// Custom hooks
+function usePreset(id: string | null) {
+	const fetcher: Fetcher<Preset, string> = (url: string) => fetch(url).then(res => res.json());
+	return useSWR(id ? `/api/presets/${id}` : null, fetcher);
+}
+
+function usePlastic() {
+	const fetcher: Fetcher<PrintingOption, string> = (url: string) => fetch(url).then(res => res.json());
+	return useSWR(`/api/globals/printing-options`, fetcher);
+}
+
 export default function BasketItem({
 	item,
 	onQuantityChange,
@@ -34,29 +45,18 @@ export default function BasketItem({
 	onRemove?: (id: string) => void;
 	progress?: number; // used for print upload in quotes
 }) {
-	function getPreset(id: string) {
-		const fetcher: Fetcher<Preset, string> = (url: string) => fetch(url).then(res => res.json());
-		return useSWR(`/api/presets/${id}`, fetcher);
-	}
-	function getPlastic() {
-		const fetcher: Fetcher<PrintingOption, string> = (url: string) => fetch(url).then(res => res.json());
-		return useSWR(`/api/globals/printing-options`, fetcher);
-	}
+	// Get preset and plastic data at component level
+	const presetId = isCustomPrint(item) && item.printingOptions.preset ? item.printingOptions.preset : null;
+	const needsPlastic = isCustomPrint(item) && item.printingOptions.plastic;
+
+	const { data: presetData, isLoading: presetLoading, error } = usePreset(presetId);
+	const { data: plasticData, isLoading: plasticLoading } = usePlastic();
 
 	const handleQuantityChange = (value: number) => {
 		onQuantityChange?.(item.id, value);
 	};
 
 	const renderCustomPrint = (print: CustomPrint) => {
-		const {
-			data: presetData,
-			isLoading: presetLoading,
-			error,
-		} = print.printingOptions.preset ? getPreset(print.printingOptions.preset) : { data: null, isLoading: false, error: null };
-		const { data: plasticData, isLoading: plasticLoading } = print.printingOptions.plastic
-			? getPlastic()
-			: { data: null, isLoading: false };
-
 		return (
 			<>
 				<div>
