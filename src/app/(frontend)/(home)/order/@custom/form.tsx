@@ -776,26 +776,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					infill: print.printingOptions.infill || 10,
 				};
 
-				if (print.printingOptions.preset) {
-					// get preset from payloadcms to get exact name (not just display name)
-					const query = stringify(
-						{
-							where: {
-								name: print.printingOptions.preset,
-							},
-							limit: 1,
-						},
-						{ addQueryPrefix: true },
-					);
-					const presetRes = await fetch(`/api/presets${query}`);
-					const presetJSON = await presetRes.json();
-
-					body = {
-						name: quoteRes.doc.id,
-						preset: presetJSON.docs[0].bambulabName,
-					};
-				}
-
 				await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/generate/presets`, {
 					method: 'POST',
 					headers: {
@@ -813,14 +793,31 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 			// upload all data to api to slice and get quote
 			try {
-				const slicerSettings: SlicingSettings = {
+				let slicerSettings: SlicingSettings = {
 					exportType: 'gcode',
 					filament: quoteRes.doc.id,
 					plate: '0',
 					printer: 'machine', // 'machine' default printer profile (bbl p1s .4 nozzle)
 					multicolorOnePlate: false,
-					preset: quoteRes.doc.id, // 'preset' is the final JSON profile that will be used for the printer
+					preset: quoteRes.doc.id,
 				};
+
+				if (print.printingOptions.preset) {
+					// get preset from payloadcms to get exact name (not just display name)
+					const query = stringify(
+						{
+							where: {
+								name: print.printingOptions.preset,
+							},
+							limit: 1,
+						},
+						{ addQueryPrefix: true },
+					);
+					const presetRes = await fetch(`/api/presets${query}`);
+					const presetJSON = await presetRes.json();
+
+					slicerSettings.preset = presetJSON.docs[0].bambulabName;
+				}
 
 				//! don't forget quantity (what to do?)
 
@@ -835,41 +832,12 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					quoteRes.doc.id,
 				);
 
-				// ------------------------------------------------------------------
-
-				// const data = new FormData();
-				// data.append('orient', 'false');
-				// data.append('arrange', 'false');
-				// data.append('exportType', 'gcode');
-				// data.append('filament', `${quoteRes.doc.id}`);
-				// data.append('plate', `0`);
-				// data.append('printer', `machine`); // 'machine' default printer profile (bbl p1s .4 nozzle)
-				// data.append('multicolorOnePlate', 'false');
-				// data.append('preset', quoteRes.doc.id); // 'preset' is the final JSON profile that will be used for the printer
-				// data.append('file', print.file);
-
-				// const res = await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice`, {
-				// 	headers: {
-				// 		accept: 'application/octet-stream',
-				// 		'Access-Control-Request-Headers': 'X-Slice-Metadata',
-				// 	},
-				// 	method: 'POST',
-				// 	body: data,
-				// });
-
-				// if (!res.ok) {
-				// 	toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
-				// 	console.error('Quote request error:', res.statusText);
-				// 	setIsLoading(false);
-				// 	return;
-				// }
-
 				if (res) {
 					console.log('Quote response received for print:', quoteRes.doc.id);
 					console.log(res);
 
 					// upload Quote document with price, times and serverURL
-					const cost = Number(res.filament?.['cost']) || 0;
+					const cost = Number(res.filament.cost) || 0;
 					const price = parseFloat((cost * print.quantity).toFixed(2));
 
 					const req = await fetch(`/api/quotes/${quoteRes.doc.id}`, {
@@ -923,6 +891,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		}
 	}
 
+	//TODO: THIS WHOLE SECTION OMDDDD
 	async function confirmQuote() {
 		setIsLoading(true);
 
@@ -954,7 +923,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 						colour: print.material.colour,
 						plastic: print.material.plastic,
 					},
-					price: null, // TODO: get from quote collection (payloadcms) NOT FROM CLIENT SIDE
+					price: null,
+					time: null,
 					quantity: print.quantity,
 				});
 			}
@@ -979,7 +949,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	async function cancelQuote() {
 		for (const quoteId of quoteIds) {
 			try {
-				await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' });
+				await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' }); // delete gcode and model files
+				await fetch(`/api/quotes/${quoteId}`, { method: 'DELETE' }); // delete quote document
 			} catch (error) {
 				console.error('Error deleting slice data:', error);
 			}
@@ -1203,6 +1174,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 															filetype: (filename.split('.').pop() || 'stl') as 'stl' | '3mf',
 														},
 														price: sliceResult?.price || null,
+														time: sliceResult?.times.total || null,
 														printingOptions: {
 															colour: p.material.colour,
 															plastic: p.material.plastic,
@@ -1212,6 +1184,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 														},
 														quantity: p.quantity,
 													}}
+													progress={uploadProgress.progress}
 													key={i}></BasketItem>
 											);
 										})}

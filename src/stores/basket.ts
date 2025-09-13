@@ -17,6 +17,7 @@ export type CustomPrint = {
 	};
 	quantity: number;
 	price: number | null;
+	time: string | null;
 };
 
 export type ShopProduct = {
@@ -26,6 +27,7 @@ export type ShopProduct = {
 		description: Product['description'];
 		pictures: Product['pictures'];
 		price: Product['price'];
+		time: Product['time'];
 		orders: Product['orders'];
 		printingOptions: {
 			//* ADMIN CHOOSES THESE
@@ -37,6 +39,7 @@ export type ShopProduct = {
 	};
 	price: Product['price'];
 	quantity: number;
+	time: Product['time'];
 };
 
 export type BasketItem = ShopProduct | CustomPrint;

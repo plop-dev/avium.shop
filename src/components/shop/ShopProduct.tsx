@@ -49,12 +49,14 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 		addShopProductToBasket({
 			id,
 			price: product.price,
+			time: product.time,
 			quantity: quantity,
 			product: {
 				name: product.name,
 				description: product.description,
 				pictures: product.pictures,
 				price: product.price,
+				time: product.time,
 				orders: product.orders,
 				printingOptions: {
 					plastic: product.printingOptions.plastic,
@@ -171,6 +173,9 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 										<Badge variant={'outline'} className='text-md'>
 											<span className='text-md text-muted-foreground'>{numToGBP(product.price)}</span>
 										</Badge>
+										<Badge variant={'outline'} className='text-md'>
+											<span className='text-md text-muted-foreground'>{product.time}</span>
+										</Badge>
 									</div>
 								</DialogDescription>
 							</DialogHeader>
@@ -278,6 +283,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 												description: product.description,
 												pictures: product.pictures,
 												price: product.price,
+												time: product.time,
 												orders: product.orders,
 												printingOptions: {
 													plastic: product.printingOptions.plastic[0]?.name ?? '',

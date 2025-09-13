@@ -59,6 +59,15 @@ export const Products: CollectionConfig = {
 		},
 
 		{
+			name: 'time',
+			type: 'text',
+			required: true,
+			admin: {
+				description: 'The estimated print time for the product',
+			},
+		},
+
+		{
 			name: 'orders',
 			type: 'number',
 			defaultValue: 0,

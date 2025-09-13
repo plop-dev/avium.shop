@@ -323,6 +323,10 @@ export interface Product {
    */
   price: number;
   /**
+   * The estimated print time for the product
+   */
+  time: string;
+  /**
    * The number of times this product has been bought
    */
   orders?: number | null;
@@ -729,6 +733,7 @@ export interface ProductsSelect<T extends boolean = true> {
   description?: T;
   pictures?: T;
   price?: T;
+  time?: T;
   orders?: T;
   printingOptions?:
     | T
