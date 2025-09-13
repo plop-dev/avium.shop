@@ -53,7 +53,9 @@ export default function BasketItem({
 	const { data: plasticData, isLoading: plasticLoading } = usePlastic();
 
 	const handleQuantityChange = (value: number) => {
-		onQuantityChange?.(item.id, value);
+		if (onQuantityChange) {
+			onQuantityChange(item.id, value);
+		}
 	};
 
 	const renderCustomPrint = (print: CustomPrint) => {
@@ -149,7 +151,7 @@ export default function BasketItem({
 				</div>
 
 				<div className='flex items-center justify-between mt-3 pt-3 border-t'>
-					<NumberInput min={1} max={100000} value={item.quantity} onChange={handleQuantityChange}></NumberInput>
+					<NumberInput min={1} max={100000} defaultValue={item.quantity} onChange={handleQuantityChange}></NumberInput>
 					<div className='flex items-center gap-4'>
 						<Badge variant={'outline'} className='text-md h-10'>
 							<span className='text-sm text-muted-foreground'>

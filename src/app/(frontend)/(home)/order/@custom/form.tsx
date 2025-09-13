@@ -819,8 +819,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					slicerSettings.preset = presetJSON.docs[0].bambulabName;
 				}
 
-				//! don't forget quantity (what to do?)
-
 				const res = await uploadFile(
 					print.file,
 					(progress, currentChunk, totalChunks) => {
@@ -1185,6 +1183,14 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 														quantity: p.quantity,
 													}}
 													progress={uploadProgress.progress}
+													onQuantityChange={(id, qty) => {
+														if (orderData) orderData.prints[i].quantity = qty;
+														setQuoteItems(prev => {
+															const updated = [...prev];
+															updated[i].quantity = qty;
+															return updated;
+														});
+													}}
 													key={i}></BasketItem>
 											);
 										})}
@@ -1193,7 +1199,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 									</div>
 
 									<Button className='mt-auto w-full' onClick={() => confirmQuote()}>
-										Add {quoteItems.length} Print{quoteItems.length > 1 && 's'} To Basket
+										Add {quoteItems.reduce((c, p) => (c += p.quantity), 0)} Print
+										{quoteItems.reduce((c, p) => (c += p.quantity), 0) > 1 && 's'} To Basket
 									</Button>
 								</div>
 							</div>
