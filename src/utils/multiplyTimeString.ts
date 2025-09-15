@@ -36,3 +36,19 @@ export function multiplyTimeString(timeStr: string, x: number): string {
 
 	return result.join(' ');
 }
+export function timeStringToSeconds(timeStr: string): number {
+	const timeParts = timeStr.split(' ');
+	let totalSeconds = 0;
+
+	for (const part of timeParts) {
+		if (part.endsWith('h')) {
+			totalSeconds += parseInt(part.slice(0, -1)) * 3600;
+		} else if (part.endsWith('m')) {
+			totalSeconds += parseInt(part.slice(0, -1)) * 60;
+		} else if (part.endsWith('s')) {
+			totalSeconds += parseInt(part.slice(0, -1));
+		}
+	}
+
+	return totalSeconds;
+}

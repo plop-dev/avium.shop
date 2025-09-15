@@ -19,6 +19,7 @@ import { Products } from '@/collections/Products';
 import { Media } from '@/collections/Media';
 import { Quotes } from './collections/Quotes';
 import { Filaments } from './collections/Filaments';
+import { PricingFormula } from './collections/PricingFormula';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -32,7 +33,7 @@ export default buildConfig({
 		avatar: 'default',
 		dateFormat: 'dd/MM/yyyy',
 	},
-	globals: [PrintingOptions],
+	globals: [PrintingOptions, PricingFormula],
 	collections: [Users, Orders, Presets, Products, Media, Quotes, Filaments],
 	editor: lexicalEditor(),
 	secret: process.env.PAYLOAD_SECRET || '',

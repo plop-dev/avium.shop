@@ -98,9 +98,11 @@ export interface Config {
   };
   globals: {
     'printing-options': PrintingOption;
+    'pricing-formula': PricingFormula;
   };
   globalsSelect: {
     'printing-options': PrintingOptionsSelect<false> | PrintingOptionsSelect<true>;
+    'pricing-formula': PricingFormulaSelect<false> | PricingFormulaSelect<true>;
   };
   locale: null;
   user: User & {
@@ -904,6 +906,16 @@ export interface PrintingOption {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pricing-formula".
+ */
+export interface PricingFormula {
+  id: string;
+  PricingPreview: string;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "printing-options_select".
  */
 export interface PrintingOptionsSelect<T extends boolean = true> {
@@ -937,6 +949,16 @@ export interface PrintingOptionsSelect<T extends boolean = true> {
         min?: T;
         max?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pricing-formula_select".
+ */
+export interface PricingFormulaSelect<T extends boolean = true> {
+  PricingPreview?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
