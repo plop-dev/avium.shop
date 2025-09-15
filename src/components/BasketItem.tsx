@@ -13,6 +13,7 @@ import { Progress } from './ui/progress';
 import { LoadingSwap } from './ui/loading-swap';
 import ms from 'ms';
 import { multiplyTimeString } from '@/utils/multiplyTimeString';
+import { useEffect, useState } from 'react';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -47,7 +48,7 @@ export default function BasketItem({
 }) {
 	// Get preset and plastic data at component level
 	const presetId = isCustomPrint(item) && item.printingOptions.preset ? item.printingOptions.preset : null;
-	const needsPlastic = isCustomPrint(item) && item.printingOptions.plastic;
+	const [isDone, setIsDone] = useState(false);
 
 	const { data: presetData, isLoading: presetLoading, error } = usePreset(presetId);
 	const { data: plasticData, isLoading: plasticLoading } = usePlastic();
@@ -57,6 +58,10 @@ export default function BasketItem({
 			onQuantityChange(item.id, value);
 		}
 	};
+
+	useEffect(() => {
+		if (progress === 100) setIsDone(true);
+	}, [progress]);
 
 	const renderCustomPrint = (print: CustomPrint) => {
 		return (
@@ -171,7 +176,7 @@ export default function BasketItem({
 					</div>
 				</div>
 			</CardContent>
-			{progress !== undefined && <Progress value={progress} className='absolute inset-x-0 bottom-0 h-1' />}
+			{progress !== undefined && <Progress value={isDone ? 100 : progress} className='absolute inset-x-0 bottom-0 h-1' />}
 		</Card>
 	);
 }

@@ -495,6 +495,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	const [userData, setUserData] = useState<User | null>(null);
 	const [sliceData, setSliceData] = useState<Record<number, SlicingResult & { price: number }>>();
 	const [quoteIds, setQuoteIds] = useState<string[]>([]);
+	// track previous quote items
+	const [previousQuoteIds, setPreviousQuoteIds] = useState<string[]>([]);
 
 	//* debug -------------------------
 	useEffect(() => {
@@ -627,30 +629,29 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		setOrderNameValid(isValid, orderValidation.orderName);
 	}, [orderValidation.orderName]);
 
-	// Update toast when upload progress changes
+	// cleanup on page unload
 	useEffect(() => {
-		if (uploadToastId !== null && uploadProgress.chunkTotal > 0) {
-			toast.loading(
-				<div className='w-full'>
-					<div className='flex gap-x-2 justify-between w-full items-center'>
-						<p>Uploading {uploadProgress.progress.toFixed(0)}%</p>
-						<span className='text-muted-foreground text-xs'>
-							File: {uploadProgress.currentChunk}/{uploadProgress.chunkTotal}
-						</span>
-					</div>
-					<Progress
-						value={uploadProgress.progress}
-						className='absolute -bottom-[1px] left-0 w-full rounded-t-none h-1'></Progress>
-				</div>,
-				{
-					id: uploadToastId,
-					dismissible: false,
-					closeButton: false,
-					duration: Infinity,
-				},
-			);
-		}
-	}, [uploadProgress, uploadToastId]);
+		const handleBeforeUnload = () => {
+			// Cleanup any pending quotes
+			if (quoteIds.length > 0) {
+				// Note: This needs to be synchronous, so use sendBeacon if available
+				const cleanup = async () => {
+					for (const quoteId of quoteIds) {
+						try {
+							await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' });
+							await fetch(`/api/quotes/${quoteId}`, { method: 'DELETE' });
+						} catch (error) {
+							console.error('Error cleaning up on unload:', error);
+						}
+					}
+				};
+				cleanup();
+			}
+		};
+
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+	}, [quoteIds]);
 
 	async function makeQuoteHash(prints: CustomOrderFormValues, index: number) {
 		const print = prints.prints[index];
@@ -823,6 +824,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					print.file,
 					(progress, currentChunk, totalChunks) => {
 						setUploadProgress({ progress, currentChunk, chunkTotal: totalChunks });
+						if (progress == 100) setUploadProgress({ progress: 0, currentChunk: 0, chunkTotal: 0 });
 					},
 					process.env.NEXT_PUBLIC_AVIUM_API_URL as string,
 					CHUNK_SIZE,
@@ -889,74 +891,57 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		}
 	}
 
-	//TODO: THIS WHOLE SECTION OMDDDD
 	async function confirmQuote() {
 		setIsLoading(true);
 
-		const data = {
-			...orderData,
-			name: orderValidation.orderName,
-			comments: orderComments,
-		};
+		// add to basket
 
-		if (!data.prints) {
-			toast.error('No prints to process. Please try again.', { dismissible: true });
-			cancelQuote();
-			setIsLoading(false);
-			return;
-		}
+		quoteItems.forEach((item, index) => {
+			const slice = sliceData?.[index];
 
-		//#region add to basket
-
-		try {
-			for (const print of data.prints) {
-				addCustomPrintToBasket({
-					id: crypto.randomUUID(),
-					model: {
-						filename: print.file.name,
-						filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | '3mf',
-					},
-					printingOptions: {
-						...print.printingOptions,
-						colour: print.material.colour,
-						plastic: print.material.plastic,
-					},
-					price: null,
-					time: null,
-					quantity: print.quantity,
-				});
-			}
-
-			// Reset form but keep order name and comments
-			form.reset({
-				prints: [],
+			addCustomPrintToBasket({
+				id: slice?.id || '',
+				model: {
+					filename: item.file.name,
+					filetype: (item.file.name.split('.').pop() || 'stl') as 'stl' | '3mf',
+				},
+				quantity: item.quantity,
+				printingOptions: {
+					...item.printingOptions,
+					colour: item.material.colour,
+					plastic: item.material.plastic,
+				},
+				price: slice?.price || 0,
+				time: slice?.times.total || '',
 			});
-			triggerHandleRemove();
-			setTriggerFile(null);
-		} catch (error) {
-			toast.error('An error occurred adding items to basket.', { dismissible: true });
-			console.error('Add to basket error:', error);
-		}
+		});
 
-		//#endregion
+		toast.success(`${quoteItems.length} item(s) added to basket`);
 
 		setIsOpen(false);
 		setIsLoading(false);
 	}
 
 	async function cancelQuote() {
-		for (const quoteId of quoteIds) {
-			try {
-				await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' }); // delete gcode and model files
-				await fetch(`/api/quotes/${quoteId}`, { method: 'DELETE' }); // delete quote document
-			} catch (error) {
-				console.error('Error deleting slice data:', error);
-			}
-		}
+		const quotesToCleanup = [...quoteIds];
+
 		setQuoteIds([]);
 		setSliceData({});
 		setIsLoading(false);
 		setIsQuoteView(false);
+
+		const cleanupPromises = quotesToCleanup.map(async quoteId => {
+			try {
+				await Promise.all([
+					fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' }),
+					fetch(`/api/quotes/${quoteId}`, { method: 'DELETE' }),
+				]);
+			} catch (error) {
+				console.error('Error cleaning up quote:', quoteId, error);
+			}
+		});
+
+		await Promise.allSettled(cleanupPromises);
 	}
 
 	async function handleAddPrint() {
@@ -976,8 +961,12 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		<div className='space-y-4'>
 			<Dialog
 				open={isOpen}
-				onOpenChange={o => {
-					setIsOpen(o);
+				onOpenChange={open => {
+					if (!open && isQuoteView && quoteIds.length > 0) {
+						// User closed dialog during quote view - cleanup
+						cancelQuote();
+					}
+					setIsOpen(open);
 				}}
 				modal={true}>
 				<div className='w-full space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm cursor-pointer'>
@@ -1191,6 +1180,42 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 															return updated;
 														});
 													}}
+													onRemove={async id => {
+														const index = quoteIds.indexOf(id);
+														if (index !== -1) {
+															if (orderData) orderData.prints.splice(index, 1);
+															setQuoteItems(prev => {
+																const updated = [...prev];
+																updated.splice(index, 1);
+																return updated;
+															});
+
+															setQuoteIds(prev => prev.filter((_, i) => i !== index));
+															setSliceData(prev => {
+																const updated = { ...prev };
+																delete updated[index];
+																// re-index remaining items
+																const reindexed: typeof updated = {};
+																Object.entries(updated).forEach(([key, value], newIndex) => {
+																	if (parseInt(key) > index) {
+																		reindexed[newIndex] = value;
+																	} else {
+																		reindexed[parseInt(key)] = value;
+																	}
+																});
+																return reindexed;
+															});
+
+															try {
+																await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
+																	method: 'DELETE',
+																});
+																await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
+															} catch (error) {
+																console.error('Error cleaning up quote:', id, error);
+															}
+														}
+													}}
 													key={i}></BasketItem>
 											);
 										})}
@@ -1198,9 +1223,21 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 										{quoteItems.length === 0 && <p className='text-sm text-muted-foreground'>No prints found.</p>}
 									</div>
 
-									<Button className='mt-auto w-full' onClick={() => confirmQuote()}>
-										Add {quoteItems.reduce((c, p) => (c += p.quantity), 0)} Print
-										{quoteItems.reduce((c, p) => (c += p.quantity), 0) > 1 && 's'} To Basket
+									<Button
+										className='mt-auto w-full'
+										onClick={() => {
+											if (isLoading || quoteItems.length === 0) cancelQuote();
+											else confirmQuote();
+										}}
+										disabled={sliceData && Object.keys(sliceData).length !== quoteItems.length}>
+										{isLoading || quoteItems.length === 0 ? (
+											'Back to Form'
+										) : (
+											<>
+												Add {quoteItems.reduce((c, p) => (c += p.quantity), 0)} Print
+												{quoteItems.reduce((c, p) => (c += p.quantity), 0) > 1 && 's'} To Basket
+											</>
+										)}
 									</Button>
 								</div>
 							</div>
