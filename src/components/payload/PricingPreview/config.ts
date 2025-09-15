@@ -1,7 +1,7 @@
 import { Field } from 'payload';
 
 const PricingPreviewField: Field = {
-	name: 'PricingPreview',
+	name: 'pricingFormula',
 	type: 'text',
 	label: 'Pricing Preview',
 	required: true,
