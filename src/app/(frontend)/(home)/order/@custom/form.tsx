@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useForm, useFieldArray, useWatch, useFormContext, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { set, z } from 'zod';
 import { customOrderFormSchema } from '@/schemas/customOrderForm';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ import { NumberInput } from '@/components/ui/number-input';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogHeader } from '@/components/ui/dialog';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Filament, Preset, PrintingOption, Quote } from '@/payload-types';
+import { Filament, Preset, PricingFormula, PrintingOption, Quote } from '@/payload-types';
 import { Progress } from '@/components/ui/progress';
 import { SlicingResult, SlicingSettings, uploadFile } from './utils';
 import { addCustomPrintToBasket, CustomPrint } from '@/stores/basket';
@@ -30,6 +30,8 @@ import useSWR, { Fetcher } from 'swr';
 import { stringify } from 'qs-esm';
 import { User } from 'next-auth';
 import { useSession } from 'next-auth/react';
+import { evaluate } from 'mathjs';
+import { timeStringToSeconds } from '@/utils/multiplyTimeString';
 
 type CustomOrderFormValues = z.infer<typeof customOrderFormSchema>;
 
@@ -824,7 +826,11 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					print.file,
 					(progress, currentChunk, totalChunks) => {
 						setUploadProgress({ progress, currentChunk, chunkTotal: totalChunks });
-						if (progress == 100) setUploadProgress({ progress: 0, currentChunk: 0, chunkTotal: 0 });
+						if (progress === 100) {
+							setTimeout(() => {
+								setUploadProgress({ progress: 0, currentChunk: 0, chunkTotal: 0 });
+							}, 100);
+						}
 					},
 					process.env.NEXT_PUBLIC_AVIUM_API_URL as string,
 					CHUNK_SIZE,
@@ -834,11 +840,43 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 				if (res) {
 					console.log('Quote response received for print:', quoteRes.doc.id);
-					console.log(res);
+
+					// get pricing formula (global) from payloadcms
+					const pricingFormulaRes = await fetch(`/api/globals/pricing-formula`);
+					if (!pricingFormulaRes.ok) {
+						toast.error('An error occurred fetching pricing formula. Please try again.', { dismissible: true });
+						cancelQuote();
+						setIsLoading(false);
+						return;
+					}
+					const pricingFormula = await pricingFormulaRes.json().then((res: PricingFormula) => res.pricingFormula);
+
+					// while (pricingFormulaLoading) {
+					// 	await new Promise(resolve => setTimeout(resolve, 100));
+					// }
+					if (!pricingFormula) {
+						toast.error('An error occurred fetching pricing formula. Please try again.', { dismissible: true });
+						cancelQuote();
+						setIsLoading(false);
+						return;
+					}
 
 					// upload Quote document with price, times and serverURL
 					const cost = Number(res.filament.cost) || 0;
-					const price = parseFloat((cost * print.quantity).toFixed(2));
+					console.log(
+						`formula: ${pricingFormula}, weight: ${res.filament.used_g}g, time: ${timeStringToSeconds(
+							res.times.total,
+						)}, cost: £${cost}`,
+					);
+					const price = (
+						evaluate(pricingFormula, {
+							weight: res.filament.used_g,
+							time: timeStringToSeconds(res.times.total),
+							cost: cost,
+						}) / 100
+					).toFixed(2) as unknown as number;
+
+					// const price = parseFloat((cost * print.quantity).toFixed(2));
 
 					const req = await fetch(`/api/quotes/${quoteRes.doc.id}`, {
 						method: 'PATCH',
@@ -929,6 +967,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		setSliceData({});
 		setIsLoading(false);
 		setIsQuoteView(false);
+		setUploadProgress({ progress: 0, currentChunk: 0, chunkTotal: 0 });
 
 		const cleanupPromises = quotesToCleanup.map(async quoteId => {
 			try {

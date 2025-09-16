@@ -60,6 +60,7 @@ export default function BasketItem({
 	};
 
 	useEffect(() => {
+		console.log(`Progress updated: ${progress}`);
 		if (progress === 100) setIsDone(true);
 	}, [progress]);
 

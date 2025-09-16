@@ -910,7 +910,7 @@ export interface PrintingOption {
  */
 export interface PricingFormula {
   id: string;
-  PricingPreview: string;
+  pricingFormula: string;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -958,7 +958,7 @@ export interface PrintingOptionsSelect<T extends boolean = true> {
  * via the `definition` "pricing-formula_select".
  */
 export interface PricingFormulaSelect<T extends boolean = true> {
-  PricingPreview?: T;
+  pricingFormula?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
