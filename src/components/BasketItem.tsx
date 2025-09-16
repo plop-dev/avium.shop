@@ -40,13 +40,11 @@ export default function BasketItem({
 	onQuantityChange,
 	onRemove,
 	progress,
-	resetProgress,
 }: {
 	item: BasketItemType;
 	onQuantityChange?: (id: string, newQuantity: number) => void;
 	onRemove?: (id: string) => void;
 	progress?: number; // used for print upload in quotes
-	resetProgress?: () => void;
 }) {
 	const presetId = isCustomPrint(item) && item.printingOptions.preset ? item.printingOptions.preset : null;
 	const [isDone, setIsDone] = useState(false);
@@ -69,10 +67,10 @@ export default function BasketItem({
 		} else if (progress === 0) {
 			setIsDone(false);
 			setIsLoading(true);
-		} else {
+		} else if (progress && progress > 0 && progress < 100) {
 			setIsLoading(true);
 		}
-	}, [progress, resetProgress]);
+	}, [progress]);
 
 	const renderCustomPrint = (print: CustomPrint) => {
 		return (

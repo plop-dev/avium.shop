@@ -1271,13 +1271,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 														quantity: p.quantity,
 													}}
 													progress={uploadProgress.get(i)?.progress}
-													resetProgress={() =>
-														setUploadProgress(prev => {
-															const updated = new Map(prev);
-															updated.set(i, { progress: 0, currentChunk: 0, chunkTotal: 0 });
-															return updated;
-														})
-													}
 													onQuantityChange={(id, qty) => {
 														form.setValue(`prints.${i}.quantity`, qty);
 													}}
