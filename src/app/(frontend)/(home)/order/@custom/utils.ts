@@ -117,7 +117,7 @@ export async function uploadFile(
 		}
 
 		//! TESTING
-		await new Promise(res => setTimeout(res, 1000));
+		// await new Promise(res => setTimeout(res, 1000));
 	}
 
 	return uploadResponse;

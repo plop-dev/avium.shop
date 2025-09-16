@@ -40,15 +40,17 @@ export default function BasketItem({
 	onQuantityChange,
 	onRemove,
 	progress,
+	resetProgress,
 }: {
 	item: BasketItemType;
 	onQuantityChange?: (id: string, newQuantity: number) => void;
 	onRemove?: (id: string) => void;
 	progress?: number; // used for print upload in quotes
+	resetProgress?: () => void;
 }) {
-	// Get preset and plastic data at component level
 	const presetId = isCustomPrint(item) && item.printingOptions.preset ? item.printingOptions.preset : null;
 	const [isDone, setIsDone] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const { data: presetData, isLoading: presetLoading, error } = usePreset(presetId);
 	const { data: plasticData, isLoading: plasticLoading } = usePlastic();
@@ -60,9 +62,17 @@ export default function BasketItem({
 	};
 
 	useEffect(() => {
-		console.log(`Progress updated: ${progress}`);
-		if (progress === 100) setIsDone(true);
-	}, [progress]);
+		// console.log(`Progress updated: ${progress}`);
+		if (progress === 100) {
+			setIsDone(true);
+			setIsLoading(false);
+		} else if (progress === 0) {
+			setIsDone(false);
+			setIsLoading(true);
+		} else {
+			setIsLoading(true);
+		}
+	}, [progress, resetProgress]);
 
 	const renderCustomPrint = (print: CustomPrint) => {
 		return (
@@ -161,7 +171,7 @@ export default function BasketItem({
 					<div className='flex items-center gap-4'>
 						<Badge variant={'outline'} className='text-md h-10'>
 							<span className='text-sm text-muted-foreground'>
-								<LoadingSwap isLoading={!item.time} loaderClassName='size-4 my-1 mx-2' className='!w-auto'>
+								<LoadingSwap isLoading={isLoading} loaderClassName='size-4 my-1 mx-2' className='!w-auto'>
 									{multiplyTimeString(item.time || '2h', item.quantity)}
 								</LoadingSwap>
 							</span>
@@ -169,7 +179,7 @@ export default function BasketItem({
 
 						<Badge variant={'outline'} className='text-md h-10'>
 							<span className='text-sm text-muted-foreground'>
-								<LoadingSwap isLoading={!item.price} loaderClassName='size-4 my-1 mx-2'>
+								<LoadingSwap isLoading={isLoading} loaderClassName='size-4 my-1 mx-2'>
 									{numToGBP((item.price || 0) * item.quantity)}
 								</LoadingSwap>
 							</span>

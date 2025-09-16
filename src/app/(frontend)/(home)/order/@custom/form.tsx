@@ -83,11 +83,9 @@ function MaterialSelection({ index, printingOptions }: { index: number; printing
 		name: `prints.${index}.material.colour`,
 	});
 
-	// Find the selected plastic block to get its colours
 	const plasticBlock = printingOptions.plastic?.find(p => p.id === selectedPlastic);
 	const availableColours = plasticBlock?.colours || [];
 
-	// Reset colour when plastic changes
 	useEffect(() => {
 		if (selectedPlastic && selectedColour) {
 			const isColourAvailable = availableColours.some(c => c.colour === selectedColour);
@@ -206,7 +204,6 @@ function PrintItemCard({
 	});
 	const fields = getValues().prints;
 
-	// Check for errors in each section
 	const fileErrors = errors.prints?.[index]?.file;
 	const materialErrors = errors.prints?.[index]?.material;
 	const settingsErrors = errors.prints?.[index]?.printingOptions || errors.prints?.[index]?.quantity;
@@ -222,7 +219,6 @@ function PrintItemCard({
 		onUpload: (url: string) => console.log('Uploaded file URL:', url),
 	});
 
-	// Custom file change handler that updates both the hook and form state
 	const handleFileChange = useCallback(
 		(e: React.ChangeEvent<HTMLInputElement>) => {
 			const file = e.target.files?.[0];
@@ -274,7 +270,6 @@ function PrintItemCard({
 		[originalHandleFileChange, setValue, index],
 	);
 
-	// Get the display file (either from form state or image upload hook)
 	const displayFile = fileValue || (fileName ? { name: fileName } : null);
 	const hasFile = displayFile || previewUrl;
 
@@ -484,30 +479,47 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	const [isLoading, setIsLoading] = useState(false);
 	const [isAddingPrint, setIsAddingPrint] = useState(false);
 	const [isQuoteView, setIsQuoteView] = useState(false);
-	const [quoteItems, setQuoteItems] = useState<CustomOrderFormValues['prints']>([]);
-	const [uploadProgress, setUploadProgress] = useState({
-		progress: 0,
-		currentChunk: 0,
-		chunkTotal: 0,
-	});
-	const [triggerFile, setTriggerFile] = useState<File | null>(null);
-	const [uploadToastId, setUploadToastId] = useState<string | number | null>(null);
 	const [orderComments, setOrderComments] = useState('');
-	const [orderData, setOrderData] = useState<CustomOrderFormValues | null>();
 	const [userData, setUserData] = useState<User | null>(null);
-	const [sliceData, setSliceData] = useState<Record<number, SlicingResult & { price: number }>>();
-	const [quoteIds, setQuoteIds] = useState<string[]>([]);
-	// track previous quote items
-	const [previousQuoteIds, setPreviousQuoteIds] = useState<string[]>([]);
+	const [triggerFile, setTriggerFile] = useState<File | null>(null);
+	const [uploadProgress, setUploadProgress] = useState<
+		Map<
+			number,
+			{
+				progress: number;
+				currentChunk: number;
+				chunkTotal: number;
+			}
+		>
+	>(new Map());
+
+	const [quotes, setQuotes] = useState<
+		Map<
+			number,
+			{
+				id: string;
+				sliceResult: SlicingResult & { price: number };
+				originalSettings: {
+					infill: number;
+					preset?: string;
+					layerHeight?: number;
+				};
+			}
+		>
+	>(new Map());
 
 	//* debug -------------------------
 	useEffect(() => {
-		console.log('Slice Data:', sliceData);
-	}, [sliceData]);
+		console.log('Quotes:', quotes);
+	}, [quotes]);
 
 	useEffect(() => {
 		console.log('Quote view:', isQuoteView);
 	}, [isQuoteView]);
+
+	useEffect(() => {
+		console.log('Upload progress:', uploadProgress);
+	}, [uploadProgress]);
 	//* -------------------------------
 
 	const user = useSession();
@@ -516,7 +528,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 	const form = useForm<CustomOrderFormValues>({
 		resolver: zodResolver(customOrderFormSchema) as Resolver<CustomOrderFormValues>,
-		// resolver: (() => ({ values: {}, errors: {} })) as Resolver<CustomOrderFormValues> UNCOMMENT THIS TO DISABLE VALIDATION
+
 		mode: 'onSubmit',
 		defaultValues: {
 			prints: [],
@@ -536,7 +548,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 	//#region file upload
 
-	// File upload hook for the trigger
 	const {
 		previewUrl: triggerPreviewUrl,
 		fileName: triggerFileName,
@@ -548,13 +559,12 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		onUpload: (url: string) => console.log('Uploaded file URL:', url),
 	});
 
-	// Handle file selection on trigger
 	const handleTriggerFileChange = useCallback(
 		(e: React.ChangeEvent<HTMLInputElement>) => {
 			const file = e.target.files?.[0];
 			if (file) {
 				setTriggerFile(file);
-				// Ensure there's at least one print item and set the file
+
 				if (fields.length === 0) {
 					append({ ...defaultPrintItem, file });
 				} else {
@@ -567,7 +577,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		[triggerHandleFileChange, setTriggerFile, fields.length, append, form],
 	);
 
-	// Drag and drop handlers for trigger
 	const [isDragging, setIsDragging] = useState(false);
 
 	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -599,7 +608,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 			if (file && fileExtension && allowedExtensions.includes(`.${fileExtension}`)) {
 				setTriggerFile(file);
-				// Ensure there's at least one print item and set the file
+
 				if (fields.length === 0) {
 					append({ ...defaultPrintItem, file });
 				} else {
@@ -618,25 +627,24 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	);
 
 	useEffect(() => {
-		if (fields.length === 0) {
+		// Only auto-add default print item when not in quote view
+		// This prevents empty items from appearing when all quotes are removed
+		if (fields.length === 0 && !isQuoteView) {
 			append(defaultPrintItem, { shouldFocus: false });
 		}
-	}, [append, fields.length]);
+	}, [append, fields.length, isQuoteView]);
 
 	//#endregion
 
-	// Update order name validation whenever it changes
 	useEffect(() => {
 		const isValid = orderValidation.orderName.trim().length >= 3;
 		setOrderNameValid(isValid, orderValidation.orderName);
 	}, [orderValidation.orderName]);
 
-	// cleanup on page unload
 	useEffect(() => {
 		const handleBeforeUnload = () => {
-			// Cleanup any pending quotes
+			const quoteIds = getQuoteIds();
 			if (quoteIds.length > 0) {
-				// Note: This needs to be synchronous, so use sendBeacon if available
 				const cleanup = async () => {
 					for (const quoteId of quoteIds) {
 						try {
@@ -653,7 +661,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		window.addEventListener('beforeunload', handleBeforeUnload);
 		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-	}, [quoteIds]);
+	}, [quotes]);
 
 	async function makeQuoteHash(prints: CustomOrderFormValues, index: number) {
 		const print = prints.prints[index];
@@ -675,9 +683,29 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			.replace(/[^a-zA-Z0-9]/g, '');
 	}
 
+	function hasSettingsChanged(printIndex: number, currentPrint: CustomOrderFormValues['prints'][0]): boolean {
+		const quote = quotes.get(printIndex);
+		if (!quote) return true;
+
+		const currentSettings = {
+			infill: currentPrint.printingOptions.infill || 10,
+			preset: currentPrint.printingOptions.preset,
+			layerHeight: currentPrint.printingOptions.layerHeight,
+		};
+
+		return (
+			quote.originalSettings.infill !== currentSettings.infill ||
+			quote.originalSettings.preset !== currentSettings.preset ||
+			quote.originalSettings.layerHeight !== currentSettings.layerHeight
+		);
+	}
+
+	function getQuoteIds(): string[] {
+		return Array.from(quotes.values()).map(quote => quote.id);
+	}
+
+	//#region on quote submit
 	async function onSubmit(data: CustomOrderFormValues) {
-		setOrderData(data);
-		// Validate order name before proceeding
 		if (!orderValidation.orderNameValid) {
 			toast.error('Please enter a valid order name (at least 3 characters)');
 			return;
@@ -688,15 +716,38 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			return;
 		}
 
-		setQuoteItems(data.prints);
 		setIsQuoteView(true);
 
-		// query api for a quote for each prints then add to Quotes collection (payloadcms)
-		for (let i = 0; i < data.prints.length; i++) {
-			const print = data.prints[i];
+		const printsToProcess = data.prints
+			.map((print, index) => ({ print, index }))
+			.filter(({ index, print }) => {
+				return !quotes.has(index) || hasSettingsChanged(index, print);
+			});
+
+		if (printsToProcess.length === 0) {
+			return;
+		}
+
+		for (const { print, index: i } of printsToProcess) {
+			const existingQuote = quotes.get(i);
+			if (existingQuote) {
+				setUploadProgress(prev => {
+					const updated = new Map(prev);
+					updated.set(i, { progress: 0, currentChunk: 0, chunkTotal: 0 });
+					return updated;
+				});
+
+				try {
+					await Promise.all([
+						fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${existingQuote.id}`, { method: 'DELETE' }),
+						fetch(`/api/quotes/${existingQuote.id}`, { method: 'DELETE' }),
+					]);
+				} catch (error) {
+					console.error('Error cleaning up old quote:', existingQuote.id, error);
+				}
+			}
 
 			const quoteHash = await makeQuoteHash(data, i);
-			// create new quote in payloadcms
 
 			const quoteRes: { doc: Quote } = await fetch('/api/quotes', {
 				method: 'POST',
@@ -715,13 +766,12 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					model: {
 						filename: print.file.name,
 						filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | '3mf',
-						modelUrl: '', // will be updated after upload OR NOT: if quote is accepted, then this quote object will be discarded
+						modelUrl: '',
 						gcodeUrl: '',
 					},
 				}),
 			}).then(res => res.json());
 
-			// get filament details from payloadcms (json file)
 			try {
 				const query = stringify(
 					{
@@ -743,7 +793,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					return;
 				}
 
-				// upload filament details (json profile from payloadcms) to api
 				const filamentRequestData = new FormData();
 				filamentRequestData.append('name', `${quoteRes.doc.id}`);
 				filamentRequestData.append(
@@ -765,7 +814,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				return;
 			}
 
-			// get presets profile 'ready' on the server (generate new preset (process) profile from template)
 			//* only works if a preset is not used
 			try {
 				const body: {
@@ -794,7 +842,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				return;
 			}
 
-			// upload all data to api to slice and get quote
 			try {
 				const slicerSettings: SlicingSettings = {
 					exportType: 'gcode',
@@ -806,7 +853,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				};
 
 				if (print.printingOptions.preset) {
-					// get preset from payloadcms to get exact name (not just display name)
 					const query = stringify(
 						{
 							where: {
@@ -825,12 +871,11 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				const res = await uploadFile(
 					print.file,
 					(progress, currentChunk, totalChunks) => {
-						setUploadProgress({ progress, currentChunk, chunkTotal: totalChunks });
-						if (progress === 100) {
-							setTimeout(() => {
-								setUploadProgress({ progress: 0, currentChunk: 0, chunkTotal: 0 });
-							}, 100);
-						}
+						setUploadProgress(prev => {
+							const updated = new Map(prev);
+							updated.set(i, { progress, currentChunk, chunkTotal: totalChunks });
+							return updated;
+						});
 					},
 					process.env.NEXT_PUBLIC_AVIUM_API_URL as string,
 					CHUNK_SIZE,
@@ -841,7 +886,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				if (res) {
 					console.log('Quote response received for print:', quoteRes.doc.id);
 
-					// get pricing formula (global) from payloadcms
 					const pricingFormulaRes = await fetch(`/api/globals/pricing-formula`);
 					if (!pricingFormulaRes.ok) {
 						toast.error('An error occurred fetching pricing formula. Please try again.', { dismissible: true });
@@ -851,7 +895,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					}
 					const pricingFormula = await pricingFormulaRes.json().then((res: PricingFormula) => res.pricingFormula);
 
-					// while (pricingFormulaLoading) {
 					// 	await new Promise(resolve => setTimeout(resolve, 100));
 					// }
 					if (!pricingFormula) {
@@ -861,7 +904,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 						return;
 					}
 
-					// upload Quote document with price, times and serverURL
 					const cost = Number(res.filament.cost) || 0;
 					console.log(
 						`formula: ${pricingFormula}, weight: ${res.filament.used_g}g, time: ${timeStringToSeconds(
@@ -875,8 +917,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 							cost: cost,
 						}) / 100
 					).toFixed(2) as unknown as number;
-
-					// const price = parseFloat((cost * print.quantity).toFixed(2));
 
 					const req = await fetch(`/api/quotes/${quoteRes.doc.id}`, {
 						method: 'PATCH',
@@ -901,7 +941,24 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 						return;
 					}
 
-					setSliceData(prev => ({ ...prev, [i]: { ...res, price } }));
+					setQuotes(
+						prev =>
+							new Map([
+								...prev,
+								[
+									i,
+									{
+										id: quoteRes.doc.id,
+										sliceResult: { ...res, price },
+										originalSettings: {
+											infill: print.printingOptions.infill || 10,
+											preset: print.printingOptions.preset,
+											layerHeight: print.printingOptions.layerHeight,
+										},
+									},
+								],
+							]),
+					);
 				} else {
 					toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
 					console.error('No response from slicing API');
@@ -910,9 +967,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					return;
 				}
 
-				setQuoteIds(prev => [...prev, quoteRes.doc.id]);
-
-				// delete uploaded files, not needed anymore (NOT including 3d model file)
 				try {
 					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/presets/${quoteRes.doc.id}`, { method: 'DELETE' });
 					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/filaments/${quoteRes.doc.id}`, { method: 'DELETE' });
@@ -928,46 +982,48 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			}
 		}
 	}
+	//#endregion
 
 	async function confirmQuote() {
 		setIsLoading(true);
 
-		// add to basket
+		const currentFormData = form.getValues();
 
-		quoteItems.forEach((item, index) => {
-			const slice = sliceData?.[index];
+		currentFormData.prints.forEach((item, index) => {
+			const quote = quotes.get(index);
 
-			addCustomPrintToBasket({
-				id: slice?.id || '',
-				model: {
-					filename: item.file.name,
-					filetype: (item.file.name.split('.').pop() || 'stl') as 'stl' | '3mf',
-				},
-				quantity: item.quantity,
-				printingOptions: {
-					...item.printingOptions,
-					colour: item.material.colour,
-					plastic: item.material.plastic,
-				},
-				price: slice?.price || 0,
-				time: slice?.times.total || '',
-			});
+			if (quote) {
+				addCustomPrintToBasket({
+					id: quote.id,
+					model: {
+						filename: item.file.name,
+						filetype: (item.file.name.split('.').pop() || 'stl') as 'stl' | '3mf',
+					},
+					quantity: item.quantity,
+					printingOptions: {
+						...item.printingOptions,
+						colour: item.material.colour,
+						plastic: item.material.plastic,
+					},
+					price: quote.sliceResult.price || 0,
+					time: quote.sliceResult.times.total || '',
+				});
+			}
 		});
 
-		toast.success(`${quoteItems.length} item(s) added to basket`);
+		toast.success(`${currentFormData.prints.length} item(s) added to basket`);
 
 		setIsOpen(false);
 		setIsLoading(false);
 	}
 
 	async function cancelQuote() {
-		const quotesToCleanup = [...quoteIds];
+		const quotesToCleanup = getQuoteIds();
 
-		setQuoteIds([]);
-		setSliceData({});
+		setQuotes(new Map());
 		setIsLoading(false);
 		setIsQuoteView(false);
-		setUploadProgress({ progress: 0, currentChunk: 0, chunkTotal: 0 });
+		setUploadProgress(new Map());
 
 		const cleanupPromises = quotesToCleanup.map(async quoteId => {
 			try {
@@ -985,7 +1041,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 	async function handleAddPrint() {
 		setIsAddingPrint(true);
-		// Validate current form first
+
 		const isValid = await form.trigger();
 		if (isValid) {
 			append(defaultPrintItem);
@@ -1001,8 +1057,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			<Dialog
 				open={isOpen}
 				onOpenChange={open => {
-					if (!open && isQuoteView && quoteIds.length > 0) {
-						// User closed dialog during quote view - cleanup
+					if (!open && isQuoteView && quotes.size > 0) {
 						cancelQuote();
 					}
 					setIsOpen(open);
@@ -1181,26 +1236,31 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 												Review your prints while we calculate the quote.
 											</p>
 										</div>
-										<Button variant={'destructive'} onClick={() => cancelQuote()}>
-											Cancel & Back to Form
-										</Button>
+										<div className='flex gap-x-2'>
+											<Button onClick={() => setIsQuoteView(false)} variant='default'>
+												Add Another Print
+											</Button>
+											<Button variant={'destructive'} onClick={() => cancelQuote()}>
+												Cancel & Back to Form
+											</Button>
+										</div>
 									</div>
 
 									<div className='flex flex-col gap-3'>
-										{quoteItems.map((p, i) => {
+										{form.getValues().prints.map((p, i) => {
 											const filename = p.file?.name || 'No file selected';
-											const sliceResult = sliceData?.[i];
+											const quote = quotes.get(i);
 
 											return (
 												<BasketItem
 													item={{
-														id: quoteIds[i],
+														id: quote?.id || '',
 														model: {
 															filename,
 															filetype: (filename.split('.').pop() || 'stl') as 'stl' | '3mf',
 														},
-														price: sliceResult?.price || null,
-														time: sliceResult?.times.total || null,
+														price: quote?.sliceResult.price || null,
+														time: quote?.sliceResult.times.total || null,
 														printingOptions: {
 															colour: p.material.colour,
 															plastic: p.material.plastic,
@@ -1210,71 +1270,90 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 														},
 														quantity: p.quantity,
 													}}
-													progress={uploadProgress.progress}
-													onQuantityChange={(id, qty) => {
-														if (orderData) orderData.prints[i].quantity = qty;
-														setQuoteItems(prev => {
-															const updated = [...prev];
-															updated[i].quantity = qty;
+													progress={uploadProgress.get(i)?.progress}
+													resetProgress={() =>
+														setUploadProgress(prev => {
+															const updated = new Map(prev);
+															updated.set(i, { progress: 0, currentChunk: 0, chunkTotal: 0 });
 															return updated;
-														});
+														})
+													}
+													onQuantityChange={(id, qty) => {
+														form.setValue(`prints.${i}.quantity`, qty);
 													}}
 													onRemove={async id => {
-														const index = quoteIds.indexOf(id);
-														if (index !== -1) {
-															if (orderData) orderData.prints.splice(index, 1);
-															setQuoteItems(prev => {
-																const updated = [...prev];
-																updated.splice(index, 1);
-																return updated;
-															});
+														remove(i);
 
-															setQuoteIds(prev => prev.filter((_, i) => i !== index));
-															setSliceData(prev => {
-																const updated = { ...prev };
-																delete updated[index];
-																// re-index remaining items
-																const reindexed: typeof updated = {};
-																Object.entries(updated).forEach(([key, value], newIndex) => {
-																	if (parseInt(key) > index) {
-																		reindexed[newIndex] = value;
-																	} else {
-																		reindexed[parseInt(key)] = value;
-																	}
-																});
-																return reindexed;
-															});
+														const updatedQuotes = new Map(quotes);
+														updatedQuotes.delete(i);
 
-															try {
-																await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
-																	method: 'DELETE',
-																});
-																await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
-															} catch (error) {
-																console.error('Error cleaning up quote:', id, error);
+														const reindexedQuotes = new Map<
+															number,
+															NonNullable<typeof updatedQuotes extends Map<number, infer T> ? T : never>
+														>();
+														updatedQuotes.forEach((quote, index) => {
+															if (quote && index > i) {
+																reindexedQuotes.set(index - 1, quote);
+															} else if (quote) {
+																reindexedQuotes.set(index, quote);
 															}
+														});
+
+														setQuotes(reindexedQuotes);
+
+														// Also clean up progress tracking
+														setUploadProgress(prev => {
+															const updated = new Map(prev);
+															updated.delete(i);
+
+															// Re-index remaining progress entries
+															const reindexedProgress = new Map<
+																number,
+																{ progress: number; currentChunk: number; chunkTotal: number }
+															>();
+															updated.forEach((progress, index) => {
+																if (index > i) {
+																	reindexedProgress.set(index - 1, progress);
+																} else {
+																	reindexedProgress.set(index, progress);
+																}
+															});
+
+															return reindexedProgress;
+														});
+
+														try {
+															await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
+																method: 'DELETE',
+															});
+															await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
+														} catch (error) {
+															console.error('Error cleaning up quote:', id, error);
 														}
 													}}
 													key={i}></BasketItem>
 											);
 										})}
 
-										{quoteItems.length === 0 && <p className='text-sm text-muted-foreground'>No prints found.</p>}
+										{form.getValues().prints.length === 0 && (
+											<p className='text-sm text-muted-foreground'>No prints found.</p>
+										)}
 									</div>
 
 									<Button
 										className='mt-auto w-full'
 										onClick={() => {
-											if (isLoading || quoteItems.length === 0) cancelQuote();
+											if (isLoading || form.getValues().prints.length === 0) cancelQuote();
 											else confirmQuote();
 										}}
-										disabled={sliceData && Object.keys(sliceData).length !== quoteItems.length}>
-										{isLoading || quoteItems.length === 0 ? (
+										disabled={quotes.size !== form.getValues().prints.length}>
+										{isLoading || form.getValues().prints.length === 0 ? (
 											'Back to Form'
 										) : (
 											<>
-												Add {quoteItems.reduce((c, p) => (c += p.quantity), 0)} Print
-												{quoteItems.reduce((c, p) => (c += p.quantity), 0) > 1 && 's'} To Basket
+												Add {form.getValues().prints.reduce((c: number, p) => (c += p.quantity), 0)} Print
+												{form.getValues().prints.reduce((c: number, p) => (c += p.quantity), 0) > 1 && 's'} To
+												Basket
 											</>
 										)}
 									</Button>
