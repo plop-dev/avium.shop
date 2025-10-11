@@ -208,7 +208,6 @@ export interface Order {
   prints: (
     | {
         product: string | Product;
-        quantity: number;
         price?: number | null;
         id?: string | null;
         blockName?: string | null;
@@ -230,7 +229,6 @@ export interface Order {
            */
           gcodeUrl: string;
         };
-        quantity: number;
         printingOptions: {
           preset?: (string | null) | Preset;
           layerHeight?: number | null;
@@ -428,7 +426,6 @@ export interface Quote {
      */
     gcodeUrl?: string | null;
   };
-  quantity: number;
   printingOptions: {
     preset?: (string | null) | Preset;
     layerHeight?: number | null;
@@ -442,7 +439,6 @@ export interface Quote {
      */
     colour: string;
   };
-  quoteHash: string;
   /**
    * The user who requested the quote
    */
@@ -657,7 +653,6 @@ export interface OrdersSelect<T extends boolean = true> {
           | T
           | {
               product?: T;
-              quantity?: T;
               price?: T;
               id?: T;
               blockName?: T;
@@ -673,7 +668,6 @@ export interface OrdersSelect<T extends boolean = true> {
                     modelUrl?: T;
                     gcodeUrl?: T;
                   };
-              quantity?: T;
               printingOptions?:
                 | T
                 | {
@@ -795,7 +789,6 @@ export interface QuotesSelect<T extends boolean = true> {
         modelUrl?: T;
         gcodeUrl?: T;
       };
-  quantity?: T;
   printingOptions?:
     | T
     | {
@@ -805,7 +798,6 @@ export interface QuotesSelect<T extends boolean = true> {
         plastic?: T;
         colour?: T;
       };
-  quoteHash?: T;
   user?: T;
   filament?: T;
   time?: T;

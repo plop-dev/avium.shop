@@ -34,7 +34,6 @@ export const Quotes: CollectionConfig = {
 				},
 			],
 		},
-		{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
 		{
 			name: 'printingOptions',
 			type: 'group',
@@ -47,11 +46,6 @@ export const Quotes: CollectionConfig = {
 				{ name: 'plastic', type: 'text', required: true, admin: { description: 'The plastic/material ID' } },
 				{ name: 'colour', type: 'text', required: true, admin: { description: 'The colour ID' } },
 			],
-		},
-		{
-			name: 'quoteHash',
-			type: 'text',
-			required: true,
 		},
 		{
 			name: 'user',

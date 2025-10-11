@@ -503,6 +503,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					infill: number;
 					preset?: string;
 					layerHeight?: number;
+					plastic: string;
 				};
 			}
 		>
@@ -663,37 +664,19 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
 	}, [quotes]);
 
-	async function makeQuoteHash(prints: CustomOrderFormValues, index: number) {
-		const print = prints.prints[index];
-
-		return Array.from(
-			new Uint8Array(
-				await crypto.subtle.digest(
-					'SHA-1',
-					new TextEncoder().encode(
-						[...Object.values(print.material), ...Object.values(print.printingOptions), print.quantity, print.file, index].join(
-							'',
-						),
-					),
-				),
-			),
-		)
-			.map(b => b.toString(36))
-			.join('')
-			.replace(/[^a-zA-Z0-9]/g, '');
-	}
-
 	function hasSettingsChanged(printIndex: number, currentPrint: CustomOrderFormValues['prints'][0]): boolean {
 		const quote = quotes.get(printIndex);
 		if (!quote) return true;
 
 		const currentSettings = {
+			plastic: currentPrint.material.plastic,
 			infill: currentPrint.printingOptions.infill || 10,
 			preset: currentPrint.printingOptions.preset,
 			layerHeight: currentPrint.printingOptions.layerHeight,
 		};
 
 		return (
+			quote.originalSettings.plastic !== currentSettings.plastic ||
 			quote.originalSettings.infill !== currentSettings.infill ||
 			quote.originalSettings.preset !== currentSettings.preset ||
 			quote.originalSettings.layerHeight !== currentSettings.layerHeight
@@ -747,17 +730,13 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				}
 			}
 
-			const quoteHash = await makeQuoteHash(data, i);
-
 			const quoteRes: { doc: Quote } = await fetch('/api/quotes', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify({
-					quoteHash,
 					user: userData.id,
-					quantity: print.quantity,
 					printingOptions: {
 						...print.printingOptions,
 						colour: print.material.colour,
@@ -895,8 +874,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					}
 					const pricingFormula = await pricingFormulaRes.json().then((res: PricingFormula) => res.pricingFormula);
 
-					// 	await new Promise(resolve => setTimeout(resolve, 100));
-					// }
 					if (!pricingFormula) {
 						toast.error('An error occurred fetching pricing formula. Please try again.', { dismissible: true });
 						cancelQuote();
@@ -925,7 +902,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 							'Content-Type': 'application/json',
 						},
 						body: JSON.stringify({
-							price,
+							// price,
 							model: {
 								modelUrl: res.modelUrl,
 								gcodeUrl: res.gcodeUrl,
@@ -954,6 +931,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 											infill: print.printingOptions.infill || 10,
 											preset: print.printingOptions.preset,
 											layerHeight: print.printingOptions.layerHeight,
+											plastic: print.material.plastic,
 										},
 									},
 								],
@@ -989,7 +967,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		const currentFormData = form.getValues();
 
-		currentFormData.prints.forEach((item, index) => {
+		currentFormData.prints.forEach(async (item, index) => {
 			const quote = quotes.get(index);
 
 			if (quote) {
@@ -1008,6 +986,30 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					price: quote.sliceResult.price || 0,
 					time: quote.sliceResult.times.total || '',
 				});
+
+				// update quote in db
+				const req = await fetch(`/api/quotes/${quote.id}`, {
+					method: 'PATCH',
+					credentials: 'include',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						printingOptions: {
+							colour: item.material.colour,
+							plastic: item.material.plastic,
+							...item.printingOptions,
+						},
+					}),
+				});
+
+				if (!req.ok) {
+					toast.error('An error occurred updating quote data. Please try again.', { dismissible: true });
+					console.error('Error updating quote:', req.statusText);
+					cancelQuote();
+					setIsLoading(false);
+					return;
+				}
 			}
 		});
 

@@ -60,7 +60,6 @@ export const Orders: CollectionConfig = {
 					labels: { singular: 'Shop Product', plural: 'Shop Product' },
 					fields: [
 						{ name: 'product', type: 'relationship', relationTo: 'products', required: true },
-						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
 
 						{ name: 'price', type: 'number' },
 					],
@@ -96,7 +95,6 @@ export const Orders: CollectionConfig = {
 								},
 							],
 						},
-						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
 						{
 							name: 'printingOptions',
 							type: 'group',
