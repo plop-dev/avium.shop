@@ -38,6 +38,7 @@ export type SlicingResult = {
 		total: string;
 	};
 	filament: FilamentInfo;
+	price: number;
 };
 
 export interface SlicingSettings {
@@ -60,7 +61,7 @@ async function uploadChunk(chunk: UploadChunk, baseServerUrl: string) {
 		headers: {
 			'Content-Type': 'application/json',
 		},
-		credentials: 'omit',
+		credentials: 'include',
 		body: JSON.stringify(chunk),
 	});
 

@@ -33,6 +33,9 @@ export default buildConfig({
 		avatar: 'default',
 		dateFormat: 'dd/MM/yyyy',
 	},
+	cors: {
+		origins: [process.env.NEXT_PUBLIC_AVIUM_API_URL || ''],
+	},
 	globals: [PrintingOptions, PricingFormula],
 	collections: [Users, Orders, Presets, Products, Media, Quotes, Filaments],
 	editor: lexicalEditor(),

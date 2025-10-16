@@ -687,7 +687,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		return Array.from(quotes.values()).map(quote => quote.id);
 	}
 
-	//#region on quote submit
+	//#region on quote submit (when print is added)
 	async function onSubmit(data: CustomOrderFormValues) {
 		if (!orderValidation.orderNameValid) {
 			toast.error('Please enter a valid order name (at least 3 characters)');
@@ -865,58 +865,60 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				if (res) {
 					console.log('Quote response received for print:', quoteRes.doc.id);
 
-					const pricingFormulaRes = await fetch(`/api/globals/pricing-formula`);
-					if (!pricingFormulaRes.ok) {
-						toast.error('An error occurred fetching pricing formula. Please try again.', { dismissible: true });
-						cancelQuote();
-						setIsLoading(false);
-						return;
-					}
-					const pricingFormula = await pricingFormulaRes.json().then((res: PricingFormula) => res.pricingFormula);
+					//* MOVE TO SERVER
+					// const pricingFormulaRes = await fetch(`/api/globals/pricing-formula`);
+					// if (!pricingFormulaRes.ok) {
+					// 	toast.error('An error occurred fetching pricing formula. Please try again.', { dismissible: true });
+					// 	cancelQuote();
+					// 	setIsLoading(false);
+					// 	return;
+					// }
+					// const pricingFormula = await pricingFormulaRes.json().then((res: PricingFormula) => res.pricingFormula);
 
-					if (!pricingFormula) {
-						toast.error('An error occurred fetching pricing formula. Please try again.', { dismissible: true });
-						cancelQuote();
-						setIsLoading(false);
-						return;
-					}
+					// if (!pricingFormula) {
+					// 	toast.error('An error occurred fetching pricing formula. Please try again.', { dismissible: true });
+					// 	cancelQuote();
+					// 	setIsLoading(false);
+					// 	return;
+					// }
 
-					const cost = Number(res.filament.cost) || 0;
-					console.log(
-						`formula: ${pricingFormula}, weight: ${res.filament.used_g}g, time: ${timeStringToSeconds(
-							res.times.total,
-						)}, cost: £${cost}`,
-					);
-					const price = (
-						evaluate(pricingFormula, {
-							weight: res.filament.used_g,
-							time: timeStringToSeconds(res.times.total),
-							cost: cost,
-						}) / 100
-					).toFixed(2) as unknown as number;
+					// const cost = Number(res.filament.cost) || 0;
+					// console.log(
+					// 	`formula: ${pricingFormula}, weight: ${res.filament.used_g}g, time: ${timeStringToSeconds(
+					// 		res.times.total,
+					// 	)}, cost: £${cost}`,
+					// );
+					// const price = (
+					// 	evaluate(pricingFormula, {
+					// 		weight: res.filament.used_g,
+					// 		time: timeStringToSeconds(res.times.total),
+					// 		cost: cost,
+					// 	}) / 100
+					// ).toFixed(2) as unknown as number;
 
-					const req = await fetch(`/api/quotes/${quoteRes.doc.id}`, {
-						method: 'PATCH',
-						credentials: 'include',
-						headers: {
-							'Content-Type': 'application/json',
-						},
-						body: JSON.stringify({
-							// price,
-							model: {
-								modelUrl: res.modelUrl,
-								gcodeUrl: res.gcodeUrl,
-							},
-							time: res.times.total,
-						}),
-					});
-					if (!req.ok) {
-						toast.error('An error occurred updating quote data. Please try again.', { dismissible: true });
-						console.error('Error updating quote:', req.statusText);
-						cancelQuote();
-						setIsLoading(false);
-						return;
-					}
+					// const req = await fetch(`/api/quotes/${quoteRes.doc.id}`, {
+					// 	method: 'PATCH',
+					// 	credentials: 'include',
+					// 	headers: {
+					// 		'Content-Type': 'application/json',
+					// 	},
+					// 	body: JSON.stringify({
+					// 		// price,
+					// 		model: {
+					// 			modelUrl: res.modelUrl,
+					// 			gcodeUrl: res.gcodeUrl,
+					// 		},
+					// 		time: res.times.total,
+					// 	}),
+					// });
+					// if (!req.ok) {
+					// 	toast.error('An error occurred updating quote data. Please try again.', { dismissible: true });
+					// 	console.error('Error updating quote:', req.statusText);
+					// 	cancelQuote();
+					// 	setIsLoading(false);
+					// 	return;
+					// }
+					//* ----------------------------------------------------
 
 					setQuotes(
 						prev =>
@@ -926,7 +928,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 									i,
 									{
 										id: quoteRes.doc.id,
-										sliceResult: { ...res, price },
+										sliceResult: { ...res },
 										originalSettings: {
 											infill: print.printingOptions.infill || 10,
 											preset: print.printingOptions.preset,
@@ -962,6 +964,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	}
 	//#endregion
 
+	//#region on confirm quote (when prints added to basket)
 	async function confirmQuote() {
 		setIsLoading(true);
 
@@ -1018,6 +1021,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		setIsOpen(false);
 		setIsLoading(false);
 	}
+	//#endregion
 
 	async function cancelQuote() {
 		const quotesToCleanup = getQuoteIds();
