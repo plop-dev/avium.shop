@@ -68,6 +68,7 @@ function UserMenu({
 						}
 						setIsLogOutLoading(false);
 					}}
+					disabled={logoutLoading}
 					className='relative'>
 					Log out
 					<Loader2

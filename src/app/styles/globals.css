@@ -253,3 +253,18 @@
 	/* Apply the reveal animation */
 	animation: reveal 0.4s ease-in-out forwards;
 }
+
+input[type='number'] {
+	-moz-appearance: textfield;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
+.thicc-text {
+	font-weight: 900;
+	text-shadow: 1px 0px var(--foreground);
+	letter-spacing: 1px;
+}

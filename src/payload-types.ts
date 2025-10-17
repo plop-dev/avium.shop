@@ -70,6 +70,11 @@ export interface Config {
     users: User;
     orders: Order;
     presets: Preset;
+    products: Product;
+    media: Media;
+    quotes: Quote;
+    filaments: Filament;
+    search: Search;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -79,6 +84,11 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    quotes: QuotesSelect<false> | QuotesSelect<true>;
+    filaments: FilamentsSelect<false> | FilamentsSelect<true>;
+    search: SearchSelect<false> | SearchSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -88,9 +98,11 @@ export interface Config {
   };
   globals: {
     'printing-options': PrintingOption;
+    'pricing-formula': PricingFormula;
   };
   globalsSelect: {
     'printing-options': PrintingOptionsSelect<false> | PrintingOptionsSelect<true>;
+    'pricing-formula': PricingFormulaSelect<false> | PricingFormulaSelect<true>;
   };
   locale: null;
   user: User & {
@@ -151,10 +163,10 @@ export interface User {
   stripeCustomerId?: string | null;
   accounts?:
     | {
-        id?: string | null;
         provider: string;
         providerAccountId: string;
         type: string;
+        id?: string | null;
       }[]
     | null;
   updatedAt: string;
@@ -193,47 +205,71 @@ export interface Order {
    * The user who placed the order
    */
   customer: string | User;
-  /**
-   * The 3D model(s) associated with this order
-   */
-  model?:
+  prints: (
+    | {
+        product: string | Product;
+        price?: number | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'shopProduct';
+      }
     | {
         /**
-         * The name of the 3D model file (example: acb123)
+         * The 3D model associated with this item
          */
-        filename: string;
-        filetype: 'stl' | 'obj' | '3mf';
+        model: {
+          filename: string;
+          filetype: 'stl' | '3mf';
+          /**
+           * The unique download URL to the model
+           */
+          modelUrl: string;
+          /**
+           * The unique download URL to the G-code file
+           */
+          gcodeUrl: string;
+        };
+        printingOptions: {
+          preset?: (string | null) | Preset;
+          layerHeight?: number | null;
+          infill?: number | null;
+          plastic: string;
+          colour: string;
+        };
         /**
-         * The relative path of the 3D model file on the server (example: /files/abc123.stl)
+         * Estimated print time as returned by the slicer (total)
          */
-        serverPath: string;
+        time?: string | null;
+        /**
+         * Estimated filament usage in grams as returned by the slicer
+         */
+        filament?: number | null;
+        price?: number | null;
         id?: string | null;
-      }[]
-    | null;
-  quantity: number;
-  printingOptions: {
-    preset?: (string | null) | Preset;
-    layerHeight?: number | null;
-    infill: {
-      min: number;
-      max: number;
-    };
-  };
+        blockName?: string | null;
+        blockType: 'customPrint';
+      }
+  )[];
   payment: {};
-  quote?: {};
-  statuses?:
-    | {
-        stage: 'received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled';
-        timestamp: string;
-        id?: string | null;
-      }[]
-    | null;
   /**
-   * Denormalized field for quick access
+   * The total price of the order. Calculated from the prints subtotals. After quote if order has any custom prints.
    */
-  currentStatus?:
-    | ('received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled')
-    | null;
+  total?: number | null;
+  status?: {
+    statuses?:
+      | {
+          stage: 'received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled';
+          timestamp: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Denormalized field for quick access
+     */
+    currentStatus?:
+      | ('received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled')
+      | null;
+  };
   comments?:
     | {
         /**
@@ -266,6 +302,89 @@ export interface Order {
   createdAt: string;
 }
 /**
+ * Products available for purchase in the shop. DO NOT DELETE PRODUCTS, HIDE INSTEAD.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: string;
+  /**
+   * The name of the product
+   */
+  name: string;
+  /**
+   * A detailed description of the product
+   */
+  description: string;
+  pictures: (string | Media)[];
+  /**
+   * The price of the product in GBP (£)
+   */
+  price: number;
+  /**
+   * The estimated print time for the product
+   */
+  time: string;
+  /**
+   * The number of times this product has been bought
+   */
+  orders?: number | null;
+  printingOptions: {
+    plastic: {
+      /**
+       * The name of the plastic type
+       */
+      name: string;
+      /**
+       * A brief description of the plastic type
+       */
+      description?: string | null;
+      colours?:
+        | {
+            colour: string;
+            id?: string | null;
+          }[]
+        | null;
+      id?: string | null;
+      blockName?: string | null;
+      blockType: 'plastic';
+    }[];
+    /**
+     * The layer height of the product. This is set by the preset and cannot be changed by the user.
+     */
+    layerHeight: number;
+    /**
+     * The infill percentage of the product. This is set by the preset and cannot be changed by the user.
+     */
+    infill: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string;
+  /**
+   * Alt text for images / caption for videos
+   */
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "presets".
  */
@@ -280,9 +399,101 @@ export interface Preset {
    */
   description?: string | null;
   /**
-   * The name of the preset in Bambu Lab
+   * The filename of the profile of the preset (process) in Bambu Studio/Orca Slicer. DO NOT INCLUDE FILE EXTENSION. See C:\Program Files\OrcaSlicer\resources\profiles\BBL\process
    */
   bambulabName?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes".
+ */
+export interface Quote {
+  id: string;
+  /**
+   * The 3D model associated with this item
+   */
+  model: {
+    filename: string;
+    filetype: 'stl' | '3mf';
+    /**
+     * The unique download URL to the model
+     */
+    modelUrl?: string | null;
+    /**
+     * The unique download URL to the G-code file
+     */
+    gcodeUrl?: string | null;
+  };
+  printingOptions: {
+    preset?: (string | null) | Preset;
+    layerHeight?: number | null;
+    infill?: number | null;
+    /**
+     * The plastic/material ID
+     */
+    plastic: string;
+    /**
+     * The colour ID
+     */
+    colour: string;
+  };
+  /**
+   * The user who requested the quote
+   */
+  user: string | User;
+  /**
+   * Estimated filament usage in grams as returned by the slicer
+   */
+  filament?: number | null;
+  /**
+   * Estimated print time as returned by the slicer (total)
+   */
+  time?: string | null;
+  price?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "filaments".
+ */
+export interface Filament {
+  id: string;
+  /**
+   * The name of the filament/material. USE THIS FORMAT: PLA, PETG, ABS, etc.
+   */
+  name: string;
+  /**
+   * JSON data from filament folder in Bambu Labs or Orca Slicer. Path: C:/Program Files/OrcaSlicer/resources/profiles/BBL
+   */
+  data:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This is a collection of automatically created search results. These results are used by the global site search and will be updated automatically as documents in the CMS are created or updated.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search".
+ */
+export interface Search {
+  id: string;
+  title?: string | null;
+  priority?: number | null;
+  doc: {
+    relationTo: 'products';
+    value: string | Product;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -304,6 +515,26 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'presets';
         value: string | Preset;
+      } | null)
+    | ({
+        relationTo: 'products';
+        value: string | Product;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'quotes';
+        value: string | Quote;
+      } | null)
+    | ({
+        relationTo: 'filaments';
+        value: string | Filament;
+      } | null)
+    | ({
+        relationTo: 'search';
+        value: string | Search;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -382,10 +613,10 @@ export interface UsersSelect<T extends boolean = true> {
   accounts?:
     | T
     | {
-        id?: T;
         provider?: T;
         providerAccountId?: T;
         type?: T;
+        id?: T;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -415,37 +646,58 @@ export interface UsersSelect<T extends boolean = true> {
 export interface OrdersSelect<T extends boolean = true> {
   name?: T;
   customer?: T;
-  model?:
+  prints?:
     | T
     | {
-        filename?: T;
-        filetype?: T;
-        serverPath?: T;
-        id?: T;
-      };
-  quantity?: T;
-  printingOptions?:
-    | T
-    | {
-        preset?: T;
-        layerHeight?: T;
-        infill?:
+        shopProduct?:
           | T
           | {
-              min?: T;
-              max?: T;
+              product?: T;
+              price?: T;
+              id?: T;
+              blockName?: T;
+            };
+        customPrint?:
+          | T
+          | {
+              model?:
+                | T
+                | {
+                    filename?: T;
+                    filetype?: T;
+                    modelUrl?: T;
+                    gcodeUrl?: T;
+                  };
+              printingOptions?:
+                | T
+                | {
+                    preset?: T;
+                    layerHeight?: T;
+                    infill?: T;
+                    plastic?: T;
+                    colour?: T;
+                  };
+              time?: T;
+              filament?: T;
+              price?: T;
+              id?: T;
+              blockName?: T;
             };
       };
   payment?: T | {};
-  quote?: T | {};
-  statuses?:
+  total?: T;
+  status?:
     | T
     | {
-        stage?: T;
-        timestamp?: T;
-        id?: T;
+        statuses?:
+          | T
+          | {
+              stage?: T;
+              timestamp?: T;
+              id?: T;
+            };
+        currentStatus?: T;
       };
-  currentStatus?: T;
   comments?:
     | T
     | {
@@ -465,6 +717,112 @@ export interface PresetsSelect<T extends boolean = true> {
   name?: T;
   description?: T;
   bambulabName?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  pictures?: T;
+  price?: T;
+  time?: T;
+  orders?: T;
+  printingOptions?:
+    | T
+    | {
+        plastic?:
+          | T
+          | {
+              plastic?:
+                | T
+                | {
+                    name?: T;
+                    description?: T;
+                    colours?:
+                      | T
+                      | {
+                          colour?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+            };
+        layerHeight?: T;
+        infill?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes_select".
+ */
+export interface QuotesSelect<T extends boolean = true> {
+  model?:
+    | T
+    | {
+        filename?: T;
+        filetype?: T;
+        modelUrl?: T;
+        gcodeUrl?: T;
+      };
+  printingOptions?:
+    | T
+    | {
+        preset?: T;
+        layerHeight?: T;
+        infill?: T;
+        plastic?: T;
+        colour?: T;
+      };
+  user?: T;
+  filament?: T;
+  time?: T;
+  price?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "filaments_select".
+ */
+export interface FilamentsSelect<T extends boolean = true> {
+  name?: T;
+  data?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search_select".
+ */
+export interface SearchSelect<T extends boolean = true> {
+  title?: T;
+  priority?: T;
+  doc?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -518,7 +876,7 @@ export interface PrintingOption {
         description?: string | null;
         colours?:
           | {
-              color: string;
+              colour: string;
               id?: string | null;
             }[]
           | null;
@@ -540,6 +898,16 @@ export interface PrintingOption {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pricing-formula".
+ */
+export interface PricingFormula {
+  id: string;
+  pricingFormula: string;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "printing-options_select".
  */
 export interface PrintingOptionsSelect<T extends boolean = true> {
@@ -554,7 +922,7 @@ export interface PrintingOptionsSelect<T extends boolean = true> {
               colours?:
                 | T
                 | {
-                    color?: T;
+                    colour?: T;
                     id?: T;
                   };
               id?: T;
@@ -573,6 +941,16 @@ export interface PrintingOptionsSelect<T extends boolean = true> {
         min?: T;
         max?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pricing-formula_select".
+ */
+export interface PricingFormulaSelect<T extends boolean = true> {
+  pricingFormula?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

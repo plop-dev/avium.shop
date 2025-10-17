@@ -5,6 +5,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import path from 'path';
 import { buildConfig } from 'payload';
 import { authjsPlugin } from 'payload-authjs';
+import { searchPlugin } from '@payloadcms/plugin-search';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob';
@@ -14,6 +15,11 @@ import { authConfig } from '@/auth.config';
 import { PrintingOptions } from '@/collections/PrintingOptions';
 import { Orders } from '@/collections/Order';
 import { Presets } from '@/collections/Presets';
+import { Products } from '@/collections/Products';
+import { Media } from '@/collections/Media';
+import { Quotes } from './collections/Quotes';
+import { Filaments } from './collections/Filaments';
+import { PricingFormula } from './collections/PricingFormula';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -25,10 +31,13 @@ export default buildConfig({
 			baseDir: path.resolve(dirname),
 		},
 		avatar: 'default',
-		dateFormat: 'DD/MM/YYYY',
+		dateFormat: 'dd/MM/yyyy',
 	},
-	globals: [PrintingOptions],
-	collections: [Users, Orders, Presets],
+	cors: {
+		origins: [process.env.NEXT_PUBLIC_AVIUM_API_URL || ''],
+	},
+	globals: [PrintingOptions, PricingFormula],
+	collections: [Users, Orders, Presets, Products, Media, Quotes, Filaments],
 	editor: lexicalEditor(),
 	secret: process.env.PAYLOAD_SECRET || '',
 	typescript: {
@@ -48,10 +57,12 @@ export default buildConfig({
 		vercelBlobStorage({
 			enabled: true,
 			collections: {
-				// If you have another collection that supports uploads, you can add it below
 				media: true,
 			},
 			token: process.env.BLOB_READ_WRITE_TOKEN,
+		}),
+		searchPlugin({
+			collections: ['products'],
 		}),
 	],
 	email: nodemailerAdapter({

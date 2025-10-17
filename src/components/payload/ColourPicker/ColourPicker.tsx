@@ -50,7 +50,7 @@ const ColourPicker = ({ field: { label, required = false }, path }: { field: { l
 		const val = e.target.value;
 		setValue(val);
 
-		// Validate hex color format
+		// Validate hex colour format
 		if (val && !val.startsWith('#')) {
 			toast.error('Color value must start with #', {
 				id: `colour-picker-format-${path}`,
@@ -58,7 +58,7 @@ const ColourPicker = ({ field: { label, required = false }, path }: { field: { l
 				dismissible: true,
 			});
 		} else if (val && val.length === 7 && !/^#[0-9A-Fa-f]{6}$/.test(val)) {
-			toast.error('Invalid hex color format', {
+			toast.error('Invalid hex colour format', {
 				id: `colour-picker-format-${path}`,
 				duration: 2000,
 				dismissible: true,
@@ -184,7 +184,7 @@ const ColourPicker = ({ field: { label, required = false }, path }: { field: { l
 						style={{ backgroundColor: value || '#000000', cursor: 'pointer' }}
 						onClick={handlePreviewClick}
 						tabIndex={0}
-						aria-label='Open color picker'
+						aria-label='Open colour picker'
 					/>
 					<div className={'textInputWrapper'}>
 						<TextInput

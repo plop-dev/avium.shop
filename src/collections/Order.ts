@@ -8,13 +8,25 @@ export const Orders: CollectionConfig = {
 	},
 	admin: {
 		useAsTitle: 'name',
-		defaultColumns: ['name', 'customer', 'currentStatus', 'createdAt'],
+		defaultColumns: ['name', 'customer', 'status.currentStatus', 'createdAt'],
 	},
 	access: {
 		read: () => true,
 		create: () => false,
 		update: () => true,
 		delete: () => false,
+	},
+	hooks: {
+		beforeChange: [
+			({ data }) => {
+				// keep currentStatus in sync with the last history entry
+				const statuses = data?.status?.statuses;
+				if (Array.isArray(statuses) && statuses.length) {
+					data.status.currentStatus = statuses[statuses.length - 1].stage;
+				}
+				return data;
+			},
+		],
 	},
 	timestamps: true,
 	fields: [
@@ -37,94 +49,78 @@ export const Orders: CollectionConfig = {
 		},
 
 		{
-			name: 'model',
-			type: 'array',
-			admin: {
-				readOnly: true,
-				isSortable: false,
-				description: 'The 3D model(s) associated with this order',
-			},
-			fields: [
-				{
-					name: 'filename',
-					type: 'text',
-					required: true,
-					admin: { description: 'The name of the 3D model file (example: acb123)', readOnly: true },
-				},
-				{
-					name: 'filetype',
-					type: 'select',
-					options: ['stl', 'obj', '3mf'],
-					required: true,
-					admin: { readOnly: true },
-				},
-				{
-					name: 'serverPath',
-					type: 'text',
-					required: true,
-					admin: {
-						description: 'The relative path of the 3D model file on the server (example: /files/abc123.stl)',
-						readOnly: true,
-					},
-				},
-			],
-		},
-
-		{
-			name: 'quantity',
-			type: 'number',
+			name: 'prints',
+			type: 'blocks',
 			required: true,
-			defaultValue: 1,
-		},
-
-		{
-			name: 'printingOptions',
-			type: 'group',
-			required: true,
-			fields: [
+			minRows: 1,
+			labels: { singular: 'Print', plural: 'Prints' },
+			blocks: [
 				{
-					name: 'preset',
-					type: 'relationship',
-					relationTo: 'presets',
-					admin: {
-						condition: (data, siblingData, { blockData, path, user }) => {
-							if (data.printingOptions.layerHeight) {
-								// if layerHeight is set, we assume it's a custom print
-								return false; // don't show preset selection
-							} else {
-								// if layerHeight is not set, we allow preset selection
-								return true; // show preset selection
-							}
-						},
-					},
+					slug: 'shopProduct',
+					labels: { singular: 'Shop Product', plural: 'Shop Product' },
+					fields: [
+						{ name: 'product', type: 'relationship', relationTo: 'products', required: true },
+
+						{ name: 'price', type: 'number' },
+					],
 				},
-
-				// or custom settings (below)
 				{
-					name: 'layerHeight',
-					label: 'Layer Height',
-					type: 'number',
-					defaultValue: 0.2, //? get default from PrintingOptions global?
-				},
-
-				//* user can always change infill, even if a preset is selected
-				{
-					name: 'infill',
-					label: 'Infill Percentage Range',
-					type: 'group',
+					slug: 'customPrint',
+					labels: { singular: 'Custom Print', plural: 'Custom Prints' },
 					fields: [
 						{
-							name: 'min',
-							label: 'Minimum %',
-							type: 'number',
-							required: true,
+							name: 'model',
+							type: 'group',
+							admin: { readOnly: true, description: 'The 3D model associated with this item' },
+							fields: [
+								{ name: 'filename', type: 'text', required: true, admin: { readOnly: true } },
+								{
+									name: 'filetype',
+									type: 'select',
+									options: ['stl', '3mf'],
+									required: true,
+									admin: { readOnly: true },
+								},
+								{
+									name: 'modelUrl',
+									type: 'text',
+									required: true,
+									admin: { readOnly: true, description: 'The unique download URL to the model' },
+								},
+								{
+									name: 'gcodeUrl',
+									type: 'text',
+									required: true,
+									admin: { readOnly: true, description: 'The unique download URL to the G-code file' },
+								},
+							],
 						},
 						{
-							name: 'max',
-							label: 'Maximum %',
-							type: 'number',
+							name: 'printingOptions',
+							type: 'group',
 							required: true,
+							fields: [
+								{ name: 'preset', type: 'relationship', relationTo: 'presets' },
+								// if layerHeight is set, treat as custom; otherwise preset applies
+								{ name: 'layerHeight', label: 'Layer Height', type: 'number' },
+								{ name: 'infill', label: 'Infill Percentage', type: 'number' },
+								{ name: 'plastic', type: 'text', required: true },
+								{ name: 'colour', type: 'text', required: true },
+							],
 						},
+						{
+							name: 'time',
+							type: 'text',
+							admin: { description: 'Estimated print time as returned by the slicer (total)' },
+						},
+						{
+							name: 'filament',
+							type: 'number',
+							admin: { description: 'Estimated filament usage in grams as returned by the slicer' },
+						},
+
+						// price for this custom print line (after quote)
+						{ name: 'price', type: 'number' },
 					],
 				},
 			],
@@ -136,32 +132,106 @@ export const Orders: CollectionConfig = {
 			name: 'payment',
 			type: 'group',
 			required: true,
-			fields: [
-				// if custom print, payment will be after the quote
-			],
+			fields: [],
 		},
 		//#endregion
 
 		// only if custom
 		{
-			name: 'quote',
-			type: 'group',
-			fields: [
-				//
-			],
+			name: 'total',
+			type: 'number',
+			admin: {
+				description:
+					'The total price of the order. Calculated from the prints subtotals. After quote if order has any custom prints.',
+			},
 		},
 
 		//#region status
 		//! CHANGE THIS -------------
 		{
-			name: 'statuses',
-			type: 'array',
-			label: 'Order Status History',
+			name: 'status',
+			type: 'group',
+			label: 'Order Status',
+			hooks: {
+				beforeChange: [
+					({ data }) => {
+						if (!data) return data;
+
+						// keep currentStatus in sync with the last history entry
+						const statuses = data?.status?.statuses;
+						if (Array.isArray(statuses) && statuses.length) {
+							const last = statuses[statuses.length - 1];
+							data.status = {
+								...data.status,
+								currentStatus: last.stage,
+							};
+						}
+
+						// compute line subtotals and order total
+						if (Array.isArray(data?.prints)) {
+							let total = 0;
+							data.prints = data.prints.map(p => {
+								const qty = Number(p?.quantity ?? 0);
+
+								if (p?.blockType === 'ShopProduct') {
+									const unit = Number(p?.snapshot?.unitPrice ?? 0);
+									const subtotal = qty * unit;
+									total += subtotal;
+									return { ...p, subtotal };
+								}
+
+								if (p?.blockType === 'customPrint') {
+									const unit = Number(p?.unitPrice ?? 0);
+									const subtotal = qty * unit;
+									total += subtotal;
+									return { ...p, subtotal };
+								}
+
+								return p;
+							});
+							data.total = total;
+						}
+
+						return data;
+					},
+				],
+			},
 			fields: [
 				{
-					name: 'stage',
+					name: 'statuses',
+					type: 'array',
+					label: 'Order Status History',
+					fields: [
+						{
+							name: 'stage',
+							type: 'select',
+							required: true,
+							options: [
+								{ label: 'Received', value: 'received' },
+								{ label: 'Processing', value: 'processing' },
+								{ label: 'Printing', value: 'printing' },
+								{ label: 'Quality Check', value: 'quality_check' },
+								{ label: 'Shipped', value: 'shipped' },
+								{ label: 'Delivered', value: 'delivered' },
+								{ label: 'Cancelled', value: 'cancelled' },
+							],
+						},
+						{
+							name: 'timestamp',
+							type: 'date',
+							required: true,
+							defaultValue: () => new Date().toISOString(),
+							admin: {
+								date: {
+									pickerAppearance: 'dayOnly',
+								},
+							},
+						},
+					],
+				},
+				{
+					name: 'currentStatus',
 					type: 'select',
-					required: true,
 					options: [
 						{ label: 'Received', value: 'received' },
 						{ label: 'Processing', value: 'processing' },
@@ -171,46 +241,11 @@ export const Orders: CollectionConfig = {
 						{ label: 'Delivered', value: 'delivered' },
 						{ label: 'Cancelled', value: 'cancelled' },
 					],
-				},
-				{
-					name: 'timestamp',
-					type: 'date',
-					required: true,
 					admin: {
-						date: {
-							pickerAppearance: 'dayOnly',
-						},
+						description: 'Denormalized field for quick access',
 					},
 				},
 			],
-		},
-		{
-			name: 'currentStatus',
-			type: 'select',
-			options: [
-				{ label: 'Received', value: 'received' },
-				{ label: 'Processing', value: 'processing' },
-				{ label: 'Printing', value: 'printing' },
-				{ label: 'Quality Check', value: 'quality_check' },
-				{ label: 'Shipped', value: 'shipped' },
-				{ label: 'Delivered', value: 'delivered' },
-				{ label: 'Cancelled', value: 'cancelled' },
-			],
-			admin: {
-				description: 'Denormalized field for quick access',
-			},
-			hooks: {
-				afterChange: [
-					({ value, previousValue, req }) => {
-						// update currentStatus based on last statuses entry
-						if (value.statuses?.length) {
-							const last = value.statuses[value.statuses.length - 1];
-							value.currentStatus = last.stage;
-						}
-						return value;
-					},
-				],
-			},
 		},
 		//! --------------------------------
 		//#endregion

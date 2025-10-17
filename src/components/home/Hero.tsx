@@ -46,8 +46,8 @@ const Hero = async ({
 	},
 }: HeroProps) => {
 	return (
-		<section className='w-full flex flex-col items-center'>
-			<div className='pt-36 pb-24 max-w-5xl'>
+		<section className='flex flex-col items-center px-64'>
+			<div className='pt-36 pb-24'>
 				<div className='flex flex-col items-center justify-center gap-y-8 text-center'>
 					<h1 className='text-6xl'>
 						{heading} <br />
@@ -57,18 +57,18 @@ const Hero = async ({
 					</h1>
 					<p className='w-2/3'>{description}</p>
 					<div className='flex gap-x-2'>
-						<Link href={buttons.primary.url} className={cn(buttonVariants({ variant: 'default' }))}>
+						<Link href={buttons.primary.url} className={cn(buttonVariants({ variant: 'default', size: 'lg' }))}>
 							{buttons.primary.text}
 						</Link>
-						<Link href={buttons.secondary.url} className={cn(buttonVariants({ variant: 'secondary' }))}>
+						<Link href={buttons.secondary.url} className={cn(buttonVariants({ variant: 'secondary', size: 'lg' }))}>
 							{buttons.secondary.text}
 						</Link>
 					</div>
 				</div>
 			</div>
 
-			<div className='w-[60%] grid place-items-center'>
-				{/* <h1 className='text-secondary'>SZYMON VID HERE</h1> */}
+			<div className='grid place-items-center relative'>
+				<div className='absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/80 z-10 pointer-events-none'></div>
 				<Video
 					type='video/webm'
 					url={'https://tt9cm3m7y1kbfhht.public.blob.vercel-storage.com/hero-printer-0.webm'}
@@ -76,7 +76,8 @@ const Hero = async ({
 					autoPlay
 					playsInline
 					loop
-					className='rounded-xl'></Video>
+					className='rounded-xl'
+				/>
 			</div>
 		</section>
 	);
