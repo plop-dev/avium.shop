@@ -19,7 +19,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import logo from '@/assets/logo.png';
-import { LayoutDashboard, List, Settings, UserLock } from 'lucide-react';
+import { Home, LayoutDashboard, List, Settings, UserLock } from 'lucide-react';
 import Link from 'next/link';
 
 export type SidebarData = {
@@ -39,19 +39,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const data: SidebarData = {
 		navMain: [
 			{
-				title: 'Dashboard',
-				url: '#',
-				icon: LayoutDashboard,
-			},
-			{
-				title: 'Admin Panel',
-				url: '/admin',
-				icon: UserLock,
-			},
-			{
-				title: 'Orders',
-				url: '#',
-				icon: List,
+				title: 'Home',
+				url: '/dashboard/home',
+				icon: Home,
 			},
 		],
 		navSecondary: [

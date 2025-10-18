@@ -865,61 +865,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				if (res) {
 					console.log('Quote response received for print:', quoteRes.doc.id);
 
-					//* MOVE TO SERVER
-					// const pricingFormulaRes = await fetch(`/api/globals/pricing-formula`);
-					// if (!pricingFormulaRes.ok) {
-					// 	toast.error('An error occurred fetching pricing formula. Please try again.', { dismissible: true });
-					// 	cancelQuote();
-					// 	setIsLoading(false);
-					// 	return;
-					// }
-					// const pricingFormula = await pricingFormulaRes.json().then((res: PricingFormula) => res.pricingFormula);
-
-					// if (!pricingFormula) {
-					// 	toast.error('An error occurred fetching pricing formula. Please try again.', { dismissible: true });
-					// 	cancelQuote();
-					// 	setIsLoading(false);
-					// 	return;
-					// }
-
-					// const cost = Number(res.filament.cost) || 0;
-					// console.log(
-					// 	`formula: ${pricingFormula}, weight: ${res.filament.used_g}g, time: ${timeStringToSeconds(
-					// 		res.times.total,
-					// 	)}, cost: £${cost}`,
-					// );
-					// const price = (
-					// 	evaluate(pricingFormula, {
-					// 		weight: res.filament.used_g,
-					// 		time: timeStringToSeconds(res.times.total),
-					// 		cost: cost,
-					// 	}) / 100
-					// ).toFixed(2) as unknown as number;
-
-					// const req = await fetch(`/api/quotes/${quoteRes.doc.id}`, {
-					// 	method: 'PATCH',
-					// 	credentials: 'include',
-					// 	headers: {
-					// 		'Content-Type': 'application/json',
-					// 	},
-					// 	body: JSON.stringify({
-					// 		// price,
-					// 		model: {
-					// 			modelUrl: res.modelUrl,
-					// 			gcodeUrl: res.gcodeUrl,
-					// 		},
-					// 		time: res.times.total,
-					// 	}),
-					// });
-					// if (!req.ok) {
-					// 	toast.error('An error occurred updating quote data. Please try again.', { dismissible: true });
-					// 	console.error('Error updating quote:', req.statusText);
-					// 	cancelQuote();
-					// 	setIsLoading(false);
-					// 	return;
-					// }
-					//* ----------------------------------------------------
-
 					setQuotes(
 						prev =>
 							new Map([
