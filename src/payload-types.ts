@@ -208,7 +208,8 @@ export interface Order {
   prints: (
     | {
         product: string | Product;
-        price?: number | null;
+        quantity: number;
+        price: number;
         id?: string | null;
         blockName?: string | null;
         blockType: 'shopProduct';
@@ -237,39 +238,55 @@ export interface Order {
           colour: string;
         };
         /**
-         * Estimated print time as returned by the slicer (total)
+         * Estimated print time as returned by the slicer
          */
         time?: string | null;
         /**
          * Estimated filament usage in grams as returned by the slicer
          */
         filament?: number | null;
-        price?: number | null;
+        quantity: number;
+        price: number;
         id?: string | null;
         blockName?: string | null;
         blockType: 'customPrint';
       }
   )[];
-  payment: {};
+  payment: {
+    /**
+     * Stripe Payment Intent ID
+     */
+    stripePaymentIntentId?: string | null;
+    status?: ('pending' | 'processing' | 'succeeded' | 'failed' | 'cancelled') | null;
+    /**
+     * Payment amount in cents
+     */
+    amount?: number | null;
+  };
   /**
-   * The total price of the order. Calculated from the prints subtotals. After quote if order has any custom prints.
+   * The total price of the order. Calculated from the prints.
    */
-  total?: number | null;
-  status?: {
+  total: number;
+  /**
+   * The print queue this order is assigned to
+   */
+  queue?: number | null;
+  status: {
     statuses?:
       | {
-          stage: 'received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled';
+          stage: 'paid' | 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled';
           timestamp: string;
           id?: string | null;
         }[]
       | null;
     /**
-     * Denormalized field for quick access
+     * Current order status - auto-synced from status history
      */
-    currentStatus?:
-      | ('received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled')
-      | null;
+    currentStatus: 'paid' | 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled';
   };
+  /**
+   * Comments on this order
+   */
   comments?:
     | {
         /**
@@ -653,6 +670,7 @@ export interface OrdersSelect<T extends boolean = true> {
           | T
           | {
               product?: T;
+              quantity?: T;
               price?: T;
               id?: T;
               blockName?: T;
@@ -679,13 +697,21 @@ export interface OrdersSelect<T extends boolean = true> {
                   };
               time?: T;
               filament?: T;
+              quantity?: T;
               price?: T;
               id?: T;
               blockName?: T;
             };
       };
-  payment?: T | {};
+  payment?:
+    | T
+    | {
+        stripePaymentIntentId?: T;
+        status?: T;
+        amount?: T;
+      };
   total?: T;
+  queue?: T;
   status?:
     | T
     | {

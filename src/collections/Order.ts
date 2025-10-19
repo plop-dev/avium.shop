@@ -141,6 +141,7 @@ export const Orders: CollectionConfig = {
 			],
 		},
 
+		//! ABSOLUTELY NO IDEA: ASK ENY
 		{
 			name: 'payment',
 			type: 'group',
@@ -160,7 +161,6 @@ export const Orders: CollectionConfig = {
 						{ label: 'Succeeded', value: 'succeeded' },
 						{ label: 'Failed', value: 'failed' },
 						{ label: 'Cancelled', value: 'cancelled' },
-						{ label: 'Refunded', value: 'refunded' },
 					],
 					defaultValue: 'pending',
 				},
@@ -207,18 +207,12 @@ export const Orders: CollectionConfig = {
 							type: 'select',
 							required: true,
 							options: [
-								{ label: 'Payment Pending', value: 'payment_pending' },
 								{ label: 'Paid', value: 'paid' },
-								{ label: 'In Queue', value: 'in_queue' },
+								{ label: 'In Queue', value: 'in-queue' },
 								{ label: 'Printing', value: 'printing' },
-								{ label: 'Print Failed', value: 'failed' },
-								{ label: 'Quality Check', value: 'quality_check' },
 								{ label: 'Packaging', value: 'packaging' },
 								{ label: 'Shipped', value: 'shipped' },
-								{ label: 'Delivered', value: 'delivered' },
-								{ label: 'Completed', value: 'completed' },
 								{ label: 'Cancelled', value: 'cancelled' },
-								{ label: 'Refunded', value: 'refunded' },
 							],
 						},
 						{
@@ -232,11 +226,6 @@ export const Orders: CollectionConfig = {
 								},
 							},
 						},
-						{
-							name: 'note',
-							type: 'textarea',
-							admin: { description: 'Optional note about this status change' },
-						},
 					],
 				},
 				{
@@ -245,18 +234,12 @@ export const Orders: CollectionConfig = {
 					required: true,
 					defaultValue: 'payment_pending',
 					options: [
-						{ label: 'Payment Pending', value: 'payment_pending' },
 						{ label: 'Paid', value: 'paid' },
-						{ label: 'In Queue', value: 'in_queue' },
+						{ label: 'In Queue', value: 'in-queue' },
 						{ label: 'Printing', value: 'printing' },
-						{ label: 'Print Failed', value: 'failed' },
-						{ label: 'Quality Check', value: 'quality_check' },
 						{ label: 'Packaging', value: 'packaging' },
 						{ label: 'Shipped', value: 'shipped' },
-						{ label: 'Delivered', value: 'delivered' },
-						{ label: 'Completed', value: 'completed' },
 						{ label: 'Cancelled', value: 'cancelled' },
-						{ label: 'Refunded', value: 'refunded' },
 					],
 					admin: {
 						description: 'Current order status - auto-synced from status history',
