@@ -8,7 +8,7 @@ export const Orders: CollectionConfig = {
 	},
 	admin: {
 		useAsTitle: 'name',
-		defaultColumns: ['name', 'customer', 'status.currentStatus', 'createdAt'],
+		defaultColumns: ['name', 'customer', 'status.currentStatus', 'total', 'createdAt'],
 	},
 	access: {
 		read: () => true,
@@ -19,11 +19,28 @@ export const Orders: CollectionConfig = {
 	hooks: {
 		beforeChange: [
 			({ data }) => {
+				if (!data) return data;
+
 				// keep currentStatus in sync with the last history entry
 				const statuses = data?.status?.statuses;
 				if (Array.isArray(statuses) && statuses.length) {
-					data.status.currentStatus = statuses[statuses.length - 1].stage;
+					const last = statuses[statuses.length - 1];
+					data.status = {
+						...data.status,
+						currentStatus: last.stage,
+					};
 				}
+
+				// compute order total from prints
+				if (Array.isArray(data?.prints)) {
+					let total = 0;
+					data.prints.forEach(print => {
+						const price = Number(print?.price ?? 0);
+						total += price;
+					});
+					data.total = total;
+				}
+
 				return data;
 			},
 		],
@@ -57,11 +74,11 @@ export const Orders: CollectionConfig = {
 			blocks: [
 				{
 					slug: 'shopProduct',
-					labels: { singular: 'Shop Product', plural: 'Shop Product' },
+					labels: { singular: 'Shop Product', plural: 'Shop Products' },
 					fields: [
 						{ name: 'product', type: 'relationship', relationTo: 'products', required: true },
-
-						{ name: 'price', type: 'number' },
+						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
+						{ name: 'price', type: 'number', required: true },
 					],
 				},
 				{
@@ -101,9 +118,8 @@ export const Orders: CollectionConfig = {
 							required: true,
 							fields: [
 								{ name: 'preset', type: 'relationship', relationTo: 'presets' },
-								// if layerHeight is set, treat as custom; otherwise preset applies
-								{ name: 'layerHeight', label: 'Layer Height', type: 'number' },
-								{ name: 'infill', label: 'Infill Percentage', type: 'number' },
+								{ name: 'layerHeight', label: 'Layer Height (mm)', type: 'number' },
+								{ name: 'infill', label: 'Infill Percentage', type: 'number', min: 0, max: 100 },
 								{ name: 'plastic', type: 'text', required: true },
 								{ name: 'colour', type: 'text', required: true },
 							],
@@ -111,91 +127,75 @@ export const Orders: CollectionConfig = {
 						{
 							name: 'time',
 							type: 'text',
-							admin: { description: 'Estimated print time as returned by the slicer (total)' },
+							admin: { description: 'Estimated print time as returned by the slicer' },
 						},
 						{
 							name: 'filament',
 							type: 'number',
 							admin: { description: 'Estimated filament usage in grams as returned by the slicer' },
 						},
-
-						// price for this custom print line (after quote)
-						{ name: 'price', type: 'number' },
+						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
+						{ name: 'price', type: 'number', required: true },
 					],
 				},
 			],
 		},
 
-		//#region payment
-		//? DOUBLE CHECK WITH STRIPE AND SZYMON
 		{
 			name: 'payment',
 			type: 'group',
 			required: true,
-			fields: [],
+			fields: [
+				{
+					name: 'stripePaymentIntentId',
+					type: 'text',
+					admin: { description: 'Stripe Payment Intent ID' },
+				},
+				{
+					name: 'status',
+					type: 'select',
+					options: [
+						{ label: 'Pending', value: 'pending' },
+						{ label: 'Processing', value: 'processing' },
+						{ label: 'Succeeded', value: 'succeeded' },
+						{ label: 'Failed', value: 'failed' },
+						{ label: 'Cancelled', value: 'cancelled' },
+						{ label: 'Refunded', value: 'refunded' },
+					],
+					defaultValue: 'pending',
+				},
+				{
+					name: 'amount',
+					type: 'number',
+					admin: { description: 'Payment amount in cents' },
+				},
+			],
 		},
-		//#endregion
 
-		// only if custom
 		{
 			name: 'total',
 			type: 'number',
+			required: true,
 			admin: {
-				description:
-					'The total price of the order. Calculated from the prints subtotals. After quote if order has any custom prints.',
+				description: 'The total price of the order. Calculated from the prints.',
+				readOnly: true,
 			},
 		},
 
-		//#region status
-		//! CHANGE THIS -------------
+		{
+			name: 'queue',
+			admin: {
+				description: 'The print queue this order is assigned to',
+			},
+			type: 'number',
+			required: false,
+			defaultValue: 1,
+		},
+
 		{
 			name: 'status',
 			type: 'group',
 			label: 'Order Status',
-			hooks: {
-				beforeChange: [
-					({ data }) => {
-						if (!data) return data;
-
-						// keep currentStatus in sync with the last history entry
-						const statuses = data?.status?.statuses;
-						if (Array.isArray(statuses) && statuses.length) {
-							const last = statuses[statuses.length - 1];
-							data.status = {
-								...data.status,
-								currentStatus: last.stage,
-							};
-						}
-
-						// compute line subtotals and order total
-						if (Array.isArray(data?.prints)) {
-							let total = 0;
-							data.prints = data.prints.map(p => {
-								const qty = Number(p?.quantity ?? 0);
-
-								if (p?.blockType === 'ShopProduct') {
-									const unit = Number(p?.snapshot?.unitPrice ?? 0);
-									const subtotal = qty * unit;
-									total += subtotal;
-									return { ...p, subtotal };
-								}
-
-								if (p?.blockType === 'customPrint') {
-									const unit = Number(p?.unitPrice ?? 0);
-									const subtotal = qty * unit;
-									total += subtotal;
-									return { ...p, subtotal };
-								}
-
-								return p;
-							});
-							data.total = total;
-						}
-
-						return data;
-					},
-				],
-			},
 			fields: [
 				{
 					name: 'statuses',
@@ -207,13 +207,18 @@ export const Orders: CollectionConfig = {
 							type: 'select',
 							required: true,
 							options: [
-								{ label: 'Received', value: 'received' },
-								{ label: 'Processing', value: 'processing' },
+								{ label: 'Payment Pending', value: 'payment_pending' },
+								{ label: 'Paid', value: 'paid' },
+								{ label: 'In Queue', value: 'in_queue' },
 								{ label: 'Printing', value: 'printing' },
+								{ label: 'Print Failed', value: 'failed' },
 								{ label: 'Quality Check', value: 'quality_check' },
+								{ label: 'Packaging', value: 'packaging' },
 								{ label: 'Shipped', value: 'shipped' },
 								{ label: 'Delivered', value: 'delivered' },
+								{ label: 'Completed', value: 'completed' },
 								{ label: 'Cancelled', value: 'cancelled' },
+								{ label: 'Refunded', value: 'refunded' },
 							],
 						},
 						{
@@ -223,39 +228,82 @@ export const Orders: CollectionConfig = {
 							defaultValue: () => new Date().toISOString(),
 							admin: {
 								date: {
-									pickerAppearance: 'dayOnly',
+									pickerAppearance: 'dayAndTime',
 								},
 							},
+						},
+						{
+							name: 'note',
+							type: 'textarea',
+							admin: { description: 'Optional note about this status change' },
 						},
 					],
 				},
 				{
 					name: 'currentStatus',
 					type: 'select',
+					required: true,
+					defaultValue: 'payment_pending',
 					options: [
-						{ label: 'Received', value: 'received' },
-						{ label: 'Processing', value: 'processing' },
+						{ label: 'Payment Pending', value: 'payment_pending' },
+						{ label: 'Paid', value: 'paid' },
+						{ label: 'In Queue', value: 'in_queue' },
 						{ label: 'Printing', value: 'printing' },
+						{ label: 'Print Failed', value: 'failed' },
 						{ label: 'Quality Check', value: 'quality_check' },
+						{ label: 'Packaging', value: 'packaging' },
 						{ label: 'Shipped', value: 'shipped' },
 						{ label: 'Delivered', value: 'delivered' },
+						{ label: 'Completed', value: 'completed' },
 						{ label: 'Cancelled', value: 'cancelled' },
+						{ label: 'Refunded', value: 'refunded' },
 					],
 					admin: {
-						description: 'Denormalized field for quick access',
+						description: 'Current order status - auto-synced from status history',
+						readOnly: true,
 					},
 				},
 			],
 		},
-		//! --------------------------------
-		//#endregion
 
-		//? TBD
+		//! NEEDED?
+		// {
+		// 	name: 'shipping',
+		// 	type: 'group',
+		// 	fields: [
+		// 		{
+		// 			name: 'address',
+		// 			type: 'group',
+		// 			fields: [
+		// 				{ name: 'line1', type: 'text', required: true },
+		// 				{ name: 'line2', type: 'text' },
+		// 				{ name: 'city', type: 'text', required: true },
+		// 				{ name: 'state', type: 'text' },
+		// 				{ name: 'postalCode', type: 'text', required: true },
+		// 				{ name: 'country', type: 'text', required: true },
+		// 			],
+		// 		},
+		// 		{
+		// 			name: 'trackingNumber',
+		// 			type: 'text',
+		// 			admin: { description: 'Shipping carrier tracking number' },
+		// 		},
+		// 		{
+		// 			name: 'carrier',
+		// 			type: 'text',
+		// 			admin: { description: 'Shipping carrier name' },
+		// 		},
+		// 	],
+		// },
+		//! --------
+
 		{
 			name: 'comments',
 			type: 'array',
 			label: 'Comments',
-
+			admin: {
+				description: 'Comments on this order',
+			},
 			fields: [
 				{
 					name: 'author',
@@ -273,8 +321,8 @@ export const Orders: CollectionConfig = {
 				{
 					name: 'createdAt',
 					type: 'date',
-					defaultValue: new Date(),
-					admin: { readOnly: true, date: { pickerAppearance: 'dayOnly' } },
+					defaultValue: () => new Date().toISOString(),
+					admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
 				},
 			],
 		},
