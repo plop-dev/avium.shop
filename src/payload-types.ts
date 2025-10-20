@@ -274,7 +274,7 @@ export interface Order {
   status: {
     statuses?:
       | {
-          stage: 'paid' | 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled';
+          stage: 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled';
           timestamp: string;
           id?: string | null;
         }[]
@@ -282,7 +282,7 @@ export interface Order {
     /**
      * Current order status - auto-synced from status history
      */
-    currentStatus: 'paid' | 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled';
+    currentStatus: 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled';
   };
   /**
    * Comments on this order

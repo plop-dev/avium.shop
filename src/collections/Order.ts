@@ -207,7 +207,6 @@ export const Orders: CollectionConfig = {
 							type: 'select',
 							required: true,
 							options: [
-								{ label: 'Paid', value: 'paid' },
 								{ label: 'In Queue', value: 'in-queue' },
 								{ label: 'Printing', value: 'printing' },
 								{ label: 'Packaging', value: 'packaging' },
@@ -234,7 +233,6 @@ export const Orders: CollectionConfig = {
 					required: true,
 					defaultValue: 'payment_pending',
 					options: [
-						{ label: 'Paid', value: 'paid' },
 						{ label: 'In Queue', value: 'in-queue' },
 						{ label: 'Printing', value: 'printing' },
 						{ label: 'Packaging', value: 'packaging' },

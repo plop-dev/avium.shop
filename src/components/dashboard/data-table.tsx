@@ -28,6 +28,7 @@ import {
 	IconLoader,
 	IconPlus,
 	IconTrendingUp,
+	IconPrinter,
 } from '@tabler/icons-react';
 import {
 	ColumnDef,
@@ -45,9 +46,9 @@ import {
 	useReactTable,
 	VisibilityState,
 } from '@tanstack/react-table';
-import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { cn } from '@/lib/utils';
 
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
@@ -90,10 +91,24 @@ export const schema = z.object({
 	customPrints: z.number().optional(),
 	total: z.number(),
 	queue: z.number(),
-	status: z.enum(['paid', 'in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
+	statuses: z.array(
+		z.object({
+			stage: z.enum(['in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
+			timestamp: z.string(),
+		}),
+	),
+	currentStatus: z.enum(['in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
 	comments: z.number().optional(),
 	createdAt: z.string(),
 });
+
+// Define the status order and metadata
+const statusSteps = [
+	{ value: 'in-queue', label: 'In Queue', icon: <IconLoader className='size-4' /> },
+	{ value: 'printing', label: 'Printing', icon: <IconPrinter className='size-4' /> },
+	{ value: 'packaging', label: 'Packaging', icon: <IconPlus className='size-4' /> },
+	{ value: 'shipped', label: 'Shipped', icon: <IconCircleCheckFilled className='size-4' /> },
+];
 
 // Create a separate component for the drag handle
 function DragHandle({ id }: { id: string }) {
@@ -179,7 +194,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 		header: 'Status',
 		cell: ({ row }) => (
 			<Badge variant='outline' className='text-muted-foreground px-1.5'>
-				{row.original.status}
+				{row.original.currentStatus}
 			</Badge>
 		),
 	},
@@ -199,8 +214,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 		cell: ({ row }) => (
 			<Popover>
 				<PopoverTrigger asChild>
-					<Button variant='link' className='px-0'>
-						{format(row.original.createdAt, 'PPP')}
+					<Button variant='link' className='px-0 flex'>
+						{format(new Date(row.original.createdAt), 'PPp')} (
+						{Math.floor((Date.now() - new Date(row.original.createdAt).getTime()) / (1000 * 60 * 60 * 24))} days ago)
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className='w-auto p-0'>
@@ -494,28 +510,41 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 	);
 }
 
-const chartData = [
-	{ month: 'January', desktop: 186, mobile: 80 },
-	{ month: 'February', desktop: 305, mobile: 200 },
-	{ month: 'March', desktop: 237, mobile: 120 },
-	{ month: 'April', desktop: 73, mobile: 190 },
-	{ month: 'May', desktop: 209, mobile: 130 },
-	{ month: 'June', desktop: 214, mobile: 140 },
-];
-
-const chartConfig = {
-	desktop: {
-		label: 'Desktop',
-		color: 'var(--primary)',
-	},
-	mobile: {
-		label: 'Mobile',
-		color: 'var(--primary)',
-	},
-} satisfies ChartConfig;
-
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 	const isMobile = useIsMobile();
+	const [currentStatus, setCurrentStatus] = React.useState(item.currentStatus);
+	const [statusHistory, setStatusHistory] = React.useState(item.statuses);
+
+	const statusList = statusSteps.map(step => step.value);
+
+	const handleStatusUpdate = (newStatus: string) => {
+		setCurrentStatus(newStatus as z.infer<typeof schema>['currentStatus']);
+
+		setStatusHistory(prev => {
+			const newIndex = statusList.indexOf(newStatus);
+			const now = new Date().toISOString();
+
+			const previousStatuses = prev.filter(item => {
+				const itemIndex = statusList.indexOf(item.stage);
+				return itemIndex < newIndex;
+			});
+
+			return [...previousStatuses, { stage: newStatus as z.infer<typeof schema>['currentStatus'], timestamp: now }];
+		});
+
+		// toast.success(`Order status updated to ${newStatus}`);
+	};
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		const formData = new FormData(e.currentTarget);
+		const data = {
+			name: formData.get('name'),
+			status: currentStatus,
+		};
+		console.log('Form data submitted:', data);
+		toast.success('Order updated successfully');
+	};
 
 	return (
 		<Drawer direction={isMobile ? 'bottom' : 'right'}>
@@ -529,54 +558,107 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 					<DrawerTitle>{item.name}</DrawerTitle>
 					<DrawerDescription>View order details and edit the status</DrawerDescription>
 				</DrawerHeader>
-				<div className='flex flex-col gap-4 overflow-y-auto px-4 text-sm'>
-					{!isMobile && (
-						<>
-							<Separator />
-							<div className='grid gap-2'>
-								<div className='flex gap-2 leading-none font-medium'>
-									Trending up by 5.2% this month <IconTrendingUp className='size-4' />
-								</div>
-								<div className='text-muted-foreground'>
-									Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans
-									multiple lines and should wrap around.
-								</div>
-							</div>
-							<Separator />
-						</>
-					)}
-					<form className='flex flex-col gap-4'>
+				<form onSubmit={handleSubmit} id='order-form'>
+					<div className='flex flex-col gap-4 overflow-y-auto px-4 text-sm'>
 						<div className='flex flex-col gap-3'>
 							<Label htmlFor='name'>Name</Label>
-							<Input id='name' defaultValue={item.name} />
+							<Input id='name' name='name' defaultValue={item.name} />
 						</div>
-						<div className='grid grid-cols-2 gap-4'>
-							<div className='flex flex-col gap-3'>
-								<Label htmlFor='status'>Status</Label>
-								<Select defaultValue={item.status}>
-									<SelectTrigger id='status' className='w-full'>
-										<SelectValue placeholder='Select a status' />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value='paid'>Paid</SelectItem>
-										<SelectItem value='in-queue'>In Queue</SelectItem>
-										<SelectItem value='printing'>Printing</SelectItem>
-										<SelectItem value='packaging'>Packaging</SelectItem>
-										<SelectItem value='shipped'>Shipped</SelectItem>
-										<SelectItem value='cancelled'>Cancelled</SelectItem>
-									</SelectContent>
-								</Select>
+						<div className='flex flex-col gap-3'>
+							<Label>Order Status</Label>
+							<div className='border rounded-md p-4'>
+								<StatusTimeline
+									currentStatus={currentStatus}
+									statusHistory={statusHistory}
+									onUpdateStatus={handleStatusUpdate}
+								/>
 							</div>
 						</div>
-					</form>
-				</div>
+					</div>
+				</form>
 				<DrawerFooter>
-					<Button>Submit</Button>
+					<Button type='submit' form='order-form'>
+						Save Changes
+					</Button>
 					<DrawerClose asChild>
-						<Button variant='outline'>Done</Button>
+						<Button variant='outline'>Cancel</Button>
 					</DrawerClose>
 				</DrawerFooter>
 			</DrawerContent>
 		</Drawer>
+	);
+}
+
+function StatusTimeline({
+	currentStatus,
+	statusHistory = [],
+	onUpdateStatus,
+}: {
+	currentStatus: string;
+	statusHistory?: { stage: string; timestamp: string }[];
+	onUpdateStatus: (newStatus: string) => void;
+}) {
+	const currentIndex = statusSteps.findIndex(step => step.value === currentStatus);
+
+	const getStatusTimestamp = (status: string) => {
+		const historyItem = statusHistory.find(item => item.stage === status);
+		return historyItem?.timestamp;
+	};
+
+	return (
+		<div className='flex flex-col space-y-1'>
+			{statusSteps.map((step, index) => {
+				const isCompleted = index < currentIndex;
+				const isCurrent = index === currentIndex;
+				const isFuture = index > currentIndex;
+				const canAdvance = index === currentIndex + 1;
+				const canRevert = index === currentIndex - 1;
+				const canChange = canRevert || canAdvance;
+
+				const timestamp = getStatusTimestamp(step.value);
+
+				return (
+					<div key={step.value} className='flex flex-col'>
+						<div
+							className={cn(
+								'flex items-center gap-2 py-1.5 transition-opacity',
+								canChange ? 'cursor-pointer hover:opacity-70' : 'cursor-default pointer-events-none',
+							)}
+							aria-disabled={!canChange}
+							onClick={() => {
+								if (canChange) {
+									onUpdateStatus(step.value);
+								}
+							}}>
+							<div
+								className={cn(
+									'flex size-8 items-center justify-center rounded-full border',
+									isCompleted && 'bg-primary/20 border-primary text-primary',
+									isCurrent && 'bg-primary text-primary-foreground border-primary',
+									isFuture && 'bg-muted border-muted-foreground/30 text-muted-foreground',
+								)}>
+								{step.icon}
+							</div>
+							<div className='flex flex-col'>
+								<span
+									className={cn(
+										'text-sm font-medium',
+										isCompleted && 'text-primary',
+										isCurrent && 'text-foreground',
+										isFuture && 'text-muted-foreground',
+									)}>
+									{step.label}
+								</span>
+								{timestamp && (
+									<span className='text-xs text-muted-foreground'>Set at {format(new Date(timestamp), 'PPp')}</span>
+								)}
+							</div>
+						</div>
+
+						{index < statusSteps.length - 1 && <div className='ml-4 h-6 w-px bg-border' />}
+					</div>
+				);
+			})}
+		</div>
 	);
 }
