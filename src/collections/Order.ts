@@ -231,7 +231,7 @@ export const Orders: CollectionConfig = {
 					name: 'currentStatus',
 					type: 'select',
 					required: true,
-					defaultValue: 'payment_pending',
+					defaultValue: 'in-queue',
 					options: [
 						{ label: 'In Queue', value: 'in-queue' },
 						{ label: 'Printing', value: 'printing' },
