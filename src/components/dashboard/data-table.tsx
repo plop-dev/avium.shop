@@ -93,7 +93,7 @@ export const schema = z.object({
 	status: z.enum(['paid', 'in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
 	comments: z.number().optional(),
 	createdAt: z.string(),
-}); // data only for the table
+});
 
 // Create a separate component for the drag handle
 function DragHandle({ id }: { id: string }) {
@@ -142,25 +142,25 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 			cellClassName: 'w-8 px-0',
 		},
 	},
-	{
-		id: 'select',
-		header: ({ table }) => (
-			<div className='flex items-center justify-center'>
-				<Checkbox
-					checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-					onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-					aria-label='Select all'
-				/>
-			</div>
-		),
-		cell: ({ row }) => (
-			<div className='flex items-center justify-center'>
-				<Checkbox checked={row.getIsSelected()} onCheckedChange={value => row.toggleSelected(!!value)} aria-label='Select row' />
-			</div>
-		),
-		enableSorting: false,
-		enableHiding: false,
-	},
+	// {
+	// 	id: 'select',
+	// 	header: ({ table }) => (
+	// 		<div className='flex items-center justify-center'>
+	// 			<Checkbox
+	// 				checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+	// 				onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
+	// 				aria-label='Select all'
+	// 			/>
+	// 		</div>
+	// 	),
+	// 	cell: ({ row }) => (
+	// 		<div className='flex items-center justify-center'>
+	// 			<Checkbox checked={row.getIsSelected()} onCheckedChange={value => row.toggleSelected(!!value)} aria-label='Select row' />
+	// 		</div>
+	// 	),
+	// 	enableSorting: false,
+	// 	enableHiding: false,
+	// },
 	{
 		accessorKey: 'name',
 		header: 'Name',
@@ -186,28 +186,17 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 	{
 		accessorKey: 'shop-prints',
 		header: () => <div className='w-full'>Shop Prints</div>,
-		cell: ({ row }) => row.original.shopProducts,
+		cell: ({ row }) => row.original.shopProducts || 0,
 	},
 	{
 		accessorKey: 'custom-prints',
 		header: () => <div className='w-full'>Custom Prints</div>,
-		cell: ({ row }) => row.original.customPrints,
+		cell: ({ row }) => row.original.customPrints || 0,
 	},
 	{
 		accessorKey: 'created-at',
 		header: () => <div className='w-full'>Created At</div>,
 		cell: ({ row }) => (
-			// <Popover>
-			// 	<PopoverTrigger asChild>
-			// 		<Button variant='link' className=''>
-			// 			{row.original.createdAt}
-			// 		</Button>
-			// 	</PopoverTrigger>
-			// 	<PopoverContent asChild>
-			// 		<Calendar animate={true} autoFocus={true} selected={new Date(row.original.createdAt || Date.now())}></Calendar>
-			// 	</PopoverContent>
-			// </Popover>
-
 			<Popover>
 				<PopoverTrigger asChild>
 					<Button variant='link' className='px-0'>
@@ -354,7 +343,7 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 						<DropdownMenuTrigger asChild>
 							<Button variant='outline' size='sm'>
 								<IconLayoutColumns />
-								<span className='hidden lg:inline'>Customize Columns</span>
+								<span className='hidden lg:inline'>Customise Columns</span>
 								<span className='lg:hidden'>Columns</span>
 								<IconChevronDown />
 							</Button>
@@ -423,10 +412,10 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 						</Table>
 					</DndContext>
 				</div>
-				<div className='flex items-center justify-between px-4'>
-					<div className='text-muted-foreground hidden flex-1 text-sm lg:flex'>
+				<div className='flex items-center justify-end px-4'>
+					{/* <div className='text-muted-foreground hidden flex-1 text-sm lg:flex'>
 						{table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected.
-					</div>
+					</div> */}
 					<div className='flex w-full items-center gap-8 lg:w-fit'>
 						<div className='hidden items-center gap-2 lg:flex'>
 							<Label htmlFor='rows-per-page' className='text-sm font-medium'>
@@ -538,47 +527,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 			<DrawerContent>
 				<DrawerHeader className='gap-1'>
 					<DrawerTitle>{item.name}</DrawerTitle>
-					<DrawerDescription>Showing total visitors for the last 6 months</DrawerDescription>
+					<DrawerDescription>View order details and edit the status</DrawerDescription>
 				</DrawerHeader>
 				<div className='flex flex-col gap-4 overflow-y-auto px-4 text-sm'>
 					{!isMobile && (
 						<>
-							<ChartContainer config={chartConfig}>
-								<AreaChart
-									accessibilityLayer
-									data={chartData}
-									margin={{
-										left: 0,
-										right: 10,
-									}}>
-									<CartesianGrid vertical={false} />
-									<XAxis
-										dataKey='month'
-										tickLine={false}
-										axisLine={false}
-										tickMargin={8}
-										tickFormatter={value => value.slice(0, 3)}
-										hide
-									/>
-									<ChartTooltip cursor={false} content={<ChartTooltipContent indicator='dot' />} />
-									<Area
-										dataKey='mobile'
-										type='natural'
-										fill='var(--color-mobile)'
-										fillOpacity={0.6}
-										stroke='var(--color-mobile)'
-										stackId='a'
-									/>
-									<Area
-										dataKey='desktop'
-										type='natural'
-										fill='var(--color-desktop)'
-										fillOpacity={0.4}
-										stroke='var(--color-desktop)'
-										stackId='a'
-									/>
-								</AreaChart>
-							</ChartContainer>
 							<Separator />
 							<div className='grid gap-2'>
 								<div className='flex gap-2 leading-none font-medium'>
@@ -592,6 +545,30 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 							<Separator />
 						</>
 					)}
+					<form className='flex flex-col gap-4'>
+						<div className='flex flex-col gap-3'>
+							<Label htmlFor='name'>Name</Label>
+							<Input id='name' defaultValue={item.name} />
+						</div>
+						<div className='grid grid-cols-2 gap-4'>
+							<div className='flex flex-col gap-3'>
+								<Label htmlFor='status'>Status</Label>
+								<Select defaultValue={item.status}>
+									<SelectTrigger id='status' className='w-full'>
+										<SelectValue placeholder='Select a status' />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value='paid'>Paid</SelectItem>
+										<SelectItem value='in-queue'>In Queue</SelectItem>
+										<SelectItem value='printing'>Printing</SelectItem>
+										<SelectItem value='packaging'>Packaging</SelectItem>
+										<SelectItem value='shipped'>Shipped</SelectItem>
+										<SelectItem value='cancelled'>Cancelled</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
+					</form>
 				</div>
 				<DrawerFooter>
 					<Button>Submit</Button>

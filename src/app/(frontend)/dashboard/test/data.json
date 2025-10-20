@@ -41,6 +41,8 @@
 		"total": 59.99,
 		"queue": 4,
 		"status": "packaging",
+		"shopProducts": 1,
+		"customPrints": 2,
 		"comments": 1,
 		"createdAt": "2025-10-10T09:15:00Z"
 	},
@@ -60,6 +62,7 @@
 		"name": "Order Zeta",
 		"customer": "user_006",
 		"shopProducts": 2,
+		"customPrints": 1,
 		"total": 29.99,
 		"queue": 6,
 		"status": "cancelled",
