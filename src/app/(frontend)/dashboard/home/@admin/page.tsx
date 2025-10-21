@@ -2,7 +2,139 @@ import { ChartAreaInteractive } from '@/components/dashboard/chart-area-interact
 import { DataTable } from '@/components/dashboard/data-table';
 import { SectionCards } from '@/components/dashboard/section-cards';
 
-import data from '../../test/data.json';
+// import data from '../../test/data.json';
+
+const data = [
+	{
+		id: 'a1b2c3d4',
+		name: 'Order Alpha',
+		customer: 'user_001',
+		shopProducts: 3,
+		customPrints: 2,
+		total: 49.99,
+		queue: 1,
+		currentStatus: 'in-queue',
+		statuses: [
+			{
+				stage: 'in-queue',
+				timestamp: '2025-10-10T09:15:00Z',
+			},
+		],
+		comments: 0,
+		createdAt: '2025-10-10T09:15:00Z',
+	},
+	{
+		id: 'e5f6g7h8',
+		name: 'Order Beta',
+		customer: 'user_002',
+		shopProducts: 1,
+		customPrints: 0,
+		total: 19.99,
+		queue: 2,
+		currentStatus: 'in-queue',
+		statuses: [
+			{
+				stage: 'in-queue',
+				timestamp: '2025-10-10T09:15:00Z',
+			},
+		],
+		comments: 2,
+		createdAt: '2025-10-10T09:15:00Z',
+	},
+	{
+		id: 'i9j0k1l2',
+		name: 'Order Gamma',
+		customer: 'user_003',
+		shopProducts: 2,
+		customPrints: 1,
+		total: 34.5,
+		queue: 3,
+		currentStatus: 'printing',
+		statuses: [
+			{
+				stage: 'in-queue',
+				timestamp: '2025-10-10T08:00:00Z',
+			},
+			{
+				stage: 'printing',
+				timestamp: '2025-10-10T09:15:00Z',
+			},
+		],
+		createdAt: '2025-10-10T09:15:00Z',
+	},
+	{
+		id: 'm3n4o5p6',
+		name: 'Order Delta',
+		customer: 'user_004',
+		total: 59.99,
+		queue: 4,
+		currentStatus: 'packaging',
+		statuses: [
+			{
+				stage: 'in-queue',
+				timestamp: '2025-10-10T07:00:00Z',
+			},
+			{
+				stage: 'printing',
+				timestamp: '2025-10-10T08:00:00Z',
+			},
+			{
+				stage: 'packaging',
+				timestamp: '2025-10-10T09:15:00Z',
+			},
+		],
+		shopProducts: 1,
+		customPrints: 2,
+		comments: 1,
+		createdAt: '2025-10-10T09:15:00Z',
+	},
+	{
+		id: 'q7r8s9t0',
+		name: 'Order Epsilon',
+		customer: 'user_005',
+		shopProducts: 4,
+		customPrints: 3,
+		total: 89.99,
+		queue: 5,
+		currentStatus: 'shipped',
+		statuses: [
+			{
+				stage: 'in-queue',
+				timestamp: '2025-10-10T06:00:00Z',
+			},
+			{
+				stage: 'printing',
+				timestamp: '2025-10-10T07:00:00Z',
+			},
+			{
+				stage: 'packaging',
+				timestamp: '2025-10-10T08:00:00Z',
+			},
+			{
+				stage: 'shipped',
+				timestamp: '2025-10-10T09:15:00Z',
+			},
+		],
+		createdAt: '2025-10-10T09:15:00Z',
+	},
+	{
+		id: 'u1v2w3x4',
+		name: 'Order Zeta',
+		customer: 'user_006',
+		shopProducts: 2,
+		customPrints: 1,
+		total: 29.99,
+		queue: 6,
+		currentStatus: 'in-queue',
+		statuses: [
+			{
+				stage: 'in-queue',
+				timestamp: '2025-10-10T09:15:00Z',
+			},
+		],
+		createdAt: '2025-10-10T09:15:00Z',
+	},
+];
 
 export default async function AdminPage() {
 	return (
@@ -12,7 +144,16 @@ export default async function AdminPage() {
 				<div className='px-4 lg:px-6'>
 					<ChartAreaInteractive />
 				</div>
-				<DataTable data={data} />
+				<DataTable
+					data={data.map(item => ({
+						...item,
+						currentStatus: item.currentStatus as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
+						statuses: item.statuses.map((status: { stage: string; timestamp: string }) => ({
+							...status,
+							stage: status.stage as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
+						})),
+					}))}
+				/>
 			</div>
 		</div>
 	);

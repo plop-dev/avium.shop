@@ -73,6 +73,8 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Toggle } from '@/components/ui/toggle';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -82,6 +84,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { format } from 'date-fns';
+import { Check, User } from 'lucide-react';
 
 export const schema = z.object({
 	id: z.string(),
@@ -558,20 +561,101 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 					<DrawerTitle>{item.name}</DrawerTitle>
 					<DrawerDescription>View order details and edit the status</DrawerDescription>
 				</DrawerHeader>
-				<form onSubmit={handleSubmit} id='order-form'>
-					<div className='flex flex-col gap-4 overflow-y-auto px-4 text-sm'>
-						<div className='flex flex-col gap-3'>
-							<Label htmlFor='name'>Name</Label>
-							<Input id='name' name='name' defaultValue={item.name} />
+				<form onSubmit={handleSubmit} id='order-form' className='flex flex-col gap-4 overflow-y-auto px-4 text-sm'>
+					<div className='flex flex-col gap-3'>
+						<Label htmlFor='name'>Name</Label>
+						<Input id='name' name='name' defaultValue={item.name} />
+					</div>
+
+					<div className='rounded-xl flex flex-col gap-3'>
+						<Label>Customer</Label>
+						<span className='flex gap-x-2 border rounded-md p-4'>
+							<User size={16}></User> {item.customer}
+						</span>
+					</div>
+
+					<div className='flex flex-col gap-3'>
+						<Label>Order Status</Label>
+						<div className='border rounded-md p-4'>
+							<StatusTimeline
+								currentStatus={currentStatus}
+								statusHistory={statusHistory}
+								onUpdateStatus={handleStatusUpdate}
+							/>
 						</div>
-						<div className='flex flex-col gap-3'>
-							<Label>Order Status</Label>
-							<div className='border rounded-md p-4'>
-								<StatusTimeline
-									currentStatus={currentStatus}
-									statusHistory={statusHistory}
-									onUpdateStatus={handleStatusUpdate}
-								/>
+					</div>
+
+					<div className='flex flex-col gap-3'>
+						<Label>Prints</Label>
+						<div className='p-2 flex flex-col gap-2'>
+							<div className='flex flex-col gap-2'>
+								<p className='font-semibold'>Custom Prints</p>
+
+								<Accordion className='border rounded-xl p-2' type='multiple'>
+									<AccordionItem value='custom-print-1'>
+										<AccordionTrigger className='p-2'>Custom Print 1</AccordionTrigger>
+										<AccordionContent>
+											<div className='flex flex-col gap-2 p-2'>
+												<div className='flex flex-col gap-1'>
+													<Label>Product</Label>
+													<span className='border rounded-md p-2'>Custom Design A</span>
+												</div>
+												<div className='flex flex-col gap-1'>
+													<Label>Quantity</Label>
+													<span className='border rounded-md p-2'>2</span>
+												</div>
+												<div className='flex flex-col gap-1'>
+													<Label>Price</Label>
+													<span className='border rounded-md p-2'>$19.99</span>
+												</div>
+												<div className='flex flex-col gap-1'>
+													<Toggle
+														variant={'outline'}
+														size={'sm'}
+														className='data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 cursor-pointer transition'>
+														Completed <Check></Check>
+													</Toggle>
+												</div>
+											</div>
+										</AccordionContent>
+									</AccordionItem>
+								</Accordion>
+							</div>
+
+							<Separator></Separator>
+
+							<div className='flex flex-col gap-2'>
+								<p className='font-semibold'>Shop Products</p>
+
+								<Accordion className='border rounded-xl p-2' type='multiple'>
+									<AccordionItem value='shop-product-1'>
+										<AccordionTrigger className='p-2'>Shop Product 1</AccordionTrigger>
+										<AccordionContent>
+											<div className='flex flex-col gap-2 p-2'>
+												<div className='flex flex-col gap-1'>
+													<Label>Product</Label>
+													<span className='border rounded-md p-2'>Shop Product A</span>
+												</div>
+												<div className='flex flex-col gap-1'>
+													<Label>Quantity</Label>
+													<span className='border rounded-md p-2'>2</span>
+												</div>
+												<div className='flex flex-col gap-1'>
+													<Label>Price</Label>
+													<span className='border rounded-md p-2'>$19.99</span>
+												</div>
+												<div className='flex flex-col gap-1'>
+													<Toggle
+														variant={'outline'}
+														size={'sm'}
+														className='data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 cursor-pointer transition'>
+														Completed <Check></Check>
+													</Toggle>
+												</div>
+											</div>
+										</AccordionContent>
+									</AccordionItem>
+								</Accordion>
 							</div>
 						</div>
 					</div>

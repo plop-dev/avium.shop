@@ -210,6 +210,10 @@ export interface Order {
         product: string | Product;
         quantity: number;
         price: number;
+        /**
+         * Mark as printed
+         */
+        completed?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'shopProduct';
@@ -247,6 +251,10 @@ export interface Order {
         filament?: number | null;
         quantity: number;
         price: number;
+        /**
+         * Mark as printed
+         */
+        completed?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'customPrint';
@@ -672,6 +680,7 @@ export interface OrdersSelect<T extends boolean = true> {
               product?: T;
               quantity?: T;
               price?: T;
+              completed?: T;
               id?: T;
               blockName?: T;
             };
@@ -699,6 +708,7 @@ export interface OrdersSelect<T extends boolean = true> {
               filament?: T;
               quantity?: T;
               price?: T;
+              completed?: T;
               id?: T;
               blockName?: T;
             };
