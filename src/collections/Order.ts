@@ -79,6 +79,7 @@ export const Orders: CollectionConfig = {
 						{ name: 'product', type: 'relationship', relationTo: 'products', required: true },
 						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
 						{ name: 'price', type: 'number', required: true },
+						{ name: 'completed', type: 'checkbox', defaultValue: false, admin: { description: 'Mark as printed' } },
 					],
 				},
 				{
@@ -136,6 +137,7 @@ export const Orders: CollectionConfig = {
 						},
 						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
 						{ name: 'price', type: 'number', required: true },
+						{ name: 'completed', type: 'checkbox', defaultValue: false, admin: { description: 'Mark as printed' } },
 					],
 				},
 			],
