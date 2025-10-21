@@ -75,6 +75,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Toggle } from '@/components/ui/toggle';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -84,12 +85,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { format } from 'date-fns';
-import { Check, User } from 'lucide-react';
+import { Check, User, Download, Package } from 'lucide-react';
 
 export const schema = z.object({
 	id: z.string(),
 	name: z.string(),
-	customer: z.string(), //? populate from user collection?
+	customer: z.string(),
 	shopProducts: z.number().optional(),
 	customPrints: z.number().optional(),
 	total: z.number(),
@@ -103,6 +104,42 @@ export const schema = z.object({
 	currentStatus: z.enum(['in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
 	comments: z.number().optional(),
 	createdAt: z.string(),
+	prints: z
+		.array(
+			z.union([
+				z.object({
+					blockType: z.literal('shopProduct'),
+					id: z.string(),
+					product: z.string(),
+					quantity: z.number(),
+					price: z.number(),
+					completed: z.boolean(),
+				}),
+				z.object({
+					blockType: z.literal('customPrint'),
+					id: z.string(),
+					model: z.object({
+						filename: z.string(),
+						filetype: z.enum(['stl', '3mf']),
+						modelUrl: z.string(),
+						gcodeUrl: z.string(),
+					}),
+					printingOptions: z.object({
+						preset: z.string().optional(),
+						layerHeight: z.number().optional(),
+						infill: z.number().optional(),
+						plastic: z.string(),
+						colour: z.string(),
+					}),
+					time: z.string().optional(),
+					filament: z.number().optional(),
+					quantity: z.number(),
+					price: z.number(),
+					completed: z.boolean(),
+				}),
+			]),
+		)
+		.optional(),
 });
 
 // Define the status order and metadata
@@ -549,6 +586,19 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 		toast.success('Order updated successfully');
 	};
 
+	const customPrints = item.prints?.filter(p => p.blockType === 'customPrint') || [];
+	const shopProducts = item.prints?.filter(p => p.blockType === 'shopProduct') || [];
+
+	const handleDownload = (url: string, filename: string) => {
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = filename;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		toast.success(`Downloading ${filename}`);
+	};
+
 	return (
 		<Drawer direction={isMobile ? 'bottom' : 'right'}>
 			<DrawerTrigger asChild>
@@ -586,77 +636,231 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 					</div>
 
 					<div className='flex flex-col gap-3'>
-						<Label>Prints</Label>
-						<div className='p-2 flex flex-col gap-2'>
-							<div className='flex flex-col gap-2'>
-								<p className='font-semibold'>Custom Prints</p>
-
-								<Accordion className='border rounded-xl p-2' type='multiple'>
-									<AccordionItem value='custom-print-1'>
-										<AccordionTrigger className='p-2'>Custom Print 1</AccordionTrigger>
-										<AccordionContent>
-											<div className='flex flex-col gap-2 p-2'>
-												<div className='flex flex-col gap-1'>
-													<Label>Product</Label>
-													<span className='border rounded-md p-2'>Custom Design A</span>
-												</div>
-												<div className='flex flex-col gap-1'>
-													<Label>Quantity</Label>
-													<span className='border rounded-md p-2'>2</span>
-												</div>
-												<div className='flex flex-col gap-1'>
-													<Label>Price</Label>
-													<span className='border rounded-md p-2'>$19.99</span>
-												</div>
-												<div className='flex flex-col gap-1'>
-													<Toggle
-														variant={'outline'}
-														size={'sm'}
-														className='data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 cursor-pointer transition'>
-														Completed <Check></Check>
-													</Toggle>
-												</div>
-											</div>
-										</AccordionContent>
-									</AccordionItem>
-								</Accordion>
+						<div className='flex items-center justify-between'>
+							<Label className='text-base'>Prints</Label>
+							<div className='flex gap-2 text-xs text-muted-foreground'>
+								<span>Custom: {customPrints.length}</span>
+								<span>•</span>
+								<span>Shop: {shopProducts.length}</span>
 							</div>
+						</div>
 
-							<Separator></Separator>
+						<div className='flex flex-col gap-4'>
+							<Accordion type='multiple'>
+								{customPrints.length > 0 && (
+									<div className='flex flex-col gap-2'>
+										<AccordionItem value='custom-prints-details'>
+											<AccordionTrigger>
+												<h4 className='text-sm font-semibold text-muted-foreground'>Custom Prints</h4>
+											</AccordionTrigger>
+											<AccordionContent>
+												<div className='flex flex-col gap-3'>
+													{customPrints.map((print, index) => {
+														if (print.blockType !== 'customPrint') return null;
+														return (
+															<Card key={print.id}>
+																<CardHeader className='pb-3'>
+																	<div className='flex items-start justify-between'>
+																		<div className='space-y-1 flex-1'>
+																			<CardTitle className='text-sm font-medium'>
+																				{print.model.filename}
+																			</CardTitle>
+																			<CardDescription className='text-xs'>
+																				Custom Print #{index + 1}
+																			</CardDescription>
+																		</div>
+																		<Badge variant='secondary' className='ml-2'>
+																			${print.price.toFixed(2)}
+																		</Badge>
+																	</div>
+																</CardHeader>
+																<CardContent className='space-y-3 pt-0'>
+																	<div className='grid grid-cols-2 gap-2 text-xs'>
+																		<div className='space-y-1'>
+																			<Label className='text-muted-foreground'>File Type</Label>
+																			<p className='font-medium uppercase'>{print.model.filetype}</p>
+																		</div>
+																		<div className='space-y-1'>
+																			<Label className='text-muted-foreground'>Quantity</Label>
+																			<p className='font-medium'>{print.quantity}</p>
+																		</div>
+																	</div>
 
-							<div className='flex flex-col gap-2'>
-								<p className='font-semibold'>Shop Products</p>
+																	<div className='space-y-2'>
+																		<Label className='text-xs text-muted-foreground'>
+																			Printing Options
+																		</Label>
+																		<div className='grid grid-cols-2 gap-2 text-xs'>
+																			<div className='space-y-1'>
+																				<Label className='text-muted-foreground'>Material</Label>
+																				<p className='font-medium'>
+																					{print.printingOptions.plastic}
+																				</p>
+																			</div>
+																			<div className='space-y-1'>
+																				<Label className='text-muted-foreground'>Colour</Label>
+																				<p className='font-medium'>
+																					{print.printingOptions.colour}
+																				</p>
+																			</div>
+																			{print.printingOptions.layerHeight && (
+																				<div className='space-y-1'>
+																					<Label className='text-muted-foreground'>
+																						Layer Height
+																					</Label>
+																					<p className='font-medium'>
+																						{print.printingOptions.layerHeight}mm
+																					</p>
+																				</div>
+																			)}
+																			{print.printingOptions.infill !== undefined && (
+																				<div className='space-y-1'>
+																					<Label className='text-muted-foreground'>Infill</Label>
+																					<p className='font-medium'>
+																						{print.printingOptions.infill}%
+																					</p>
+																				</div>
+																			)}
+																		</div>
+																	</div>
 
-								<Accordion className='border rounded-xl p-2' type='multiple'>
-									<AccordionItem value='shop-product-1'>
-										<AccordionTrigger className='p-2'>Shop Product 1</AccordionTrigger>
-										<AccordionContent>
-											<div className='flex flex-col gap-2 p-2'>
-												<div className='flex flex-col gap-1'>
-													<Label>Product</Label>
-													<span className='border rounded-md p-2'>Shop Product A</span>
+																	{(print.time || print.filament) && (
+																		<div className='grid grid-cols-2 gap-2 text-xs'>
+																			{print.time && (
+																				<div className='space-y-1'>
+																					<Label className='text-muted-foreground'>
+																						Estimated Time
+																					</Label>
+																					<p className='font-medium'>{print.time}</p>
+																				</div>
+																			)}
+																			{print.filament && (
+																				<div className='space-y-1'>
+																					<Label className='text-muted-foreground'>
+																						Filament
+																					</Label>
+																					<p className='font-medium'>{print.filament}g</p>
+																				</div>
+																			)}
+																		</div>
+																	)}
+
+																	<Separator />
+
+																	<div className='grid grid-cols-2 gap-2'>
+																		<Button
+																			type='button'
+																			variant='outline'
+																			size='sm'
+																			className='w-full'
+																			onClick={() =>
+																				handleDownload(print.model.modelUrl, print.model.filename)
+																			}>
+																			<Download className='mr-2 size-3.5' />
+																			STL
+																		</Button>
+																		<Button
+																			type='button'
+																			variant='outline'
+																			size='sm'
+																			className='w-full'
+																			onClick={() =>
+																				handleDownload(
+																					print.model.gcodeUrl,
+																					print.model.filename.replace(/\.(stl|3mf)$/i, '.gcode'),
+																				)
+																			}>
+																			<Download className='mr-2 size-3.5' />
+																			G-code
+																		</Button>
+																	</div>
+
+																	<Toggle
+																		variant='outline'
+																		size='sm'
+																		defaultPressed={print.completed}
+																		className='data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full justify-start transition-colors'>
+																		<Check className='mr-2 size-4' />
+																		Mark as Completed
+																	</Toggle>
+																</CardContent>
+															</Card>
+														);
+													})}
 												</div>
-												<div className='flex flex-col gap-1'>
-													<Label>Quantity</Label>
-													<span className='border rounded-md p-2'>2</span>
+											</AccordionContent>
+										</AccordionItem>
+									</div>
+								)}
+
+								{customPrints.length > 0 && shopProducts.length > 0 && <Separator />}
+
+								{shopProducts.length > 0 && (
+									<div className='flex flex-col gap-2'>
+										<AccordionItem value='shop-products-details'>
+											<AccordionTrigger>
+												<h4 className='text-sm font-semibold text-muted-foreground'>Shop Products</h4>
+											</AccordionTrigger>
+											<AccordionContent>
+												<div className='flex flex-col gap-3'>
+													{shopProducts.map((print, index) => {
+														if (print.blockType !== 'shopProduct') return null;
+														return (
+															<Card key={print.id}>
+																<CardHeader className='pb-3'>
+																	<div className='flex items-start justify-between'>
+																		<div className='space-y-1 flex-1'>
+																			<CardTitle className='text-sm font-medium'>
+																				{print.product}
+																			</CardTitle>
+																			<CardDescription className='text-xs'>
+																				Shop Product #{index + 1}
+																			</CardDescription>
+																		</div>
+																		<Badge variant='secondary' className='ml-2'>
+																			${print.price.toFixed(2)}
+																		</Badge>
+																	</div>
+																</CardHeader>
+																<CardContent className='space-y-3 pt-0'>
+																	<div className='grid grid-cols-2 gap-2 text-xs'>
+																		<div className='space-y-1'>
+																			<Label className='text-muted-foreground'>Product ID</Label>
+																			<p className='font-medium font-mono text-xs truncate'>
+																				{print.product}
+																			</p>
+																		</div>
+																		<div className='space-y-1'>
+																			<Label className='text-muted-foreground'>Quantity</Label>
+																			<p className='font-medium'>{print.quantity}</p>
+																		</div>
+																	</div>
+
+																	<Toggle
+																		variant='outline'
+																		size='sm'
+																		defaultPressed={print.completed}
+																		className='data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full justify-start transition-colors'>
+																		<Check className='mr-2 size-4' />
+																		Mark as Completed
+																	</Toggle>
+																</CardContent>
+															</Card>
+														);
+													})}
 												</div>
-												<div className='flex flex-col gap-1'>
-													<Label>Price</Label>
-													<span className='border rounded-md p-2'>$19.99</span>
-												</div>
-												<div className='flex flex-col gap-1'>
-													<Toggle
-														variant={'outline'}
-														size={'sm'}
-														className='data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 cursor-pointer transition'>
-														Completed <Check></Check>
-													</Toggle>
-												</div>
-											</div>
-										</AccordionContent>
-									</AccordionItem>
-								</Accordion>
-							</div>
+											</AccordionContent>
+										</AccordionItem>
+									</div>
+								)}
+							</Accordion>
+
+							{customPrints.length === 0 && shopProducts.length === 0 && (
+								<div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center'>
+									<Package className='mb-2 size-8 text-muted-foreground' />
+									<p className='text-sm text-muted-foreground'>No prints in this order</p>
+								</div>
+							)}
 						</div>
 					</div>
 				</form>
