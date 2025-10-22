@@ -87,7 +87,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 				}}>
 				<div className='h-48 flex items-center justify-center rounded-t-lg'>
 					{typeof pic === 'string' ? (
-						<img className='h-48 w-48 aspect-square bg-cover object-cover' src={pic} alt='Product Image' />
+						<Image className='h-48 w-48 aspect-square bg-cover object-cover' src={pic} alt='Product Image' />
 					) : (
 						<Image
 							className='h-48 w-48 aspect-square bg-cover object-cover'
@@ -122,7 +122,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 												<CarouselItem key={idx} className='pl-0'>
 													<div className='w-full flex justify-center'>
 														{typeof p === 'string' ? (
-															<img
+															<Image
 																className='max-h-[60vh] w-auto object-contain rounded-md select-none shadow-sm bg-background'
 																src={p}
 																alt={`Product image ${idx + 1}`}

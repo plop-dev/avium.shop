@@ -144,6 +144,8 @@ export const schema = z.object({
 		.optional(),
 });
 
+export type Order = z.infer<typeof schema>;
+
 // Define the status order and metadata
 const statusSteps = [
 	{ value: 'in-queue', label: 'In Queue', icon: <IconLoader className='size-4' /> },
@@ -178,7 +180,7 @@ declare module '@tanstack/react-table' {
 	}
 }
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+const columns: ColumnDef<Order>[] = [
 	{
 		id: 'order',
 		header: () => <div className='w-6 text-right text-xs font-medium text-muted-foreground'>#</div>,
@@ -294,7 +296,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 	},
 ];
 
-function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
+function DraggableRow({ row }: { row: Row<Order> }) {
 	const { transform, transition, setNodeRef, isDragging } = useSortable({
 		id: row.original.id,
 	});
@@ -318,7 +320,7 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 	);
 }
 
-export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[] }) {
+export function DataTable({ data: initialData }: { data: Order[] }) {
 	const [data, setData] = React.useState(() => initialData);
 	const [rowSelection, setRowSelection] = React.useState({});
 	const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -552,7 +554,7 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 	);
 }
 
-function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
+function TableCellViewer({ item }: { item: Order }) {
 	const isMobile = useIsMobile();
 	const [currentStatus, setCurrentStatus] = React.useState(item.currentStatus);
 	const [statusHistory, setStatusHistory] = React.useState(item.statuses);

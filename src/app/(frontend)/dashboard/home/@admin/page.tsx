@@ -1,8 +1,8 @@
 import { ChartAreaInteractive } from '@/components/dashboard/chart-area-interactive';
-import { DataTable } from '@/components/dashboard/data-table';
+import { DataTable, type Order } from '@/components/dashboard/data-table';
 import { SectionCards } from '@/components/dashboard/section-cards';
 
-const data = [
+const data: Order[] = [
 	{
 		id: 'a1b2c3d4',
 		name: 'Order Alpha',

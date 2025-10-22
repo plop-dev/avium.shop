@@ -1,10 +1,17 @@
 import { ChartAreaInteractive } from '@/components/dashboard/chart-area-interactive';
-import { DataTable } from '@/components/dashboard/data-table';
+import { DataTable, schema, type Order } from '@/components/dashboard/data-table';
 import { SectionCards } from '@/components/dashboard/section-cards';
 
-import data from './data.json';
+import rawOrders from './data.json';
 
 export default function Page() {
+	const data: Order[] = schema.array().parse(
+		rawOrders.map(order => ({
+			...order,
+			comments: typeof order.comments === 'number' ? String(order.comments) : order.comments,
+		})),
+	);
+
 	return (
 		<div className='flex flex-1 flex-col'>
 			<div className='@container/main flex flex-1 flex-col gap-2'>
