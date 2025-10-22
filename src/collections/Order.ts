@@ -282,32 +282,11 @@ export const Orders: CollectionConfig = {
 
 		{
 			name: 'comments',
-			type: 'array',
+			type: 'text',
 			label: 'Comments',
 			admin: {
 				description: 'Comments on this order',
 			},
-			fields: [
-				{
-					name: 'author',
-					type: 'relationship',
-					relationTo: 'users',
-					required: true,
-					admin: { description: 'The user who made the comment' },
-				},
-				{
-					name: 'content',
-					type: 'richText',
-					required: true,
-					admin: { description: 'The content of the comment' },
-				},
-				{
-					name: 'createdAt',
-					type: 'date',
-					defaultValue: () => new Date().toISOString(),
-					admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
-				},
-			],
 		},
 	],
 };

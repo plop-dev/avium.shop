@@ -18,7 +18,7 @@ const data = [
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
-		comments: 0,
+		comments: 'test comments',
 		createdAt: '2025-10-10T09:15:00Z',
 		prints: [
 			{
@@ -68,7 +68,7 @@ const data = [
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
-		comments: 2,
+		comments: 'i want it quick pls',
 		createdAt: '2025-10-10T09:15:00Z',
 		prints: [
 			{
@@ -178,7 +178,6 @@ const data = [
 		],
 		shopProducts: 0,
 		customPrints: 3,
-		comments: 1,
 		createdAt: '2025-10-10T09:15:00Z',
 		prints: [
 			{

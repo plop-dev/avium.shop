@@ -295,34 +295,7 @@ export interface Order {
   /**
    * Comments on this order
    */
-  comments?:
-    | {
-        /**
-         * The user who made the comment
-         */
-        author: string | User;
-        /**
-         * The content of the comment
-         */
-        content: {
-          root: {
-            type: string;
-            children: {
-              type: string;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        };
-        createdAt?: string | null;
-        id?: string | null;
-      }[]
-    | null;
+  comments?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -734,14 +707,7 @@ export interface OrdersSelect<T extends boolean = true> {
             };
         currentStatus?: T;
       };
-  comments?:
-    | T
-    | {
-        author?: T;
-        content?: T;
-        createdAt?: T;
-        id?: T;
-      };
+  comments?: T;
   updatedAt?: T;
   createdAt?: T;
 }

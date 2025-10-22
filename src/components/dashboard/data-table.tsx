@@ -86,6 +86,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { format } from 'date-fns';
 import { Check, User, Download, Package } from 'lucide-react';
+import numToGBP from '@/utils/numToGBP';
+import { Textarea } from '../ui/textarea';
 
 export const schema = z.object({
 	id: z.string(),
@@ -102,7 +104,7 @@ export const schema = z.object({
 		}),
 	),
 	currentStatus: z.enum(['in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
-	comments: z.number().optional(),
+	comments: z.string().optional(),
 	createdAt: z.string(),
 	prints: z
 		.array(
@@ -614,7 +616,18 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 				<form onSubmit={handleSubmit} id='order-form' className='flex flex-col gap-4 overflow-y-auto px-4 text-sm'>
 					<div className='flex flex-col gap-3'>
 						<Label htmlFor='name'>Name</Label>
-						<Input id='name' name='name' defaultValue={item.name} />
+						<div className='border rounded-md p-4 font-medium'>{item.name}</div>
+					</div>
+
+					<div className='grid grid-cols-[2fr_1fr] grid-rows-1 gap-y-3 gap-x-2'>
+						<div className='flex flex-col gap-2'>
+							<Label>Price</Label>
+							<span className='border rounded-md p-4 font-medium'>{numToGBP(item.total)}</span>
+						</div>
+						<div className='flex flex-col gap-2'>
+							<Label>Queue Position</Label>
+							<span className='border rounded-md p-4 font-medium'>{item.queue}</span>
+						</div>
 					</div>
 
 					<div className='rounded-xl flex flex-col gap-3'>
@@ -645,17 +658,18 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 							</div>
 						</div>
 
+						{/* prints view */}
 						<div className='flex flex-col gap-4'>
-							<Accordion
-								type='multiple'
-								className='**:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1'>
+							<Accordion type='multiple' className=''>
 								{customPrints.length > 0 && (
 									<div className='flex flex-col gap-2'>
 										<AccordionItem value='custom-prints-details'>
 											<AccordionTrigger>
 												<h4 className='text-sm font-semibold text-muted-foreground'>
 													Custom Prints
-													<Badge variant={'secondary'} className='ml-2'>
+													<Badge
+														variant={'secondary'}
+														className='ml-2 bg-muted-foreground/30 size-5 rounded-full px-1'>
 														{customPrints.length}
 													</Badge>
 												</h4>
@@ -677,7 +691,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 																			</CardDescription>
 																		</div>
 																		<Badge variant='secondary' className='ml-2'>
-																			${print.price.toFixed(2)}
+																			{numToGBP(print.price)}
 																		</Badge>
 																	</div>
 																</CardHeader>
@@ -808,7 +822,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 											<AccordionTrigger>
 												<h4 className='text-sm font-semibold text-muted-foreground'>
 													Shop Products
-													<Badge variant={'secondary'} className='ml-2'>
+													<Badge
+														variant={'secondary'}
+														className='ml-2 bg-muted-foreground/30 size-5 rounded-full px-1'>
 														{shopProducts.length}
 													</Badge>
 												</h4>
@@ -830,7 +846,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 																			</CardDescription>
 																		</div>
 																		<Badge variant='secondary' className='ml-2'>
-																			${print.price.toFixed(2)}
+																			{numToGBP(print.price)}
 																		</Badge>
 																	</div>
 																</CardHeader>
@@ -874,6 +890,17 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 								</div>
 							)}
 						</div>
+					</div>
+
+					<div className='flex flex-col gap-3'>
+						<Label htmlFor='notes'>Comments</Label>
+						<Textarea
+							id='notes'
+							name='notes'
+							defaultValue={item.comments || ''}
+							placeholder='Add comments to this order...'
+							className='min-h-[100px]'
+						/>
 					</div>
 				</form>
 				<DrawerFooter>
