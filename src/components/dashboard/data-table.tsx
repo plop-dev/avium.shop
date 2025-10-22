@@ -646,12 +646,19 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 						</div>
 
 						<div className='flex flex-col gap-4'>
-							<Accordion type='multiple'>
+							<Accordion
+								type='multiple'
+								className='**:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1'>
 								{customPrints.length > 0 && (
 									<div className='flex flex-col gap-2'>
 										<AccordionItem value='custom-prints-details'>
 											<AccordionTrigger>
-												<h4 className='text-sm font-semibold text-muted-foreground'>Custom Prints</h4>
+												<h4 className='text-sm font-semibold text-muted-foreground'>
+													Custom Prints
+													<Badge variant={'secondary'} className='ml-2'>
+														{customPrints.length}
+													</Badge>
+												</h4>
 											</AccordionTrigger>
 											<AccordionContent>
 												<div className='flex flex-col gap-3'>
@@ -799,7 +806,12 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 									<div className='flex flex-col gap-2'>
 										<AccordionItem value='shop-products-details'>
 											<AccordionTrigger>
-												<h4 className='text-sm font-semibold text-muted-foreground'>Shop Products</h4>
+												<h4 className='text-sm font-semibold text-muted-foreground'>
+													Shop Products
+													<Badge variant={'secondary'} className='ml-2'>
+														{shopProducts.length}
+													</Badge>
+												</h4>
 											</AccordionTrigger>
 											<AccordionContent>
 												<div className='flex flex-col gap-3'>
