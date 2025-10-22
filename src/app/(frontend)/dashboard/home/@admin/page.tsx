@@ -11,10 +11,10 @@ const data = [
 		customPrints: 1,
 		total: 49.99,
 		queue: 1,
-		currentStatus: 'in-queue',
+		currentStatus: 'in-queue' as const,
 		statuses: [
 			{
-				stage: 'in-queue',
+				stage: 'in-queue' as const,
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -61,10 +61,10 @@ const data = [
 		customPrints: 0,
 		total: 19.99,
 		queue: 2,
-		currentStatus: 'in-queue',
+		currentStatus: 'in-queue' as const,
 		statuses: [
 			{
-				stage: 'in-queue',
+				stage: 'in-queue' as const,
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -89,14 +89,14 @@ const data = [
 		customPrints: 2,
 		total: 54.97,
 		queue: 3,
-		currentStatus: 'printing',
+		currentStatus: 'printing' as const,
 		statuses: [
 			{
-				stage: 'in-queue',
+				stage: 'in-queue' as const,
 				timestamp: '2025-10-10T08:00:00Z',
 			},
 			{
-				stage: 'printing',
+				stage: 'printing' as const,
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -161,18 +161,18 @@ const data = [
 		customer: 'user_004',
 		total: 59.99,
 		queue: 4,
-		currentStatus: 'packaging',
+		currentStatus: 'packaging' as const,
 		statuses: [
 			{
-				stage: 'in-queue',
+				stage: 'in-queue' as const,
 				timestamp: '2025-10-10T07:00:00Z',
 			},
 			{
-				stage: 'printing',
+				stage: 'printing' as const,
 				timestamp: '2025-10-10T08:00:00Z',
 			},
 			{
-				stage: 'packaging',
+				stage: 'packaging' as const,
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -254,22 +254,22 @@ const data = [
 		customPrints: 2,
 		total: 89.99,
 		queue: 5,
-		currentStatus: 'shipped',
+		currentStatus: 'shipped' as const,
 		statuses: [
 			{
-				stage: 'in-queue',
+				stage: 'in-queue' as const,
 				timestamp: '2025-10-10T06:00:00Z',
 			},
 			{
-				stage: 'printing',
+				stage: 'printing' as const,
 				timestamp: '2025-10-10T07:00:00Z',
 			},
 			{
-				stage: 'packaging',
+				stage: 'packaging' as const,
 				timestamp: '2025-10-10T08:00:00Z',
 			},
 			{
-				stage: 'shipped',
+				stage: 'shipped' as const,
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -344,10 +344,10 @@ const data = [
 		customPrints: 1,
 		total: 29.99,
 		queue: 6,
-		currentStatus: 'in-queue',
+		currentStatus: 'in-queue' as const,
 		statuses: [
 			{
-				stage: 'in-queue',
+				stage: 'in-queue' as const,
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -394,16 +394,7 @@ export default async function AdminPage() {
 				<div className='px-4 lg:px-6'>
 					<ChartAreaInteractive />
 				</div>
-				<DataTable
-					data={data.map(item => ({
-						...item,
-						currentStatus: item.currentStatus as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
-						statuses: item.statuses.map((status: { stage: string; timestamp: string }) => ({
-							...status,
-							stage: status.stage as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
-						})),
-					}))}
-				/>
+				<DataTable data={data} />
 			</div>
 		</div>
 	);
