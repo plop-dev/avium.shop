@@ -11,10 +11,10 @@ const data = [
 		customPrints: 1,
 		total: 49.99,
 		queue: 1,
-		currentStatus: 'in-queue' as const,
+		currentStatus: 'in-queue' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 		statuses: [
 			{
-				stage: 'in-queue' as const,
+				stage: 'in-queue' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -26,7 +26,7 @@ const data = [
 				id: 'cp_001',
 				model: {
 					filename: 'dragon_figurine.stl',
-					filetype: 'stl' as const,
+					filetype: 'stl' as 'stl' | '3mf',
 					modelUrl: 'https://storage.example.com/models/dragon_figurine.stl',
 					gcodeUrl: 'https://storage.example.com/gcode/dragon_figurine.gcode',
 				},
@@ -61,10 +61,10 @@ const data = [
 		customPrints: 0,
 		total: 19.99,
 		queue: 2,
-		currentStatus: 'in-queue' as const,
+		currentStatus: 'in-queue' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 		statuses: [
 			{
-				stage: 'in-queue' as const,
+				stage: 'in-queue' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -89,14 +89,14 @@ const data = [
 		customPrints: 2,
 		total: 54.97,
 		queue: 3,
-		currentStatus: 'printing' as const,
+		currentStatus: 'printing' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 		statuses: [
 			{
-				stage: 'in-queue' as const,
+				stage: 'in-queue' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T08:00:00Z',
 			},
 			{
-				stage: 'printing' as const,
+				stage: 'printing' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -107,7 +107,7 @@ const data = [
 				id: 'cp_002',
 				model: {
 					filename: 'vase_organic.3mf',
-					filetype: '3mf' as const,
+					filetype: '3mf' as 'stl' | '3mf',
 					modelUrl: 'https://storage.example.com/models/vase_organic.3mf',
 					gcodeUrl: 'https://storage.example.com/gcode/vase_organic.gcode',
 				},
@@ -128,7 +128,7 @@ const data = [
 				id: 'cp_003',
 				model: {
 					filename: 'chess_set.stl',
-					filetype: 'stl' as const,
+					filetype: 'stl' as 'stl' | '3mf',
 					modelUrl: 'https://storage.example.com/models/chess_set.stl',
 					gcodeUrl: 'https://storage.example.com/gcode/chess_set.gcode',
 				},
@@ -161,18 +161,18 @@ const data = [
 		customer: 'user_004',
 		total: 59.99,
 		queue: 4,
-		currentStatus: 'packaging' as const,
+		currentStatus: 'packaging' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 		statuses: [
 			{
-				stage: 'in-queue' as const,
+				stage: 'in-queue' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T07:00:00Z',
 			},
 			{
-				stage: 'printing' as const,
+				stage: 'printing' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T08:00:00Z',
 			},
 			{
-				stage: 'packaging' as const,
+				stage: 'packaging' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -185,7 +185,7 @@ const data = [
 				id: 'cp_004',
 				model: {
 					filename: 'action_figure_base.stl',
-					filetype: 'stl' as const,
+					filetype: 'stl' as 'stl' | '3mf',
 					modelUrl: 'https://storage.example.com/models/action_figure_base.stl',
 					gcodeUrl: 'https://storage.example.com/gcode/action_figure_base.gcode',
 				},
@@ -206,7 +206,7 @@ const data = [
 				id: 'cp_005',
 				model: {
 					filename: 'lamp_shade.3mf',
-					filetype: '3mf' as const,
+					filetype: '3mf' as 'stl' | '3mf',
 					modelUrl: 'https://storage.example.com/models/lamp_shade.3mf',
 					gcodeUrl: 'https://storage.example.com/gcode/lamp_shade.gcode',
 				},
@@ -228,7 +228,7 @@ const data = [
 				id: 'cp_006',
 				model: {
 					filename: 'custom_bracket.stl',
-					filetype: 'stl' as const,
+					filetype: 'stl' as 'stl' | '3mf',
 					modelUrl: 'https://storage.example.com/models/custom_bracket.stl',
 					gcodeUrl: 'https://storage.example.com/gcode/custom_bracket.gcode',
 				},
@@ -254,22 +254,22 @@ const data = [
 		customPrints: 2,
 		total: 89.99,
 		queue: 5,
-		currentStatus: 'shipped' as const,
+		currentStatus: 'shipped' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 		statuses: [
 			{
-				stage: 'in-queue' as const,
+				stage: 'in-queue' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T06:00:00Z',
 			},
 			{
-				stage: 'printing' as const,
+				stage: 'printing' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T07:00:00Z',
 			},
 			{
-				stage: 'packaging' as const,
+				stage: 'packaging' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T08:00:00Z',
 			},
 			{
-				stage: 'shipped' as const,
+				stage: 'shipped' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -280,7 +280,7 @@ const data = [
 				id: 'cp_007',
 				model: {
 					filename: 'miniature_house.stl',
-					filetype: 'stl' as const,
+					filetype: 'stl' as 'stl' | '3mf',
 					modelUrl: 'https://storage.example.com/models/miniature_house.stl',
 					gcodeUrl: 'https://storage.example.com/gcode/miniature_house.gcode',
 				},
@@ -302,7 +302,7 @@ const data = [
 				id: 'cp_008',
 				model: {
 					filename: 'phone_case_custom.3mf',
-					filetype: '3mf' as const,
+					filetype: '3mf' as 'stl' | '3mf',
 					modelUrl: 'https://storage.example.com/models/phone_case_custom.3mf',
 					gcodeUrl: 'https://storage.example.com/gcode/phone_case_custom.gcode',
 				},
@@ -344,10 +344,10 @@ const data = [
 		customPrints: 1,
 		total: 29.99,
 		queue: 6,
-		currentStatus: 'in-queue' as const,
+		currentStatus: 'in-queue' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 		statuses: [
 			{
-				stage: 'in-queue' as const,
+				stage: 'in-queue' as 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled',
 				timestamp: '2025-10-10T09:15:00Z',
 			},
 		],
@@ -358,7 +358,7 @@ const data = [
 				id: 'cp_009',
 				model: {
 					filename: 'gear_mechanism.stl',
-					filetype: 'stl' as const,
+					filetype: 'stl' as 'stl' | '3mf',
 					modelUrl: 'https://storage.example.com/models/gear_mechanism.stl',
 					gcodeUrl: 'https://storage.example.com/gcode/gear_mechanism.gcode',
 				},
