@@ -1,4 +1,4 @@
-import { CollectionConfig } from 'payload';
+import { APIError, CollectionConfig } from 'payload';
 
 export const Orders: CollectionConfig = {
 	slug: 'orders',
@@ -12,12 +12,32 @@ export const Orders: CollectionConfig = {
 	},
 	access: {
 		read: () => true,
-		create: () => false,
+		create: () => true,
 		update: () => true,
 		delete: () => false,
 	},
 	hooks: {
 		beforeChange: [
+			({ data, req }) => {
+				if (req.user) {
+					if (data.customer != req.user.id) {
+						console.log(data);
+						console.log(data.customer);
+						console.log(req.user);
+						console.log(req.user.id);
+						throw new APIError("Cannot set customer to another user.", 400);
+					}
+					console.log(data);
+					//data.customer = data.customer.replace("-", "");
+				} else {
+					// this shouldn't be reachable with proper access control
+					console.log("Unauthenticated request trying to create/update an order.");
+					throw new APIError("Unauthenticated requests cannot create or modify orders.", 401);
+				}
+
+			}
+		]
+		/*beforeChange: [
 			({ data }) => {
 				if (!data) return data;
 
@@ -43,7 +63,7 @@ export const Orders: CollectionConfig = {
 
 				return data;
 			},
-		],
+		],*/
 	},
 	timestamps: true,
 	fields: [

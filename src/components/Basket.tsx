@@ -46,6 +46,86 @@ export default function Basket() {
 	const hasCustomPrints = customPrints.length > 0;
 	const isCheckoutDisabled = basketItems.length === 0 || (hasCustomPrints && !orderValidation.orderNameValid);
 
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [message, setMessage] = useState<string | null>(null);
+
+	// New: handle checkout - create order in Payload via REST API (/api/orders)
+	const handleCheckout = async () => {
+		if (isCheckoutDisabled) return;
+
+		setIsSubmitting(true);
+		setMessage(null);
+
+		try {
+			// Map basket items to Payload Order.prints shapes
+			console.log(basketItems);
+			const prints = basketItems.map(item => {
+				if (isCustomPrint(item)) {
+					// custom print shape
+					return {
+						model: item.model,
+						printingOptions: item.printingOptions,
+						time: (item as any).time ?? undefined,
+						filament: (item as any).filament ?? undefined,
+						price: item.price ?? 0,
+						blockType: 'customPrint',
+					};
+				}
+
+				// shop product shape
+				const shopItem = item as ShopProduct;
+				return {
+					//product: (shopItem as any).product ?? (shopItem.id ?? undefined),
+					//price: shopItem.price ?? 0,
+					blockType: 'shopProduct',
+					//id: shopItem.id,
+					price: shopItem.price,
+					product: shopItem.id,
+					blockName: shopItem.product.name
+				};
+			});
+
+			const total = basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+
+			let me = await fetch("/api/users/me");
+			if (me.status !== 200) {
+				throw new Error("An unexpected error occurred retrieving user information.");
+			}
+			let userId = (await me.json()).user.id;
+
+
+			const payload = {
+				name: (orderValidation && (orderValidation as any).orderName) || `Order ${new Date().toISOString()}`,
+				prints,
+				total,
+				customer: userId,
+			};
+
+			const res = await fetch('/api/orders', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(payload),
+			});
+
+			if (!res.ok) {
+				const text = await res.text();
+				throw new Error(text || `Failed to create order: ${res.status}`);
+			}
+
+			// Clear basket by setting each item quantity to 0
+			basketItems.forEach(item => setItemQuantity(item.id, 0));
+
+			setMessage('Order created successfully.');
+		} catch (err: any) {
+			console.error('Checkout error', err);
+			setMessage(err?.message || 'Failed to create order.');
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
 	return (
 		<Drawer direction='right' autoFocus={true}>
 			<DrawerTrigger asChild>
@@ -121,10 +201,17 @@ export default function Basket() {
 						</div>
 					)}
 
-					<Button disabled={isCheckoutDisabled}>
+					{/* Wire up checkout handler and disable while submitting */}
+					<Button disabled={isCheckoutDisabled} onClick={handleCheckout}>
 						<ShoppingBasket className='mr-2' />
 						Checkout ({totalItems} {totalItems === 1 ? 'item' : 'items'})
 					</Button>
+
+					{message && (
+						<div className='text-sm mt-2'>
+							<p>{message}</p>
+						</div>
+					)}
 				</DrawerFooter>
 			</DrawerContent>
 		</Drawer>

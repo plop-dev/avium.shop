@@ -31,20 +31,9 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 		}
 	};
 
-	async function generateShopProductId(product: ShopProductType['product']) {
-		const res = await crypto.subtle.digest(
-			'SHA-1',
-			new TextEncoder().encode([...Object.values(product), ...Object.values(product.printingOptions)].join('')),
-		);
-		return Array.from(new Uint8Array(res))
-			.map(b => b.toString(36))
-			.join('')
-			.replace(/[^a-zA-Z0-9]/g, '');
-	}
-
-	const handleAddToCart = async (product: ShopProductType['product'], quantity = 1) => {
+	const handleAddToCart = async (product: ShopProductType['product'], id: ShopProductType['id'], quantity = 1) => {
 		toast.success(`Added ${quantity} x ${product.name} to basket`);
-		const id = await generateShopProductId(product);
+		//const id = await generateShopProductId(product);
 
 		addShopProductToBasket({
 			id,
@@ -292,6 +281,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 													colour: selectedColour,
 												},
 											},
+											product.id,
 											qty,
 										);
 										setOpen(false);
