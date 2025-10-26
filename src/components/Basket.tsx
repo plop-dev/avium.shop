@@ -65,8 +65,8 @@ export default function Basket() {
 					return {
 						model: item.model,
 						printingOptions: item.printingOptions,
-						time: (item as any).time ?? undefined,
-						filament: (item as any).filament ?? undefined,
+						time: item.time ?? undefined,
+						//filament: item.filament ?? undefined,
 						price: item.price ?? 0,
 						blockType: 'customPrint',
 					};
@@ -87,15 +87,15 @@ export default function Basket() {
 
 			const total = basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
 
-			let me = await fetch("/api/users/me");
+			const me = await fetch("/api/users/me");
 			if (me.status !== 200) {
 				throw new Error("An unexpected error occurred retrieving user information.");
 			}
-			let userId = (await me.json()).user.id;
+			const userId = (await me.json()).user.id;
 
 
 			const payload = {
-				name: (orderValidation && (orderValidation as any).orderName) || `Order ${new Date().toISOString()}`,
+				name: (orderValidation && orderValidation.orderName) || `Order ${new Date().toISOString()}`,
 				prints,
 				total,
 				customer: userId,
@@ -118,9 +118,9 @@ export default function Basket() {
 			basketItems.forEach(item => setItemQuantity(item.id, 0));
 
 			setMessage('Order created successfully.');
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Checkout error', err);
-			setMessage(err?.message || 'Failed to create order.');
+			//setMessage(err?.message || 'Failed to create order.');
 		} finally {
 			setIsSubmitting(false);
 		}
