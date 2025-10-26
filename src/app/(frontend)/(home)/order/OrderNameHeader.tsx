@@ -9,7 +9,6 @@ import { CheckCircle } from 'lucide-react';
 
 export default function OrderNameHeader() {
 	const [orderName, setOrderName] = useState('');
-	const orderValidation = useStore($orderValidation);
 
 	// Update order name validation whenever it changes
 	useEffect(() => {

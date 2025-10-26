@@ -45,7 +45,7 @@ export default function Basket() {
 
 	// Check if we have any custom prints that need a valid order name
 	const hasCustomPrints = customPrints.length > 0;
-	const isCheckoutDisabled = basketItems.length === 0 || (hasCustomPrints && !orderValidation.orderNameValid);
+	const isCheckoutDisabled = basketItems.length === 0 || !orderValidation.orderNameValid;
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
@@ -197,7 +197,7 @@ export default function Basket() {
 						<p>{numToGBP(basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0))}</p>
 					</div>
 
-					{hasCustomPrints && !orderValidation.orderNameValid && (
+					{!orderValidation.orderNameValid && (
 						<div className='flex items-center gap-2 text-amber-500 text-sm mb-2'>
 							<AlertCircle className='h-4 w-4' />
 							<p>Please provide a valid order name for your custom prints</p>
