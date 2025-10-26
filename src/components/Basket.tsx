@@ -11,6 +11,7 @@ import numToGBP from '@/utils/numToGBP';
 import { useStore } from '@nanostores/react';
 import { $basket, setItemQuantity, CustomPrint, ShopProduct, BasketItem as BasketItemType } from '@/stores/basket';
 import { $orderValidation } from '@/stores/order';
+import { toast } from 'sonner';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -56,74 +57,76 @@ export default function Basket() {
 		setIsSubmitting(true);
 		setMessage(null);
 
-		try {
-			// Map basket items to Payload Order.prints shapes
-			console.log(basketItems);
-			const prints = basketItems.map(item => {
-				if (isCustomPrint(item)) {
-					// custom print shape
-					return {
-						model: item.model,
-						printingOptions: item.printingOptions,
-						time: item.time ?? undefined,
-						//filament: item.filament ?? undefined,
-						price: item.price ?? 0,
-						blockType: 'customPrint',
-					};
-				}
-
-				// shop product shape
-				const shopItem = item as ShopProduct;
+		// Map basket items to Payload Order.prints shapes
+		// TODO: rewrite custom print logic
+		const prints = basketItems.map(item => {
+			if (isCustomPrint(item)) {
+				// custom print shape
 				return {
-					//product: (shopItem as any).product ?? (shopItem.id ?? undefined),
-					//price: shopItem.price ?? 0,
-					blockType: 'shopProduct',
-					//id: shopItem.id,
-					price: shopItem.price,
-					product: shopItem.id,
-					blockName: shopItem.product.name
+					model: item.model,
+					printingOptions: item.printingOptions,
+					time: item.time ?? undefined,
+					//filament: item.filament ?? undefined,
+					price: item.price ?? 0,
+					blockType: 'customPrint',
 				};
-			});
-
-			const total = basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
-
-			const me = await fetch("/api/users/me");
-			if (me.status !== 200) {
-				throw new Error("An unexpected error occurred retrieving user information.");
 			}
-			const userId = (await me.json()).user.id;
 
-
-			const payload = {
-				name: (orderValidation && orderValidation.orderName) || `Order ${new Date().toISOString()}`,
-				prints,
-				total,
-				customer: userId,
+			// shop product shape
+			const shopItem = item as ShopProduct;
+			return {
+				blockType: 'shopProduct',
+				price: shopItem.price,
+				product: shopItem.id,
+				blockName: shopItem.product.name
 			};
+		});
 
-			const res = await fetch('/api/orders', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(payload),
-			});
+		const total = basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
 
-			if (!res.ok) {
-				const text = await res.text();
-				throw new Error(text || `Failed to create order: ${res.status}`);
-			}
-
-			// Clear basket by setting each item quantity to 0
-			basketItems.forEach(item => setItemQuantity(item.id, 0));
-
-			setMessage('Order created successfully.');
-		} catch (err: unknown) {
-			console.error('Checkout error', err);
-			//setMessage(err?.message || 'Failed to create order.');
-		} finally {
-			setIsSubmitting(false);
+		const me = await fetch("/api/users/me");
+		if (me.status !== 200) {
+			toast.error("Failed to retrieve user information.");
+			// TODO: set is submitting
+			return;
 		}
+		const userId = (await me.json()).user.id;
+
+		console.log(orderValidation);
+		const payload = {
+			name: (orderValidation && orderValidation.orderName) || `Order ${new Date().toISOString()}`,
+			prints,
+			total,
+			customer: userId,
+		};
+
+		const res = await fetch('/api/orders', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(payload),
+		});
+
+		if (!res.ok) {
+			// TODO: typing?
+			const text = await res.json();
+			console.log("Failed to create order: ", text.errors.join("\n"))
+			toast.error("Failed to create order");
+		}
+
+		toast.success("Order created successfully.");
+		basketItems.length = 0;
+		// TODO: right now the Checkout button still says 1 item - this shouldn't be an issue with a redirect, but right now it is (solve?)
+		// TODO: redirect to payment (get rid of toast?)
+
+		//setMessage('Order created successfully.');
+		//} catch (err: unknown) {
+		//	console.error('Checkout error', err);
+		//	//setMessage(err?.message || 'Failed to create order.');
+		//} finally {
+		//	setIsSubmitting(false);
+		//}
 	};
 
 	return (
