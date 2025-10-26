@@ -12,6 +12,7 @@ import { useStore } from '@nanostores/react';
 import { $basket, setItemQuantity, CustomPrint, ShopProduct, BasketItem as BasketItemType } from '@/stores/basket';
 import { $orderValidation } from '@/stores/order';
 import { toast } from 'sonner';
+import { LoadingSwap } from './ui/loading-swap';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -87,7 +88,7 @@ export default function Basket() {
 		const me = await fetch("/api/users/me");
 		if (me.status !== 200) {
 			toast.error("Failed to retrieve user information.");
-			// TODO: set is submitting
+			setIsSubmitting(false);
 			return;
 		}
 		const userId = (await me.json()).user.id;
@@ -113,10 +114,14 @@ export default function Basket() {
 			const text = await res.json();
 			console.log("Failed to create order: ", text.errors.join("\n"))
 			toast.error("Failed to create order");
+			setIsSubmitting(false);
+			return;
 		}
 
 		toast.success("Order created successfully.");
-		basketItems.length = 0;
+		// TODO: needed? probably but not sure
+		setIsSubmitting(false);
+		// TODO: empty basket
 		// TODO: right now the Checkout button still says 1 item - this shouldn't be an issue with a redirect, but right now it is (solve?)
 		// TODO: redirect to payment (get rid of toast?)
 
@@ -205,9 +210,14 @@ export default function Basket() {
 					)}
 
 					{/* Wire up checkout handler and disable while submitting */}
-					<Button disabled={isCheckoutDisabled} onClick={handleCheckout}>
-						<ShoppingBasket className='mr-2' />
-						Checkout ({totalItems} {totalItems === 1 ? 'item' : 'items'})
+					<Button disabled={isCheckoutDisabled || isSubmitting} onClick={handleCheckout}>
+						{/*Checkout ({totalItems} {totalItems === 1 ? 'item' : 'items'}) */}
+						<LoadingSwap isLoading={isSubmitting}>
+							<div className="flex">
+								<ShoppingBasket className='mr-2' />
+								Checkout ({totalItems} {totalItems === 1 ? 'item' : 'items'})
+							</div>
+						</LoadingSwap>
 					</Button>
 
 					{message && (
