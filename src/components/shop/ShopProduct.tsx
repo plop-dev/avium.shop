@@ -33,7 +33,6 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 
 	const handleAddToCart = async (product: ShopProductType['product'], id: ShopProductType['id'], quantity = 1) => {
 		toast.success(`Added ${quantity} x ${product.name} to basket`);
-		//const id = await generateShopProductId(product);
 
 		addShopProductToBasket({
 			id,
