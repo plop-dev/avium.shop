@@ -209,9 +209,7 @@ export default function Basket() {
 						</div>
 					)}
 
-					{/* Wire up checkout handler and disable while submitting */}
 					<Button disabled={isCheckoutDisabled || isSubmitting} onClick={handleCheckout}>
-						{/*Checkout ({totalItems} {totalItems === 1 ? 'item' : 'items'}) */}
 						<LoadingSwap isLoading={isSubmitting}>
 							<div className="flex">
 								<ShoppingBasket className='mr-2' />
