@@ -93,16 +93,18 @@ export const schema = z.object({
 	id: z.string(),
 	name: z.string(),
 	customer: z.string(),
-	shopProducts: z.number().optional(),
-	customPrints: z.number().optional(),
+	shopProducts: z.number().default(0),
+	customPrints: z.number().default(0),
 	total: z.number(),
-	queue: z.number(),
-	statuses: z.array(
-		z.object({
-			stage: z.enum(['in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
-			timestamp: z.string(),
-		}),
-	),
+	queue: z.number().default(0),
+	statuses: z
+		.array(
+			z.object({
+				stage: z.enum(['in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
+				timestamp: z.string(),
+			}),
+		)
+		.default([]),
 	currentStatus: z.enum(['in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
 	comments: z.string().optional(),
 	createdAt: z.string(),
@@ -115,7 +117,7 @@ export const schema = z.object({
 					product: z.string(),
 					quantity: z.number(),
 					price: z.number(),
-					completed: z.boolean(),
+					completed: z.boolean().default(false),
 				}),
 				z.object({
 					blockType: z.literal('customPrint'),
@@ -137,11 +139,11 @@ export const schema = z.object({
 					filament: z.number().optional(),
 					quantity: z.number(),
 					price: z.number(),
-					completed: z.boolean(),
+					completed: z.boolean().default(false),
 				}),
 			]),
 		)
-		.optional(),
+		.default([]),
 });
 
 export type Order = z.infer<typeof schema>;
