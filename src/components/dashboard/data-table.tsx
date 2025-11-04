@@ -335,6 +335,18 @@ export function DataTable({ data: initialData }: { data: Order[] }) {
 	const sortableId = React.useId();
 	const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}));
 
+	const sortedData = statusSteps
+		.map(step => step.value)
+		.map(status => {
+			return data.filter(order => order.currentStatus === status);
+		})
+		.map((orders, index) => {
+			const status = statusSteps.map(step => step.value)[index];
+			if (orders.length === 0) return { [status]: [] };
+
+			return { [status]: orders };
+		})[0];
+
 	const dataIds = React.useMemo<UniqueIdentifier[]>(() => data?.map(({ id }) => id) || [], [data]);
 
 	const table = useReactTable({
@@ -391,14 +403,18 @@ export function DataTable({ data: initialData }: { data: Order[] }) {
 					</SelectContent>
 				</Select>
 				<TabsList className='**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex'>
-					<TabsTrigger value='in-queue'>In Queue</TabsTrigger>
+					<TabsTrigger value='in-queue'>
+						In Queue <Badge variant='secondary'>{sortedData?.['in-queue'] ? sortedData['in-queue'].length : 0}</Badge>
+					</TabsTrigger>
 					<TabsTrigger value='printing'>
-						Printing <Badge variant='secondary'>3</Badge>
+						Printing <Badge variant='secondary'>{sortedData?.['printing'] ? sortedData['printing'].length : 0}</Badge>
 					</TabsTrigger>
 					<TabsTrigger value='packaging'>
-						Packaging <Badge variant='secondary'>2</Badge>
+						Packaging <Badge variant='secondary'>{sortedData?.['packaging'] ? sortedData['packaging'].length : 0}</Badge>
 					</TabsTrigger>
-					<TabsTrigger value='shipped'>Shipped</TabsTrigger>
+					<TabsTrigger value='shipped'>
+						Shipped <Badge variant='secondary'>{sortedData?.['shipped'] ? sortedData['shipped'].length : 0}</Badge>
+					</TabsTrigger>
 				</TabsList>
 				<div className='flex items-center gap-2'>
 					<DropdownMenu>
