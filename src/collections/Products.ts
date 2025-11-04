@@ -9,6 +9,7 @@ export const Products: CollectionConfig = {
 		singular: 'Product',
 		plural: 'Products',
 	},
+	// indexes: [{ unique: true, fields: ['name'] }],
 	admin: {
 		useAsTitle: 'name',
 		//? defaultColumns: ['name', 'customer', 'currentStatus', 'createdAt'],
@@ -26,8 +27,9 @@ export const Products: CollectionConfig = {
 			name: 'name',
 			type: 'text',
 			required: true,
+			unique: true,
 			admin: {
-				description: 'The name of the product',
+				description: 'The name of the product. Also used as the file name on the server. THIS MUST BE UNIQUE.',
 			},
 		},
 
@@ -54,7 +56,7 @@ export const Products: CollectionConfig = {
 			type: 'number',
 			required: true,
 			admin: {
-				description: 'The price of the product in GBP (£)',
+				description: 'The price of the product in GBP (£) (e.g. 1.5)',
 			},
 		},
 
@@ -63,7 +65,7 @@ export const Products: CollectionConfig = {
 			type: 'text',
 			required: true,
 			admin: {
-				description: 'The estimated print time for the product',
+				description: 'The estimated print time for the product (e.g. "2h30m")',
 			},
 		},
 

@@ -308,7 +308,7 @@ export interface Order {
 export interface Product {
   id: string;
   /**
-   * The name of the product
+   * The name of the product. Also used as the file name on the server. THIS MUST BE UNIQUE.
    */
   name: string;
   /**
@@ -317,11 +317,11 @@ export interface Product {
   description: string;
   pictures: (string | Media)[];
   /**
-   * The price of the product in GBP (£)
+   * The price of the product in GBP (£) (e.g. 1.5)
    */
   price: number;
   /**
-   * The estimated print time for the product
+   * The estimated print time for the product (e.g. "2h30m")
    */
   time: string;
   /**
