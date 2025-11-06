@@ -308,7 +308,7 @@ export interface Order {
 export interface Product {
   id: string;
   /**
-   * The name of the product. Also used as the file name on the server. THIS MUST BE UNIQUE.
+   * The name of the product.
    */
   name: string;
   /**

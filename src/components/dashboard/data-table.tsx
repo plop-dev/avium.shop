@@ -618,7 +618,17 @@ function TableCellViewer({ item }: { item: Order }) {
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
-		toast.success(`Downloading ${filename}`);
+		toast.success(`Downloaded ${filename}`);
+	};
+
+	const handleProductDownload = (productId: string) => {
+		const link = document.createElement('a');
+		link.href = `${process.env.NEXT_PUBLIC_AVIUM_API_URL}/products/${productId}.stl`;
+		link.download = productId;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		toast.success(`Downloaded ${productId}`);
 	};
 
 	return (
@@ -884,6 +894,16 @@ function TableCellViewer({ item }: { item: Order }) {
 																		</div>
 																	</div>
 
+																	<Button
+																		type='button'
+																		variant='outline'
+																		size='sm'
+																		className='w-full'
+																		onClick={() => handleProductDownload(print.id)}>
+																		<Download className='mr-2 size-3.5' />
+																		STL
+																	</Button>
+
 																	<Toggle
 																		variant='outline'
 																		size='sm'
@@ -903,6 +923,7 @@ function TableCellViewer({ item }: { item: Order }) {
 								)}
 							</Accordion>
 
+							{/* //* THIS SHOULD NEVER HAPPEN BUT WHO KNOWS */}
 							{customPrints.length === 0 && shopProducts.length === 0 && (
 								<div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center'>
 									<Package className='mb-2 size-8 text-muted-foreground' />

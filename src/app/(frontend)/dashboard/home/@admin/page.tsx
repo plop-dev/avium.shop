@@ -47,8 +47,8 @@ const data: Order[] = [
 			},
 			{
 				blockType: 'shopProduct' as const,
-				id: 'sp_001',
-				product: 'prod_keychain_001',
+				id: '689a73717ec937a5c4333e72',
+				product: 'benchy2',
 				quantity: 2,
 				price: 25.0,
 				completed: false,
@@ -149,8 +149,8 @@ const data: Order[] = [
 			},
 			{
 				blockType: 'shopProduct' as const,
-				id: 'sp_003',
-				product: 'prod_coaster_set',
+				id: '689bcb52718628ddd680d48e',
+				product: 'benchy',
 				quantity: 1,
 				price: 1.99,
 				completed: false,
@@ -322,16 +322,16 @@ const data: Order[] = [
 			},
 			{
 				blockType: 'shopProduct' as const,
-				id: 'sp_004',
-				product: 'prod_desk_organizer',
+				id: '689bcb52718628ddd680d48e',
+				product: 'benchy',
 				quantity: 1,
 				price: 15.0,
 				completed: true,
 			},
 			{
 				blockType: 'shopProduct' as const,
-				id: 'sp_005',
-				product: 'prod_cable_holder',
+				id: '689bcb52718628ddd680d48e',
+				product: 'benchy',
 				quantity: 2,
 				price: 10.01,
 				completed: true,
@@ -378,8 +378,8 @@ const data: Order[] = [
 			},
 			{
 				blockType: 'shopProduct' as const,
-				id: 'sp_006',
-				product: 'prod_bookmark_set',
+				id: '689a73717ec937a5c4333e72',
+				product: 'benchy2',
 				quantity: 1,
 				price: 10.0,
 				completed: false,
@@ -458,7 +458,7 @@ export default async function AdminPage() {
 				<div className='px-4 lg:px-6'>
 					<ChartAreaInteractive />
 				</div>
-				<DataTable data={orderData} />
+				<DataTable data={data} />
 			</div>
 		</div>
 	);

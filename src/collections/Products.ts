@@ -27,9 +27,8 @@ export const Products: CollectionConfig = {
 			name: 'name',
 			type: 'text',
 			required: true,
-			unique: true,
 			admin: {
-				description: 'The name of the product. Also used as the file name on the server. THIS MUST BE UNIQUE.',
+				description: 'The name of the product.',
 			},
 		},
 
