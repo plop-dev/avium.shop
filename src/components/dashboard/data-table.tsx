@@ -92,7 +92,10 @@ import { Textarea } from '../ui/textarea';
 export const schema = z.object({
 	id: z.string(),
 	name: z.string(),
-	customer: z.string(),
+	customer: z.object({
+		id: z.string(),
+		name: z.string(),
+	}),
 	shopProducts: z.number().default(0),
 	customPrints: z.number().default(0),
 	total: z.number(),
@@ -233,7 +236,7 @@ const columns: ColumnDef<Order>[] = [
 	{
 		accessorKey: 'customer',
 		header: 'Customer',
-		cell: ({ row }) => row.original.customer,
+		cell: ({ row }) => row.original.customer.name,
 	},
 	{
 		accessorKey: 'status',
@@ -663,7 +666,7 @@ function TableCellViewer({ item }: { item: Order }) {
 					<div className='rounded-xl flex flex-col gap-3'>
 						<Label>Customer</Label>
 						<span className='flex gap-x-2 border rounded-md p-4'>
-							<User size={16}></User> {item.customer}
+							<User size={16}></User> {item.customer.name}
 						</span>
 					</div>
 
