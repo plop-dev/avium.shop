@@ -467,7 +467,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 				<div className='px-4 lg:px-6'>
 					<ChartAreaInteractive />
 				</div>
-				<DataTable data={orderData} />
+				<DataTable data={orderData} limit={limit} page={page} />
 			</div>
 		</div>
 	);

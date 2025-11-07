@@ -89,6 +89,7 @@ import { Check, User, Download, Package } from 'lucide-react';
 import numToGBP from '@/utils/numToGBP';
 import { Textarea } from '../ui/textarea';
 import { parseAsInteger, useQueryState } from 'nuqs';
+import { useEffect } from 'react';
 
 export const schema = z.object({
 	id: z.string(),
@@ -326,7 +327,7 @@ function DraggableRow({ row }: { row: Row<Order> }) {
 	);
 }
 
-export function DataTable({ data: initialData }: { data: Order[] }) {
+export function DataTable({ data: initialData, limit, page }: { data: Order[]; limit: number; page: number }) {
 	const [data, setData] = React.useState(() => initialData);
 	const [rowSelection, setRowSelection] = React.useState({});
 	const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -336,9 +337,11 @@ export function DataTable({ data: initialData }: { data: Order[] }) {
 		'limit',
 		parseAsInteger.withDefault(10).withOptions({ shallow: false }),
 	);
+	const [selectedPage, setSelectedPage] = useQueryState('page', parseAsInteger.withDefault(1).withOptions({ shallow: false }));
+
 	const [pagination, setPagination] = React.useState({
-		pageIndex: 0,
-		pageSize: 10,
+		pageIndex: page - 1,
+		pageSize: limit,
 	});
 	const sortableId = React.useId();
 	const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}));
@@ -356,6 +359,11 @@ export function DataTable({ data: initialData }: { data: Order[] }) {
 		})[0];
 
 	const dataIds = React.useMemo<UniqueIdentifier[]>(() => data?.map(({ id }) => id) || [], [data]);
+
+	useEffect(() => {
+		setSelectedRowsPerPage(pagination.pageSize);
+		setSelectedPage(pagination.pageIndex + 1);
+	}, [pagination]);
 
 	const table = useReactTable({
 		data,
@@ -517,7 +525,7 @@ export function DataTable({ data: initialData }: { data: Order[] }) {
 									<SelectValue placeholder={table.getState().pagination.pageSize} />
 								</SelectTrigger>
 								<SelectContent side='top'>
-									{[10, 20, 30, 40, 50].map(pageSize => (
+									{[5, 10, 20, 30, 40, 50].map(pageSize => (
 										<SelectItem key={pageSize} value={`${pageSize}`}>
 											{pageSize}
 										</SelectItem>
