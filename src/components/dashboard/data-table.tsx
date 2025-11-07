@@ -88,6 +88,7 @@ import { format } from 'date-fns';
 import { Check, User, Download, Package } from 'lucide-react';
 import numToGBP from '@/utils/numToGBP';
 import { Textarea } from '../ui/textarea';
+import { parseAsInteger, useQueryState } from 'nuqs';
 
 export const schema = z.object({
 	id: z.string(),
@@ -331,6 +332,10 @@ export function DataTable({ data: initialData }: { data: Order[] }) {
 	const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
 	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 	const [sorting, setSorting] = React.useState<SortingState>([]);
+	const [selectedRowsPerPage, setSelectedRowsPerPage] = useQueryState(
+		'limit',
+		parseAsInteger.withDefault(10).withOptions({ shallow: false }),
+	);
 	const [pagination, setPagination] = React.useState({
 		pageIndex: 0,
 		pageSize: 10,
@@ -506,6 +511,7 @@ export function DataTable({ data: initialData }: { data: Order[] }) {
 								value={`${table.getState().pagination.pageSize}`}
 								onValueChange={value => {
 									table.setPageSize(Number(value));
+									setSelectedRowsPerPage(Number(value));
 								}}>
 								<SelectTrigger size='sm' className='w-20' id='rows-per-page'>
 									<SelectValue placeholder={table.getState().pagination.pageSize} />

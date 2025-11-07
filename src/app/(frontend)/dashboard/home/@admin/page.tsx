@@ -2,7 +2,9 @@ import { ChartAreaInteractive } from '@/components/dashboard/chart-area-interact
 import { DataTable, type Order } from '@/components/dashboard/data-table';
 import { SectionCards } from '@/components/dashboard/section-cards';
 import { getPayload } from 'payload';
+import { loadSearchParams } from './searchParams';
 import config from '@/payload.config';
+import { SearchParams } from 'nuqs/server';
 
 // const data: Order[] = [
 // 	{
@@ -388,12 +390,14 @@ import config from '@/payload.config';
 // 	},
 // ];
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
 	const payload = await getPayload({ config });
+	const { limit, page } = await loadSearchParams(searchParams);
 
 	const orders = await payload.find({
 		collection: 'orders',
-		limit: 10,
+		limit,
+		page,
 		populate: {
 			users: {
 				name: true,
