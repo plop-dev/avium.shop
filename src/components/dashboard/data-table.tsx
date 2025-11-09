@@ -847,7 +847,7 @@ function TableCellViewer({ item }: { item: Order }) {
 																		variant='outline'
 																		size='sm'
 																		defaultPressed={print.completed}
-																		className='data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full justify-start transition-colors'>
+																		className='cursor-pointer justify-center data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full transition-colors'>
 																		<Check className='mr-2 size-4' />
 																		Mark as Completed
 																	</Toggle>
@@ -925,7 +925,7 @@ function TableCellViewer({ item }: { item: Order }) {
 																		variant='outline'
 																		size='sm'
 																		defaultPressed={print.completed}
-																		className='data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full justify-start transition-colors'>
+																		className='cursor-pointer justify-center data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full transition-colors'>
 																		<Check className='mr-2 size-4' />
 																		Mark as Completed
 																	</Toggle>
