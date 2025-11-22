@@ -21,7 +21,7 @@ export const Orders: CollectionConfig = {
 			async ({ operation, data, req }) => {
 				// ensure that customers can only set themselves as the customer on an order
 				if (req.user) {
-					if (data.customer != req.user.id && !req.data?.queue) {
+					if (data.customer != req.user.id && req.data?.customer) {
 						// console.log(data);
 						// console.log(data.customer);
 						// console.log(req.user);
@@ -50,6 +50,8 @@ export const Orders: CollectionConfig = {
 				}
 			},
 		],
+
+		//* old ↓
 		/*beforeChange: [
 			({ data }) => {
 				if (!data) return data;

@@ -673,6 +673,7 @@ function TableCellViewer({ item }: { item: Order }) {
 	const isMobile = useIsMobile();
 	const [currentStatus, setCurrentStatus] = React.useState(item.currentStatus);
 	const [statusHistory, setStatusHistory] = React.useState(item.statuses);
+	const [completedPrints, setCompletedPrints] = React.useState<string[]>();
 
 	const statusList = statusSteps.map(step => step.value);
 
@@ -694,15 +695,49 @@ function TableCellViewer({ item }: { item: Order }) {
 		// toast.success(`Order status updated to ${newStatus}`);
 	};
 
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+	const handleMarkAsCompleted = (id: string, completed: boolean) => {
+		if (completed) setCompletedPrints(prev => (prev ? [...prev, id] : [id]));
+		else setCompletedPrints(prev => (prev ? prev.filter(id => id !== id) : []));
+	};
+
+	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		const formData = new FormData(e.currentTarget);
 		const data = {
-			name: formData.get('name'),
-			status: currentStatus,
+			orderId: item.id,
+			status: {
+				statuses: statusHistory,
+				currentStatus: currentStatus,
+			},
+			prints: item.prints?.map(print => {
+				if (print.id === completedPrints?.find(id => id === print.id)) {
+					return { ...print, completed: true };
+				}
+				return print;
+			}),
+			comments: formData.get('comments') || '',
 		};
-		console.log('Form data submitted:', data);
-		toast.success('Order updated successfully');
+
+		const where: Where = {
+			id: {
+				equals: item.id,
+			},
+		};
+		const stringifiedQuery = stringify(
+			{
+				where,
+			},
+			{ addQueryPrefix: true },
+		);
+
+		const res = await fetch(`/api/orders${stringifiedQuery}`, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(data),
+		});
+
+		if (!res.ok) toast.error('Failed to update order.');
+		else toast.success('Order updated successfully');
 	};
 
 	const customPrints = item.prints?.filter(p => p.blockType === 'customPrint') || [];
@@ -732,7 +767,7 @@ function TableCellViewer({ item }: { item: Order }) {
 		<Drawer direction={isMobile ? 'bottom' : 'right'}>
 			<DrawerTrigger asChild>
 				<Button variant='link' className='text-foreground w-fit px-0 text-left'>
-					{item.name} ({item.id})
+					{item.name}
 				</Button>
 			</DrawerTrigger>
 			<DrawerContent>
@@ -930,6 +965,7 @@ function TableCellViewer({ item }: { item: Order }) {
 																		variant='outline'
 																		size='sm'
 																		defaultPressed={print.completed}
+																		onPressedChange={e => handleMarkAsCompleted(print.id, e)}
 																		className='cursor-pointer justify-center data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full transition-colors'>
 																		<Check className='mr-2 size-4' />
 																		Mark as Completed
@@ -1008,6 +1044,7 @@ function TableCellViewer({ item }: { item: Order }) {
 																		variant='outline'
 																		size='sm'
 																		defaultPressed={print.completed}
+																		onPressedChange={e => handleMarkAsCompleted(print.id, e)}
 																		className='cursor-pointer justify-center data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full transition-colors'>
 																		<Check className='mr-2 size-4' />
 																		Mark as Completed
@@ -1034,10 +1071,10 @@ function TableCellViewer({ item }: { item: Order }) {
 					</div>
 
 					<div className='flex flex-col gap-3'>
-						<Label htmlFor='notes'>Comments</Label>
+						<Label htmlFor='comments'>Comments</Label>
 						<Textarea
-							id='notes'
-							name='notes'
+							id='comments'
+							name='comments'
 							defaultValue={item.comments || ''}
 							placeholder='Add comments to this order...'
 							className='min-h-[100px]'
