@@ -674,6 +674,7 @@ function TableCellViewer({ item }: { item: Order }) {
 	const [currentStatus, setCurrentStatus] = React.useState(item.currentStatus);
 	const [statusHistory, setStatusHistory] = React.useState(item.statuses);
 	const [completedPrints, setCompletedPrints] = React.useState<string[]>();
+	const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
 	const statusList = statusSteps.map(step => step.value);
 
@@ -737,7 +738,10 @@ function TableCellViewer({ item }: { item: Order }) {
 		});
 
 		if (!res.ok) toast.error('Failed to update order.');
-		else toast.success('Order updated successfully');
+		else {
+			toast.success('Order updated successfully');
+			setIsDrawerOpen(false);
+		}
 	};
 
 	const customPrints = item.prints?.filter(p => p.blockType === 'customPrint') || [];
@@ -764,7 +768,7 @@ function TableCellViewer({ item }: { item: Order }) {
 	};
 
 	return (
-		<Drawer direction={isMobile ? 'bottom' : 'right'}>
+		<Drawer direction={isMobile ? 'bottom' : 'right'} open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
 			<DrawerTrigger asChild>
 				<Button variant='link' className='text-foreground w-fit px-0 text-left'>
 					{item.name}
