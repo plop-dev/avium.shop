@@ -18,25 +18,38 @@ export const Orders: CollectionConfig = {
 	},
 	hooks: {
 		beforeChange: [
-			({ data, req }) => {
+			async ({ operation, data, req }) => {
+				// ensure that customers can only set themselves as the customer on an order
 				if (req.user) {
-					if (data.customer != req.user.id) {
-						console.log(data);
-						console.log(data.customer);
-						console.log(req.user);
-						console.log(req.user.id);
-						throw new APIError("Cannot set customer to another user.", 400);
+					if (data.customer != req.user.id && !req.data?.queue) {
+						// console.log(data);
+						// console.log(data.customer);
+						// console.log(req.user);
+						// console.log(req.user.id);
+						throw new APIError('Cannot set customer to another user.', 400);
 					}
-					console.log(data);
+					// console.log(data);
 					//data.customer = data.customer.replace("-", "");
 				} else {
 					// this shouldn't be reachable with proper access control
-					console.log("Unauthenticated request trying to create/update an order.");
-					throw new APIError("Unauthenticated requests cannot create or modify orders.", 401);
+					console.log('Unauthenticated request trying to create/update an order.');
+					throw new APIError('Unauthenticated requests cannot create or modify orders.', 401);
 				}
 
-			}
-		]
+				// queue priority stuff
+				if (operation === 'create') {
+					const lastOrder = await req.payload.find({
+						collection: 'orders',
+						sort: '-queue',
+						limit: 1,
+					});
+
+					data.queue = lastOrder.docs[0] ? lastOrder.docs[0].queue + 1 : 1;
+
+					return data;
+				}
+			},
+		],
 		/*beforeChange: [
 			({ data }) => {
 				if (!data) return data;
@@ -210,8 +223,8 @@ export const Orders: CollectionConfig = {
 				description: 'The print queue this order is assigned to',
 			},
 			type: 'number',
-			required: false,
-			defaultValue: 1,
+			required: true,
+			index: true,
 		},
 
 		{

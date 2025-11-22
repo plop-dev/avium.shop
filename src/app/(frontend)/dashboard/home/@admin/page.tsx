@@ -397,6 +397,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 	const orders = await payload.find({
 		collection: 'orders',
 		limit,
+		sort: '-queue',
 		page,
 		populate: {
 			users: {

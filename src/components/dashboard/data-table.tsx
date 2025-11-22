@@ -1,11 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import { stringify } from 'qs-esm';
 import {
 	closestCenter,
 	DndContext,
 	KeyboardSensor,
 	MouseSensor,
+	Over,
 	TouchSensor,
 	useSensor,
 	useSensors,
@@ -90,6 +92,7 @@ import numToGBP from '@/utils/numToGBP';
 import { Textarea } from '../ui/textarea';
 import { parseAsInteger, useQueryState } from 'nuqs';
 import { useEffect } from 'react';
+import { Where } from 'payload';
 
 export const schema = z.object({
 	id: z.string(),
@@ -390,9 +393,86 @@ export function DataTable({ data: initialData, limit, page }: { data: Order[]; l
 		getFacetedUniqueValues: getFacetedUniqueValues(),
 	});
 
-	function handleDragEnd(event: DragEndEvent) {
+	const dragQueueRef = React.useRef<Array<{ data: Order; newPriority: number; over: Over }>>([]);
+	const isProcessingRef = React.useRef(false);
+
+	const processDragQueue = async () => {
+		if (isProcessingRef.current || dragQueueRef.current.length === 0) return;
+
+		isProcessingRef.current = true;
+
+		while (dragQueueRef.current.length > 0) {
+			const { data: queueItem, newPriority, over } = dragQueueRef.current.shift()!;
+
+			const where: Where = {
+				id: {
+					equals: queueItem.id,
+				},
+			};
+			const stringifiedQuery = stringify(
+				{
+					where,
+				},
+				{ addQueryPrefix: true },
+			);
+
+			try {
+				const res = await fetch(`/api/orders${stringifiedQuery}`, {
+					method: 'PATCH',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						queue: newPriority,
+					}),
+				});
+
+				if (!res.ok) {
+					toast.error('Failed to update order priority.');
+					dragQueueRef.current.unshift({ data: queueItem, newPriority, over }); // return back to original queue
+
+					arrayMove(data, dataIds.indexOf(over.id), dataIds.indexOf(queueItem.id));
+					break;
+				}
+
+				toast.success('Order priority updated.');
+			} catch (error) {
+				console.error('Error updating order:', error);
+				toast.error('Failed to update order priority.');
+				dragQueueRef.current.unshift({ data: queueItem, newPriority, over }); // return back to original queue
+				break;
+			}
+		}
+
+		isProcessingRef.current = false;
+	};
+
+	async function handleDragEnd(event: DragEndEvent) {
 		const { active, over } = event;
+
 		if (active && over && active.id !== over.id) {
+			const locations = dataIds.indexOf(over.id as string);
+			let previous = null;
+			let next = null;
+
+			const currentItem = data.find(item => item.id === active.id);
+
+			if (locations + 1 === dataIds.length) next = over.id;
+			else {
+				previous = over.id;
+				next = dataIds[locations - 1] || null;
+			}
+
+			const newPriority = !next
+				? !previous
+					? data[data.length - 1].queue - 1
+					: data[0].queue + 1
+				: ((data.find(item => item.id === previous)?.queue || 0) + (data.find(item => item.id === next)?.queue || 0)) / 2;
+
+			// dragQueueRef.current.push({ id: active.id as string, newPriority });
+			if (currentItem) dragQueueRef.current.push({ data: currentItem, newPriority, over });
+			processDragQueue();
+
 			setData(data => {
 				const oldIndex = dataIds.indexOf(active.id);
 				const newIndex = dataIds.indexOf(over.id);
@@ -652,12 +732,15 @@ function TableCellViewer({ item }: { item: Order }) {
 		<Drawer direction={isMobile ? 'bottom' : 'right'}>
 			<DrawerTrigger asChild>
 				<Button variant='link' className='text-foreground w-fit px-0 text-left'>
-					{item.name}
+					{item.name} ({item.id})
 				</Button>
 			</DrawerTrigger>
 			<DrawerContent>
 				<DrawerHeader className='gap-1'>
-					<DrawerTitle>{item.name}</DrawerTitle>
+					<DrawerTitle>
+						{item.name}
+						<p className='text-sm text-muted-foreground'>{item.id}</p>
+					</DrawerTitle>
 					<DrawerDescription>View order details and edit the status</DrawerDescription>
 				</DrawerHeader>
 				<form onSubmit={handleSubmit} id='order-form' className='flex flex-col gap-4 overflow-y-auto px-4 text-sm'>

@@ -278,7 +278,7 @@ export interface Order {
   /**
    * The print queue this order is assigned to
    */
-  queue?: number | null;
+  queue: number;
   status: {
     statuses?:
       | {
