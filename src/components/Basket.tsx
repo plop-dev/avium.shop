@@ -79,21 +79,20 @@ export default function Basket() {
 				blockType: 'shopProduct',
 				price: shopItem.price,
 				product: shopItem.id,
-				blockName: shopItem.product.name
+				blockName: shopItem.product.name,
 			};
 		});
 
 		const total = basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
 
-		const me = await fetch("/api/users/me");
+		const me = await fetch('/api/users/me');
 		if (me.status !== 200) {
-			toast.error("Failed to retrieve user information.");
+			toast.error('Failed to retrieve user information.');
 			setIsSubmitting(false);
 			return;
 		}
 		const userId = (await me.json()).user.id;
 
-		console.log(orderValidation);
 		const payload = {
 			name: (orderValidation && orderValidation.orderName) || `Order ${new Date().toISOString()}`,
 			prints,
@@ -112,13 +111,13 @@ export default function Basket() {
 		if (!res.ok) {
 			// TODO: typing?
 			const text = await res.json();
-			console.log("Failed to create order: ", text.errors.join("\n"))
-			toast.error("Failed to create order");
+			console.log('Failed to create order: ', text.errors.join('\n'));
+			toast.error('Failed to create order');
 			setIsSubmitting(false);
 			return;
 		}
 
-		toast.success("Order created successfully.");
+		toast.success('Order created successfully.');
 		// TODO: needed? probably but not sure
 		setIsSubmitting(false);
 		// TODO: empty basket
@@ -211,7 +210,7 @@ export default function Basket() {
 
 					<Button disabled={isCheckoutDisabled || isSubmitting} onClick={handleCheckout}>
 						<LoadingSwap isLoading={isSubmitting}>
-							<div className="flex">
+							<div className='flex'>
 								<ShoppingBasket className='mr-2' />
 								Checkout ({totalItems} {totalItems === 1 ? 'item' : 'items'})
 							</div>

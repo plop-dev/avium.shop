@@ -17,7 +17,7 @@ export default async function ClientPage() {
 		overrideAccess: true,
 	});
 
-	console.log(orders.docs);
+	console.log(`users's orders:`, orders.docs);
 
 	return (
 		<div className='@container/main flex flex-1 flex-col gap-2'>

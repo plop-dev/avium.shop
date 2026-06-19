@@ -1,3 +1,5 @@
+'use server';
+
 import { ChartAreaInteractive } from '@/components/dashboard/chart-area-interactive';
 import { DataTable, type Order } from '@/components/dashboard/data-table';
 import { SectionCards } from '@/components/dashboard/section-cards';
@@ -6,6 +8,7 @@ import { loadSearchParams } from './searchParams';
 import config from '@/payload.config';
 import { SearchParams } from 'nuqs/server';
 
+//* example data:
 // const data: Order[] = [
 // 	{
 // 		id: 'a1b2c3d4',
@@ -433,8 +436,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 						print.printingOptions.preset === null
 							? undefined
 							: typeof print.printingOptions.preset === 'string'
-							? print.printingOptions.preset
-							: print.printingOptions.preset?.id,
+								? print.printingOptions.preset
+								: print.printingOptions.preset?.id,
 					layerHeight: print.printingOptions.layerHeight || undefined,
 					infill: print.printingOptions.infill || undefined,
 					plastic: print.printingOptions.plastic,

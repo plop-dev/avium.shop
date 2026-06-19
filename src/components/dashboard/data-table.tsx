@@ -94,6 +94,8 @@ import { parseAsInteger, useQueryState } from 'nuqs';
 import { useEffect } from 'react';
 import { Where } from 'payload';
 
+// server actions
+
 export const schema = z.object({
 	id: z.string(),
 	name: z.string(),
@@ -349,17 +351,12 @@ export function DataTable({ data: initialData, limit, page }: { data: Order[]; l
 	const sortableId = React.useId();
 	const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}));
 
-	const sortedData = statusSteps
-		.map(step => step.value)
-		.map(status => {
-			return data.filter(order => order.currentStatus === status);
-		})
-		.map((orders, index) => {
-			const status = statusSteps.map(step => step.value)[index];
-			if (orders.length === 0) return { [status]: [] };
-
-			return { [status]: orders };
-		})[0];
+	const sortedData = React.useMemo(() => {
+		return data.reduce<Record<string, Order[]>>((acc, status) => {
+			(acc[status.currentStatus] ??= []).push(status);
+			return acc;
+		}, {});
+	}, [data]);
 
 	const dataIds = React.useMemo<UniqueIdentifier[]>(() => data?.map(({ id }) => id) || [], [data]);
 
@@ -368,8 +365,12 @@ export function DataTable({ data: initialData, limit, page }: { data: Order[]; l
 		setSelectedPage(pagination.pageIndex + 1);
 	}, [pagination]);
 
+	const [currentTab, setCurrentTab] = React.useState('in-queue');
+
+	const tableData = React.useMemo(() => (currentTab ? sortedData[currentTab] || [] : data), [currentTab, data, sortedData]);
+
 	const table = useReactTable({
-		data,
+		data: tableData,
 		columns,
 		state: {
 			sorting,
@@ -482,7 +483,7 @@ export function DataTable({ data: initialData, limit, page }: { data: Order[]; l
 	}
 
 	return (
-		<Tabs defaultValue='in-queue' className='w-full flex-col justify-start gap-6'>
+		<Tabs defaultValue='in-queue' className='w-full flex-col justify-start gap-6' onValueChange={value => setCurrentTab(value)}>
 			<div className='flex items-center justify-between px-4 lg:px-6'>
 				<Label htmlFor='view-selector' className='sr-only'>
 					View
@@ -500,16 +501,16 @@ export function DataTable({ data: initialData, limit, page }: { data: Order[]; l
 				</Select>
 				<TabsList className='**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex'>
 					<TabsTrigger value='in-queue'>
-						In Queue <Badge variant='secondary'>{sortedData?.['in-queue'] ? sortedData['in-queue'].length : 0}</Badge>
+						In Queue <Badge variant='secondary'>{sortedData['in-queue'] ? sortedData['in-queue'].length : 0}</Badge>
 					</TabsTrigger>
 					<TabsTrigger value='printing'>
-						Printing <Badge variant='secondary'>{sortedData?.['printing'] ? sortedData['printing'].length : 0}</Badge>
+						Printing <Badge variant='secondary'>{sortedData['printing'] ? sortedData['printing'].length : 0}</Badge>
 					</TabsTrigger>
 					<TabsTrigger value='packaging'>
-						Packaging <Badge variant='secondary'>{sortedData?.['packaging'] ? sortedData['packaging'].length : 0}</Badge>
+						Packaging <Badge variant='secondary'>{sortedData['packaging'] ? sortedData['packaging'].length : 0}</Badge>
 					</TabsTrigger>
 					<TabsTrigger value='shipped'>
-						Shipped <Badge variant='secondary'>{sortedData?.['shipped'] ? sortedData['shipped'].length : 0}</Badge>
+						Shipped <Badge variant='secondary'>{sortedData['shipped'] ? sortedData['shipped'].length : 0}</Badge>
 					</TabsTrigger>
 				</TabsList>
 				<div className='flex items-center gap-2'>
@@ -541,130 +542,123 @@ export function DataTable({ data: initialData, limit, page }: { data: Order[]; l
 					</DropdownMenu>
 				</div>
 			</div>
-			<TabsContent value='in-queue' className='relative flex flex-col gap-4 overflow-auto px-4 lg:px-6'>
-				<div className='overflow-hidden rounded-lg border'>
-					<DndContext
-						collisionDetection={closestCenter}
-						modifiers={[restrictToVerticalAxis]}
-						onDragEnd={handleDragEnd}
-						sensors={sensors}
-						id={sortableId}>
-						<Table>
-							<TableHeader className='bg-muted sticky top-0 z-10'>
-								{table.getHeaderGroups().map(headerGroup => (
-									<TableRow key={headerGroup.id}>
-										{headerGroup.headers.map(header => {
-											return (
-												<TableHead
-													key={header.id}
-													colSpan={header.colSpan}
-													className={header.column.columnDef.meta?.headerClassName}>
-													{header.isPlaceholder
-														? null
-														: flexRender(header.column.columnDef.header, header.getContext())}
-												</TableHead>
-											);
-										})}
-									</TableRow>
-								))}
-							</TableHeader>
-							<TableBody className='**:data-[slot=table-cell]:first:w-8 **:data-[slot=table-cell]:first:text-right'>
-								{table.getRowModel().rows?.length ? (
-									<SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
-										{table.getRowModel().rows.map(row => (
-											<DraggableRow key={row.id} row={row} />
-										))}
-									</SortableContext>
-								) : (
-									<TableRow>
-										<TableCell colSpan={columns.length} className='h-24 text-center'>
-											No results.
-										</TableCell>
-									</TableRow>
-								)}
-							</TableBody>
-						</Table>
-					</DndContext>
-				</div>
-				<div className='flex items-center justify-end px-4'>
-					{/* <div className='text-muted-foreground hidden flex-1 text-sm lg:flex'>
+			{Object.keys(sortedData).map(status => (
+				<TabsContent value={status} key={status} className='relative flex flex-col gap-4 overflow-auto px-4 lg:px-6'>
+					<div className='overflow-hidden rounded-lg border'>
+						<DndContext
+							collisionDetection={closestCenter}
+							modifiers={[restrictToVerticalAxis]}
+							onDragEnd={handleDragEnd}
+							sensors={sensors}
+							id={sortableId}>
+							<Table>
+								<TableHeader className='bg-muted sticky top-0 z-10'>
+									{table.getHeaderGroups().map(headerGroup => (
+										<TableRow key={headerGroup.id}>
+											{headerGroup.headers.map(header => {
+												return (
+													<TableHead
+														key={header.id}
+														colSpan={header.colSpan}
+														className={header.column.columnDef.meta?.headerClassName}>
+														{header.isPlaceholder
+															? null
+															: flexRender(header.column.columnDef.header, header.getContext())}
+													</TableHead>
+												);
+											})}
+										</TableRow>
+									))}
+								</TableHeader>
+								<TableBody className='**:data-[slot=table-cell]:first:w-8 **:data-[slot=table-cell]:first:text-right'>
+									{table.getRowModel().rows?.length ? (
+										<SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
+											{table.getRowModel().rows.map(row => (
+												<DraggableRow key={row.id} row={row} />
+											))}
+										</SortableContext>
+									) : (
+										<TableRow>
+											<TableCell colSpan={columns.length} className='h-24 text-center'>
+												No results.
+											</TableCell>
+										</TableRow>
+									)}
+								</TableBody>
+							</Table>
+						</DndContext>
+					</div>
+					<div className='flex items-center justify-end px-4'>
+						{/* <div className='text-muted-foreground hidden flex-1 text-sm lg:flex'>
 						{table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected.
 					</div> */}
-					<div className='flex w-full items-center gap-8 lg:w-fit'>
-						<div className='hidden items-center gap-2 lg:flex'>
-							<Label htmlFor='rows-per-page' className='text-sm font-medium'>
-								Rows per page
-							</Label>
-							<Select
-								value={`${table.getState().pagination.pageSize}`}
-								onValueChange={value => {
-									table.setPageSize(Number(value));
-									setSelectedRowsPerPage(Number(value));
-								}}>
-								<SelectTrigger size='sm' className='w-20' id='rows-per-page'>
-									<SelectValue placeholder={table.getState().pagination.pageSize} />
-								</SelectTrigger>
-								<SelectContent side='top'>
-									{[5, 10, 20, 30, 40, 50].map(pageSize => (
-										<SelectItem key={pageSize} value={`${pageSize}`}>
-											{pageSize}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-						<div className='flex w-fit items-center justify-center text-sm font-medium'>
-							Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-						</div>
-						<div className='ml-auto flex items-center gap-2 lg:ml-0'>
-							<Button
-								variant='outline'
-								className='hidden h-8 w-8 p-0 lg:flex'
-								onClick={() => table.setPageIndex(0)}
-								disabled={!table.getCanPreviousPage()}>
-								<span className='sr-only'>Go to first page</span>
-								<IconChevronsLeft />
-							</Button>
-							<Button
-								variant='outline'
-								className='size-8'
-								size='icon'
-								onClick={() => table.previousPage()}
-								disabled={!table.getCanPreviousPage()}>
-								<span className='sr-only'>Go to previous page</span>
-								<IconChevronLeft />
-							</Button>
-							<Button
-								variant='outline'
-								className='size-8'
-								size='icon'
-								onClick={() => table.nextPage()}
-								disabled={!table.getCanNextPage()}>
-								<span className='sr-only'>Go to next page</span>
-								<IconChevronRight />
-							</Button>
-							<Button
-								variant='outline'
-								className='hidden size-8 lg:flex'
-								size='icon'
-								onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-								disabled={!table.getCanNextPage()}>
-								<span className='sr-only'>Go to last page</span>
-								<IconChevronsRight />
-							</Button>
+						<div className='flex w-full items-center gap-8 lg:w-fit'>
+							<div className='hidden items-center gap-2 lg:flex'>
+								<Label htmlFor='rows-per-page' className='text-sm font-medium'>
+									Rows per page
+								</Label>
+								<Select
+									value={`${table.getState().pagination.pageSize}`}
+									onValueChange={value => {
+										table.setPageSize(Number(value));
+										setSelectedRowsPerPage(Number(value));
+									}}>
+									<SelectTrigger size='sm' className='w-20' id='rows-per-page'>
+										<SelectValue placeholder={table.getState().pagination.pageSize} />
+									</SelectTrigger>
+									<SelectContent side='top'>
+										{[5, 10, 20, 30, 40, 50].map(pageSize => (
+											<SelectItem key={pageSize} value={`${pageSize}`}>
+												{pageSize}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className='flex w-fit items-center justify-center text-sm font-medium'>
+								Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+							</div>
+							<div className='ml-auto flex items-center gap-2 lg:ml-0'>
+								<Button
+									variant='outline'
+									className='hidden h-8 w-8 p-0 lg:flex'
+									onClick={() => table.setPageIndex(0)}
+									disabled={!table.getCanPreviousPage()}>
+									<span className='sr-only'>Go to first page</span>
+									<IconChevronsLeft />
+								</Button>
+								<Button
+									variant='outline'
+									className='size-8'
+									size='icon'
+									onClick={() => table.previousPage()}
+									disabled={!table.getCanPreviousPage()}>
+									<span className='sr-only'>Go to previous page</span>
+									<IconChevronLeft />
+								</Button>
+								<Button
+									variant='outline'
+									className='size-8'
+									size='icon'
+									onClick={() => table.nextPage()}
+									disabled={!table.getCanNextPage()}>
+									<span className='sr-only'>Go to next page</span>
+									<IconChevronRight />
+								</Button>
+								<Button
+									variant='outline'
+									className='hidden size-8 lg:flex'
+									size='icon'
+									onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+									disabled={!table.getCanNextPage()}>
+									<span className='sr-only'>Go to last page</span>
+									<IconChevronsRight />
+								</Button>
+							</div>
 						</div>
 					</div>
-				</div>
-			</TabsContent>
-			<TabsContent value='past-performance' className='flex flex-col px-4 lg:px-6'>
-				<div className='aspect-video w-full flex-1 rounded-lg border border-dashed'></div>
-			</TabsContent>
-			<TabsContent value='key-personnel' className='flex flex-col px-4 lg:px-6'>
-				<div className='aspect-video w-full flex-1 rounded-lg border border-dashed'></div>
-			</TabsContent>
-			<TabsContent value='focus-documents' className='flex flex-col px-4 lg:px-6'>
-				<div className='aspect-video w-full flex-1 rounded-lg border border-dashed'></div>
-			</TabsContent>
+				</TabsContent>
+			))}
 		</Tabs>
 	);
 }
@@ -1064,7 +1058,7 @@ function TableCellViewer({ item }: { item: Order }) {
 								)}
 							</Accordion>
 
-							{/* //* THIS SHOULD NEVER HAPPEN BUT WHO KNOWS */}
+							{/* //* THIS SHOULD NEVER HAPPEN BUT WHO KNOWS  */}
 							{customPrints.length === 0 && shopProducts.length === 0 && (
 								<div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center'>
 									<Package className='mb-2 size-8 text-muted-foreground' />
