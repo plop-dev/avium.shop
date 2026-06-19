@@ -3,6 +3,8 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@types/node@26.0.0'
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - '@tailwindcss/oxide'
