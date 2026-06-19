@@ -7,6 +7,7 @@ import logo from '@/assets/logo.png';
 import {
 	NavigationMenu,
 	NavigationMenuContent,
+	NavigationMenuIndicator,
 	NavigationMenuItem,
 	NavigationMenuLink,
 	NavigationMenuList,
@@ -286,7 +287,6 @@ const Navbar = ({ items, user }: NavbarProps) => {
 				</div>
 
 				<NavigationMenuList ref={listRef} className='relative'>
-					{/* Indicator Element with matching animation classes from NavigationMenuContent */}
 					<div
 						className={cn(
 							'absolute w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-border shadow-md',
@@ -397,11 +397,9 @@ const Navbar = ({ items, user }: NavbarProps) => {
 					))}
 				</NavigationMenuList>
 
-				<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' />
+				<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' left={64} />
 
 				<div className='flex gap-x-4 ml-auto'>
-					{/* {user.status === 'loading' && <Skeleton className='w-[200px] h-9'></Skeleton>} */}
-
 					{!userData ? (
 						<>
 							<Link href={'/auth/login'} className={buttonVariants({ variant: 'default' })}>
