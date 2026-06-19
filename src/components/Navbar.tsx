@@ -397,7 +397,7 @@ const Navbar = ({ items, user }: NavbarProps) => {
 					))}
 				</NavigationMenuList>
 
-				<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' left={64} />
+				<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' />
 
 				<div className='flex gap-x-4 ml-auto'>
 					{!userData ? (
