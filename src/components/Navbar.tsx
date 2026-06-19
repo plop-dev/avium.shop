@@ -280,7 +280,7 @@ const Navbar = ({ items, user }: NavbarProps) => {
 				}}>
 				<div className='flex-shrink-0'>
 					<Link href='/' className='flex items-center gap-4'>
-						<Image src={logo} alt='Avium Logo' height={28} width={28}></Image>
+						<Image src={logo} loading='eager' alt='Avium Logo' height={28} width={28}></Image>
 						<span className='text-lg font-bold whitespace-nowrap'>Avium</span>
 					</Link>
 				</div>
