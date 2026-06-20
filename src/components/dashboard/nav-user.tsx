@@ -46,7 +46,14 @@ export function NavUser({ user }: { user: User | null }) {
 							size='lg'
 							className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'>
 							<Avatar className='h-8 w-8 rounded-lg'>
-								<AvatarImage src={user.image || '#'} alt={user.name || ''} className='rounded-lg' width={48} height={48} />
+								<AvatarImage
+									loading='eager'
+									src={user.image || '#'}
+									alt={user.name || ''}
+									className='rounded-lg'
+									width={48}
+									height={48}
+								/>
 								<AvatarFallback className='rounded-lg'>{getInitials(user.name || 'u', 2, true)}</AvatarFallback>
 							</Avatar>
 							<div className='grid flex-1 text-left text-sm leading-tight'>

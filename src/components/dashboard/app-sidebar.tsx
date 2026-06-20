@@ -70,7 +70,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild className='!p-1.5'>
 							<Link href='/'>
-								<Image priority src={logo} alt='Avium' height={28} width={28}></Image>
+								<Image priority src={logo} loading='eager' alt='Avium' height={28} width={28}></Image>
 								<span className='font-semibold text-xl'>Avium</span>
 							</Link>
 						</SidebarMenuButton>
