@@ -82,7 +82,7 @@
 		"nextjs-toploader": "^3.8.16",
 		"nodemailer": "^7.0.3",
 		"nuqs": "^2.5.0",
-		"payload": "^3.50.0",
+		"payload": "^3.85.1",
 		"payload-authjs": "0.10.2",
 		"postcss": "^8.5.4",
 		"qs-esm": "^7.0.2",
