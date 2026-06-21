@@ -8,27 +8,7 @@ import { useStore } from '@nanostores/react';
 import { CheckCircle } from 'lucide-react';
 
 export default function OrderNameHeader() {
-	// const defaultOrderValidation = {
-	// 	orderName: 'default',
-	// 	orderNameValid: false,
-	// };
-
-	// const orderValidation = useSyncExternalStore(
-	// 	callback => {
-	// 		const unsubscribe = $orderValidation.subscribe(callback);
-	// 		return unsubscribe;
-	// 	},
-	// 	() => $orderValidation.get(),
-	// 	() => defaultOrderValidation,
-	// );
 	const orderValidation = useStore($orderValidation);
-	// const [orderName, setOrderName] = useState(orderValidation.orderName);
-
-	// Update order name validation whenever it changes
-	// useEffect(() => {
-	// 	const isValid = orderName.trim().length >= 3;
-	// 	setOrderNameValid(isValid, orderName);
-	// }, [orderName]);
 
 	const isValid = orderValidation.orderName.trim().length >= 3;
 

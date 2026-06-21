@@ -7,6 +7,8 @@ export type CustomPrint = {
 	model: {
 		filename: string;
 		filetype: 'stl' | '3mf';
+		modelUrl: string;
+		gcodeUrl: string;
 	};
 	printingOptions: {
 		preset?: string; // relationship to presets, so an ID string is stored

@@ -531,19 +531,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 	const user = useSession();
 
-	// const defaultOrderValidation = {
-	// 	orderName: 'default',
-	// 	orderNameValid: false,
-	// };
-
-	// const orderValidation = useSyncExternalStore(
-	// 	callback => {
-	// 		const unsubscribe = $orderValidation.subscribe(callback);
-	// 		return unsubscribe;
-	// 	},
-	// 	() => $orderValidation.get(),
-	// 	() => defaultOrderValidation,
-	// );
 	const orderValidation = useStore($orderValidation);
 
 	const form = useForm<CustomOrderFormValues>({
@@ -972,6 +959,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					model: {
 						filename: item.file.name,
 						filetype: (item.file.name.split('.').pop() || 'stl') as 'stl' | '3mf',
+						modelUrl: quote.sliceResult.modelUrl,
+						gcodeUrl: quote.sliceResult.gcodeUrl,
 					},
 					quantity: item.quantity,
 					printingOptions: {
@@ -1008,7 +997,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		});
 
 		setOrderDetails({ ...orderDetails, comments: orderComments });
-		toast.success(`${currentFormData.prints.length} item(s) added to basket`);
+		toast.success(`${currentFormData.prints.reduce((acc, p) => acc + p.quantity, 0)} item(s) added to basket`);
 
 		setIsOpen(false);
 		setIsLoading(false);
@@ -1296,6 +1285,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 															model: {
 																filename,
 																filetype: (filename.split('.').pop() || 'stl') as 'stl' | '3mf',
+																modelUrl: quote?.sliceResult.modelUrl || '',
+																gcodeUrl: quote?.sliceResult.gcodeUrl || '',
 															},
 															price: quote?.sliceResult.price || null,
 															time: quote?.sliceResult.times.total || null,

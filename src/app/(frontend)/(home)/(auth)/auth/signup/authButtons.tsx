@@ -13,23 +13,7 @@ export default function AuthButtons() {
 	const [isGithubLoading, startGithubLoading] = useTransition();
 
 	async function handleProviderSignup(e: React.FormEvent, provider: 'google' | 'github') {
-		const res = await signIn(provider, { redirect: false });
-		if (res?.error || !res.url) {
-			toast.error('Signup failed: ' + res.error, {
-				duration: 3000,
-				dismissible: true,
-				action: {
-					label: 'Retry',
-					onClick: () => handleProviderSignup(e, provider),
-				},
-			});
-			console.error('Signup failed:', res.error);
-			return;
-		}
-
-		if (res?.ok) {
-			router.push(res.url);
-		}
+		await signIn(provider, { redirect: true, redirectTo: '/dashboard/home' });
 	}
 
 	return (

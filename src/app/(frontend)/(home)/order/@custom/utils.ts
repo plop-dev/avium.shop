@@ -118,7 +118,7 @@ export async function uploadFile(
 			onProgress(progress, currentChunk, totalChunks);
 		}
 
-		//! TESTING
+		//! FOR TESTING
 		// await new Promise(res => setTimeout(res, 1000));
 	}
 

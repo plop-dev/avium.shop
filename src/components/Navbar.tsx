@@ -222,11 +222,6 @@ const Navbar = ({ items, user }: NavbarProps) => {
 			router.push('/');
 			setUserData(null);
 
-			toast.success('Logged out successfully', {
-				duration: 3000,
-				dismissible: true,
-			});
-
 			setLogoutLoading(false);
 			return { success: true };
 		} catch (error) {

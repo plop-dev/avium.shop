@@ -28,7 +28,9 @@ export default buildConfig({
 	admin: {
 		user: Users.slug,
 		importMap: {
-			baseDir: path.resolve(dirname),
+			// Write the import map outside of the `src` tree to avoid Next dev
+			// file-watchers triggering rebuilds when Payload updates the file.
+			baseDir: path.resolve(dirname, '..', '.payload'),
 		},
 		avatar: 'default',
 		dateFormat: 'dd/MM/yyyy',

@@ -9,12 +9,12 @@ import { useEffect, useState } from 'react';
 import BasketItem from './BasketItem';
 import numToGBP from '@/utils/numToGBP';
 import { useStore } from '@nanostores/react';
-import { $basket, setItemQuantity, CustomPrint, ShopProduct, BasketItem as BasketItemType } from '@/stores/basket';
-import { $orderValidation, $orderDetails, setOrderDetails } from '@/stores/order';
+import { $basket, setItemQuantity, CustomPrint, ShopProduct, BasketItem as BasketItemType, resetBasket } from '@/stores/basket';
+import { $orderValidation, $orderDetails, setOrderDetails, setOrderNameValid } from '@/stores/order';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { LoadingSwap } from './ui/loading-swap';
-import { stringify } from 'qs-esm';
+import { useRouter } from 'next/navigation';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -26,6 +26,7 @@ const isShopProduct = (item: BasketItemType): item is ShopProduct => {
 };
 
 export default function Basket() {
+	const router = useRouter();
 	const [totalItems, setTotalItems] = useState(0);
 	const basketItems = useStore($basket);
 	const orderValidation = useStore($orderValidation);
@@ -72,7 +73,12 @@ export default function Basket() {
 				// custom print shape
 				return {
 					blockType: 'customPrint',
-					model: item.model,
+					model: {
+						filename: item.model.filename,
+						filetype: item.model.filetype,
+						modelUrl: item.model.modelUrl,
+						gcodeUrl: item.model.gcodeUrl,
+					},
 					printingOptions: item.printingOptions,
 					quantity: item.quantity,
 					price: item.price,
@@ -118,7 +124,7 @@ export default function Basket() {
 				],
 				currentStatus: 'in-queue',
 			},
-			comments: '',
+			comments: orderDetails.comments,
 		};
 
 		const res = await fetch('/api/orders', {
@@ -140,19 +146,15 @@ export default function Basket() {
 		}
 
 		toast.success('Order created successfully.');
-		// TODO: needed? probably but not sure
-		setIsSubmitting(false);
-		// TODO: empty basket
-		// TODO: right now the Checkout button still says 1 item - this shouldn't be an issue with a redirect, but right now it is (solve?)
-		// TODO: redirect to payment (get rid of toast?)
 
-		//setMessage('Order created successfully.');
-		//} catch (err: unknown) {
-		//	console.error('Checkout error', err);
-		//	//setMessage(err?.message || 'Failed to create order.');
-		//} finally {
-		//	setIsSubmitting(false);
-		//}
+		setIsSubmitting(false); //? maybe
+		setOrderDetails({ orderName: '', comments: '' });
+		setOrderNameValid(false, '');
+		resetBasket();
+
+		router.push('/dashboard/home');
+
+		// TODO: redirect to payment (get rid of toast?)
 	};
 
 	return (
