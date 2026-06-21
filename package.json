@@ -103,6 +103,7 @@
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",
+		"@size-limit/preset-big-lib": "^12.1.0",
 		"@tailwindcss/container-queries": "^0.1.1",
 		"@tailwindcss/postcss": "^4",
 		"@tailwindcss/typography": "^0.5.16",

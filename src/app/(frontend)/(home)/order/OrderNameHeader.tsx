@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { $orderValidation, setOrderNameValid } from '@/stores/order';
@@ -8,15 +8,29 @@ import { useStore } from '@nanostores/react';
 import { CheckCircle } from 'lucide-react';
 
 export default function OrderNameHeader() {
-	const [orderName, setOrderName] = useState('');
+	// const defaultOrderValidation = {
+	// 	orderName: 'default',
+	// 	orderNameValid: false,
+	// };
+
+	// const orderValidation = useSyncExternalStore(
+	// 	callback => {
+	// 		const unsubscribe = $orderValidation.subscribe(callback);
+	// 		return unsubscribe;
+	// 	},
+	// 	() => $orderValidation.get(),
+	// 	() => defaultOrderValidation,
+	// );
+	const orderValidation = useStore($orderValidation);
+	// const [orderName, setOrderName] = useState(orderValidation.orderName);
 
 	// Update order name validation whenever it changes
-	useEffect(() => {
-		const isValid = orderName.trim().length >= 3;
-		setOrderNameValid(isValid, orderName);
-	}, [orderName]);
+	// useEffect(() => {
+	// 	const isValid = orderName.trim().length >= 3;
+	// 	setOrderNameValid(isValid, orderName);
+	// }, [orderName]);
 
-	const isValid = orderName.trim().length >= 3;
+	const isValid = orderValidation.orderName.trim().length >= 3;
 
 	return (
 		<div className='mb-12'>
@@ -55,17 +69,21 @@ export default function OrderNameHeader() {
 						<Input
 							id='orderName'
 							placeholder='e.g., My 3D Project, Christmas Gifts...'
-							value={orderName}
-							onChange={e => setOrderName(e.target.value)}
+							value={orderValidation.orderName}
+							onChange={e => setOrderNameValid(e.target.value.trim().length >= 3, e.target.value)}
 							className={cn(
-								isValid ? 'border-primary/50' : orderName && orderName.trim().length > 0 ? 'border-amber-500/50' : '',
+								isValid
+									? 'border-primary/50'
+									: orderValidation.orderName && orderValidation.orderName.trim().length > 0
+										? 'border-amber-500/50'
+										: '',
 							)}
 						/>
 
 						<div className='mt-2'>
-							{!orderName ? (
+							{!orderValidation.orderName ? (
 								<p className='text-xs text-muted-foreground'>Enter a name with at least 3 characters</p>
-							) : orderName.trim().length < 3 ? (
+							) : orderValidation.orderName.trim().length < 3 ? (
 								<p className='text-xs text-amber-500'>Order name must be at least 3 characters long</p>
 							) : (
 								<p className='text-xs text-primary'>You can now add products or custom prints below</p>

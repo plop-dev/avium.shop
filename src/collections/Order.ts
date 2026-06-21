@@ -182,7 +182,7 @@ export const Orders: CollectionConfig = {
 		{
 			name: 'payment',
 			type: 'group',
-			required: true,
+			required: false,
 			fields: [
 				{
 					name: 'stripePaymentIntentId',

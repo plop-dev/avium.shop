@@ -10,9 +10,11 @@ import BasketItem from './BasketItem';
 import numToGBP from '@/utils/numToGBP';
 import { useStore } from '@nanostores/react';
 import { $basket, setItemQuantity, CustomPrint, ShopProduct, BasketItem as BasketItemType } from '@/stores/basket';
-import { $orderValidation } from '@/stores/order';
+import { $orderValidation, $orderDetails, setOrderDetails } from '@/stores/order';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { LoadingSwap } from './ui/loading-swap';
+import { stringify } from 'qs-esm';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -28,6 +30,9 @@ export default function Basket() {
 	const basketItems = useStore($basket);
 	const orderValidation = useStore($orderValidation);
 
+	const orderDetails = useStore($orderDetails);
+	const [orderCommentsLocal, setOrderCommentsLocal] = useState<string | null>(orderDetails.comments || '');
+
 	const handleQuantityChange = (id: string, newQuantity: number) => {
 		setItemQuantity(id, newQuantity);
 	};
@@ -40,11 +45,14 @@ export default function Basket() {
 		setTotalItems(basketItems.reduce((sum, item) => sum + item.quantity, 0));
 	}, [basketItems]);
 
+	useEffect(() => {
+		setOrderCommentsLocal(orderDetails.comments || '');
+	}, [orderDetails.comments]);
+
 	// Separate items by type
 	const customPrints = basketItems.filter(isCustomPrint);
 	const shopProducts = basketItems.filter(isShopProduct);
 
-	// Check if we have any custom prints that need a valid order name
 	const hasCustomPrints = customPrints.length > 0;
 	const isCheckoutDisabled = basketItems.length === 0 || !orderValidation.orderNameValid;
 
@@ -59,17 +67,15 @@ export default function Basket() {
 		setMessage(null);
 
 		// Map basket items to Payload Order.prints shapes
-		// TODO: rewrite custom print logic
 		const prints = basketItems.map(item => {
 			if (isCustomPrint(item)) {
 				// custom print shape
 				return {
+					blockType: 'customPrint',
 					model: item.model,
 					printingOptions: item.printingOptions,
-					time: item.time ?? undefined,
-					//filament: item.filament ?? undefined,
-					price: item.price ?? 0,
-					blockType: 'customPrint',
+					quantity: item.quantity,
+					price: item.price,
 				};
 			}
 
@@ -77,9 +83,9 @@ export default function Basket() {
 			const shopItem = item as ShopProduct;
 			return {
 				blockType: 'shopProduct',
-				price: shopItem.price,
 				product: shopItem.id,
-				blockName: shopItem.product.name,
+				quantity: shopItem.quantity,
+				price: shopItem.price,
 			};
 		});
 
@@ -93,11 +99,26 @@ export default function Basket() {
 		}
 		const userId = (await me.json()).user.id;
 
+		const orders = await (await fetch(`/api/orders?sort=-queue`)).json();
+		const queue = orders?.docs?.[0]?.queue ? orders.docs[0].queue + 1 : 1;
+
 		const payload = {
 			name: (orderValidation && orderValidation.orderName) || `Order ${new Date().toISOString()}`,
-			prints,
-			total,
 			customer: userId,
+			prints,
+			// payment, (need to add)
+			total,
+			queue,
+			status: {
+				statuses: [
+					{
+						stage: 'in-queue',
+						timestamp: new Date().toISOString(),
+					},
+				],
+				currentStatus: 'in-queue',
+			},
+			comments: '',
 		};
 
 		const res = await fetch('/api/orders', {
@@ -106,6 +127,7 @@ export default function Basket() {
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify(payload),
+			credentials: 'include', // include cookies
 		});
 
 		if (!res.ok) {
@@ -165,6 +187,26 @@ export default function Basket() {
 											onRemove={handleRemoveItem}
 										/>
 									))}
+
+									{/* Order comments for custom prints */}
+									<div className='mt-3'>
+										<label
+											htmlFor='basketOrderComments'
+											className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
+											Order Comments (Optional)
+										</label>
+										<Textarea
+											id='basketOrderComments'
+											placeholder='Any special instructions, material preferences, or questions about your order?'
+											value={orderCommentsLocal || ''}
+											onChange={e => {
+												setOrderCommentsLocal(e.target.value);
+												setOrderDetails({ orderName: orderValidation.orderName || '', comments: e.target.value });
+											}}
+											className='min-h-[80px] w-full mt-2'
+										/>
+										<p className='text-sm text-muted-foreground mt-2'>These comments will apply to the entire order</p>
+									</div>
 								</div>
 							)}
 

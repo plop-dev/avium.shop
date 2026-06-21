@@ -11,6 +11,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { auth } from '@/auth';
 import { MessageToaster } from '@/components/MessageToaster';
 import CustomToaster from '@/components/layouts/CustomToaster';
+import NanostoreManager from '@/components/NanostoreManager';
 
 export const metadata: Metadata = {
 	title: 'Avium',
@@ -40,6 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 							<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange enableColorScheme>
 								<Suspense>
 									<MessageToaster></MessageToaster>
+									<NanostoreManager></NanostoreManager>
 								</Suspense>
 								{children}
 							</ThemeProvider>

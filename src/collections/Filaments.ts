@@ -14,6 +14,7 @@ export const Filaments: CollectionConfig = {
 			name: 'name',
 			type: 'text',
 			required: true,
+			unique: true, // we use names in the order form instead of the id so we need to make sure they are unique
 			admin: {
 				description: 'The name of the filament/material. USE THIS FORMAT: PLA, PETG, ABS, etc.',
 			},

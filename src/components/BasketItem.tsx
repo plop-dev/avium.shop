@@ -40,11 +40,13 @@ export default function BasketItem({
 	onQuantityChange,
 	onRemove,
 	progress,
+	canChangeQuantity = true,
 }: {
 	item: BasketItemType;
 	onQuantityChange?: (id: string, newQuantity: number) => void;
 	onRemove?: (id: string) => void;
 	progress?: number; // used for print upload in quotes
+	canChangeQuantity?: boolean;
 }) {
 	const presetId = isCustomPrint(item) && item.printingOptions.preset ? item.printingOptions.preset : null;
 	const [isDone, setIsDone] = useState(false);
@@ -76,7 +78,9 @@ export default function BasketItem({
 		return (
 			<>
 				<div>
-					<h4 className='font-medium text-sm'>{print.model.filename}</h4>
+					<h4 className='font-medium text-sm items-center'>
+						{print.model.filename} <Badge>x{print.quantity}</Badge>
+					</h4>
 					<p className='text-xs text-muted-foreground'>{print.id}</p>
 				</div>
 
@@ -86,8 +90,8 @@ export default function BasketItem({
 							{plasticLoading
 								? 'Loading...'
 								: plasticData
-								? plasticData.plastic?.find(p => p.id === print.printingOptions.plastic)?.name
-								: 'Preset not found'}
+									? plasticData.plastic?.find(p => p.name === print.printingOptions.plastic)?.name
+									: 'Preset not found'}
 						</Badge>
 					)}
 					{print.printingOptions.layerHeight && (
@@ -119,7 +123,9 @@ export default function BasketItem({
 	const renderShopProduct = (product: ShopProduct) => (
 		<>
 			<div>
-				<h4 className='font-medium text-sm'>{product.product.name}</h4>
+				<h4 className='font-medium text-sm items-center'>
+					{product.product.name} <Badge>x{product.quantity}</Badge>
+				</h4>
 				<p className='text-xs text-muted-foreground'>{product.id}</p>
 			</div>
 
@@ -165,7 +171,9 @@ export default function BasketItem({
 				</div>
 
 				<div className='flex items-center justify-between mt-3 pt-3 border-t'>
-					<NumberInput min={1} max={100000} defaultValue={item.quantity} onChange={handleQuantityChange}></NumberInput>
+					{canChangeQuantity && (
+						<NumberInput min={1} max={100000} defaultValue={item.quantity} onChange={handleQuantityChange}></NumberInput>
+					)}
 					<div className='flex items-center gap-4'>
 						<Badge variant={'outline'} className='text-md h-10'>
 							<span className='text-sm text-muted-foreground'>

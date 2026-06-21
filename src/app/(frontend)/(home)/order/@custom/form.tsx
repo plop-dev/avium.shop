@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { useForm, useFieldArray, useWatch, useFormContext, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { set, z } from 'zod';
@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { FilePlus2, ImagePlus, Loader2, PlusCircle, Printer, Trash2, Upload, X, Palette, Settings } from 'lucide-react';
+import { AlertCircle, FilePlus2, ImagePlus, Loader2, PlusCircle, Printer, Trash2, Upload, X, Palette, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingSwap } from '@/components/ui/loading-swap';
@@ -23,7 +23,9 @@ import { Progress } from '@/components/ui/progress';
 import { SlicingResult, SlicingSettings, uploadFile } from './utils';
 import { addCustomPrintToBasket, CustomPrint } from '@/stores/basket';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { $orderValidation, setOrderNameValid } from '@/stores/order';
+import { $orderDetails, setOrderDetails } from '@/stores/order';
 import { useStore } from '@nanostores/react';
 import BasketItem from '@/components/BasketItem';
 import useSWR, { Fetcher } from 'swr';
@@ -83,7 +85,7 @@ function MaterialSelection({ index, printingOptions }: { index: number; printing
 		name: `prints.${index}.material.colour`,
 	});
 
-	const plasticBlock = printingOptions.plastic?.find(p => p.id === selectedPlastic);
+	const plasticBlock = printingOptions.plastic?.find(p => p.name === selectedPlastic);
 	const availableColours = plasticBlock?.colours || [];
 
 	useEffect(() => {
@@ -108,10 +110,10 @@ function MaterialSelection({ index, printingOptions }: { index: number; printing
 								{printingOptions.plastic?.map(plastic => (
 									<Card
 										key={plastic.id}
-										onClick={() => field.onChange(field.value === plastic.id ? '' : plastic.id)}
+										onClick={() => field.onChange(field.value === plastic.name ? '' : plastic.name)}
 										className={cn(
 											'cursor-pointer transition-all hover:border-primary/50 gap-0 py-2',
-											field.value === plastic.id && 'border-primary ring-1 ring-primary/50',
+											field.value === plastic.name && 'border-primary ring-1 ring-primary/50',
 										)}>
 										<CardHeader className='p-3 pb-1'>
 											<CardTitle className='text-sm'>{plastic.name}</CardTitle>
@@ -475,11 +477,15 @@ function PrintItemCard({
 }
 
 export default function CustomPrintForm({ presets, printingOptions }: { presets: Preset[]; printingOptions: PrintingOption }) {
+	const orderDetails = useStore($orderDetails);
+
 	const [isOpen, setIsOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isAddingPrint, setIsAddingPrint] = useState(false);
 	const [isQuoteView, setIsQuoteView] = useState(false);
-	const [orderComments, setOrderComments] = useState('');
+	const [isQuoteLocked, setIsQuoteLocked] = useState(false);
+	const [quoteAlerts, setQuoteAlerts] = useState<Array<{ id: string; title: string; description: string }>>([]);
+	const [orderComments, setOrderComments] = useState(orderDetails.comments);
 	const [userData, setUserData] = useState<User | null>(null);
 	const [triggerFile, setTriggerFile] = useState<File | null>(null);
 	const [uploadProgress, setUploadProgress] = useState<
@@ -510,21 +516,34 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	>(new Map());
 
 	//* debug -------------------------
-	useEffect(() => {
-		console.log('Quotes:', quotes);
-	}, [quotes]);
+	// useEffect(() => {
+	// 	console.log('Quotes:', quotes);
+	// }, [quotes]);
 
-	useEffect(() => {
-		console.log('Quote view:', isQuoteView);
-	}, [isQuoteView]);
+	// useEffect(() => {
+	// 	console.log('Quote view:', isQuoteView);
+	// }, [isQuoteView]);
 
-	useEffect(() => {
-		console.log('Upload progress:', uploadProgress);
-	}, [uploadProgress]);
+	// useEffect(() => {
+	// 	console.log('Upload progress:', uploadProgress);
+	// }, [uploadProgress]);
 	//* -------------------------------
 
 	const user = useSession();
 
+	// const defaultOrderValidation = {
+	// 	orderName: 'default',
+	// 	orderNameValid: false,
+	// };
+
+	// const orderValidation = useSyncExternalStore(
+	// 	callback => {
+	// 		const unsubscribe = $orderValidation.subscribe(callback);
+	// 		return unsubscribe;
+	// 	},
+	// 	() => $orderValidation.get(),
+	// 	() => defaultOrderValidation,
+	// );
 	const orderValidation = useStore($orderValidation);
 
 	const form = useForm<CustomOrderFormValues>({
@@ -640,6 +659,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 	useEffect(() => {
 		const isValid = orderValidation.orderName.trim().length >= 3;
 		setOrderNameValid(isValid, orderValidation.orderName);
+		setOrderDetails({ ...orderDetails, orderName: orderValidation.orderName });
 	}, [orderValidation.orderName]);
 
 	useEffect(() => {
@@ -685,6 +705,30 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 	function getQuoteIds(): string[] {
 		return Array.from(quotes.values()).map(quote => quote.id);
+	}
+
+	function isZeroPriceQuote(price?: number) {
+		return Number(price) === 0;
+	}
+
+	const hasZeroPriceQuote = Array.from(quotes.values()).some(quote => isZeroPriceQuote(quote.sliceResult.price));
+	const quotePageLocked = isQuoteView && isQuoteLocked;
+
+	function addQuoteAlert(title: string, description: string) {
+		setQuoteAlerts([
+			{
+				id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+				title,
+				description,
+			},
+		]);
+	}
+
+	function lockQuoteView(title: string, description: string) {
+		setIsQuoteView(true);
+		setIsQuoteLocked(true);
+		setIsLoading(false);
+		addQuoteAlert(title, description);
 	}
 
 	//#region on quote submit (when print is added)
@@ -755,7 +799,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				const query = stringify(
 					{
 						where: {
-							name: print.material.plastic,
+							name: { equals: print.material.plastic },
 						},
 						limit: 1,
 					},
@@ -766,13 +810,15 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				const filamentJSON = await filamentRes.json();
 
 				if (filamentJSON.totalDocs === 0) {
-					toast.error(`No filament profile found for ${print.material.plastic}. Please contact support.`, { dismissible: true });
-					cancelQuote();
-					setIsLoading(false);
+					lockQuoteView(
+						'Quote generation failed',
+						`No filament profile was found for ${print.material.plastic}. Please cancel this quote and contact support.`,
+					);
 					return;
 				}
 
 				const filamentRequestData = new FormData();
+
 				filamentRequestData.append('name', `${quoteRes.doc.id}`);
 				filamentRequestData.append(
 					'file',
@@ -787,9 +833,10 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				});
 			} catch (error) {
 				console.error('Error fetching filament data:', error);
-				toast.error('An error occurred fetching filament data. Please try again.', { dismissible: true });
-				cancelQuote();
-				setIsLoading(false);
+				lockQuoteView(
+					'Quote generation failed',
+					'An error occurred fetching filament data. Please cancel this quote and try again.',
+				);
 				return;
 			}
 
@@ -815,9 +862,10 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				});
 			} catch (error) {
 				console.error('Error generating preset profile:', error);
-				toast.error('An error occurred generating preset profile. Please try again.', { dismissible: true });
-				cancelQuote();
-				setIsLoading(false);
+				lockQuoteView(
+					'Quote generation failed',
+					'An error occurred generating the preset profile. Please cancel this quote and try again.',
+				);
 				return;
 			}
 
@@ -832,19 +880,10 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				};
 
 				if (print.printingOptions.preset) {
-					const query = stringify(
-						{
-							where: {
-								name: print.printingOptions.preset,
-							},
-							limit: 1,
-						},
-						{ addQueryPrefix: true },
-					);
-					const presetRes = await fetch(`/api/presets${query}`);
+					const presetRes = await fetch(`/api/presets/${print.printingOptions.preset}`);
 					const presetJSON = await presetRes.json();
 
-					slicerSettings.preset = presetJSON.docs[0].bambulabName;
+					slicerSettings.preset = presetJSON.bambulabName;
 				}
 
 				const res = await uploadFile(
@@ -885,10 +924,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 							]),
 					);
 				} else {
-					toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
 					console.error('No response from slicing API');
-					cancelQuote();
-					setIsLoading(false);
+					lockQuoteView('Quote generation failed', 'The slicer did not return a quote. Please cancel this quote and try again.');
 					return;
 				}
 
@@ -899,18 +936,29 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					console.error('Error deleting temporary files:', error);
 				}
 			} catch (error) {
-				toast.error('An error occurred getting a quote. Please try again.', { dismissible: true });
 				console.error('Quote request error:', error);
-				cancelQuote();
-				setIsLoading(false);
+				lockQuoteView(
+					'Quote generation failed',
+					'An error occurred while getting a quote. Please cancel this quote and try again.',
+				);
 				return;
 			}
 		}
+
+		setIsQuoteLocked(false);
 	}
 	//#endregion
 
 	//#region on confirm quote (when prints added to basket)
 	async function confirmQuote() {
+		if (hasZeroPriceQuote) {
+			lockQuoteView(
+				'Quote cannot be completed',
+				'The prices for one or more models cannot be calculated. Cancel this quote and choose a different model.',
+			);
+			return;
+		}
+
 		setIsLoading(true);
 
 		const currentFormData = form.getValues();
@@ -952,15 +1000,14 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				});
 
 				if (!req.ok) {
-					toast.error('An error occurred updating quote data. Please try again.', { dismissible: true });
 					console.error('Error updating quote:', req.statusText);
-					cancelQuote();
-					setIsLoading(false);
+					lockQuoteView('Quote update failed', 'An error occurred updating quote data. Please cancel this quote and try again.');
 					return;
 				}
 			}
 		});
 
+		setOrderDetails({ ...orderDetails, comments: orderComments });
 		toast.success(`${currentFormData.prints.length} item(s) added to basket`);
 
 		setIsOpen(false);
@@ -974,6 +1021,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		setQuotes(new Map());
 		setIsLoading(false);
 		setIsQuoteView(false);
+		setIsQuoteLocked(false);
+		setQuoteAlerts([]);
 		setUploadProgress(new Map());
 
 		const cleanupPromises = quotesToCleanup.map(async quoteId => {
@@ -1084,7 +1133,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					)}
 				</div>
 
-				{/* REPLACED: DialogContent with sliding two-panel layout */}
 				<DialogContent className='!w-4xl !max-w-4xl max-h-[calc(100vh-8rem)] overflow-hidden' asChild>
 					<div className='relative w-full h-[calc(100vh-12rem)] overflow-hidden'>
 						<div
@@ -1177,6 +1225,25 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 							{/* Right panel: quote view */}
 							<div className='w-1/2 flex-none px-4 h-full'>
 								<div className='flex flex-col gap-4 h-full overflow-y-auto'>
+									{quoteAlerts.map(alert => (
+										<Alert key={alert.id} variant='destructive'>
+											<AlertCircle className='h-4 w-4' />
+											<AlertTitle>{alert.title}</AlertTitle>
+											<AlertDescription>{alert.description}</AlertDescription>
+										</Alert>
+									))}
+
+									{hasZeroPriceQuote && (
+										<Alert variant='destructive'>
+											<AlertCircle className='h-4 w-4' />
+											<AlertTitle>Choose a different model</AlertTitle>
+											<AlertDescription>
+												The prices for one or more models cannot be calculated. This usually isn't the fault of the
+												model. Replace the invalid model to continue.
+											</AlertDescription>
+										</Alert>
+									)}
+
 									<div className='flex items-center justify-between'>
 										<div>
 											<h2 className='text-xl font-semibold flex items-center gap-2'>
@@ -1188,94 +1255,115 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 											</p>
 										</div>
 										<div className='flex gap-x-2'>
-											<Button onClick={() => setIsQuoteView(false)} variant='default'>
+											<Button onClick={() => setIsQuoteView(false)} variant='default' disabled={quotePageLocked}>
 												Add Another Print
 											</Button>
-											<Button variant={'destructive'} onClick={() => cancelQuote()}>
-												Cancel & Back to Form
+											<Button variant='destructive' onClick={() => cancelQuote()}>
+												Cancel Quote
 											</Button>
 										</div>
 									</div>
 
-									<div className='flex flex-col gap-3'>
+									<div className={cn('flex flex-col gap-3', quotePageLocked && 'pointer-events-none opacity-60')}>
 										{form.getValues().prints.map((p, i) => {
 											const filename = p.file?.name || 'No file selected';
 											const quote = quotes.get(i);
+											const isInvalidQuote = isZeroPriceQuote(quote?.sliceResult.price);
 
 											return (
-												<BasketItem
-													item={{
-														id: quote?.id || '',
-														model: {
-															filename,
-															filetype: (filename.split('.').pop() || 'stl') as 'stl' | '3mf',
-														},
-														price: quote?.sliceResult.price || null,
-														time: quote?.sliceResult.times.total || null,
-														printingOptions: {
-															colour: p.material.colour,
-															plastic: p.material.plastic,
-															infill: p.printingOptions.infill,
-															layerHeight: p.printingOptions.layerHeight,
-															preset: p.printingOptions.preset,
-														},
-														quantity: p.quantity,
-													}}
-													progress={uploadProgress.get(i)?.progress}
-													onQuantityChange={(id, qty) => {
-														form.setValue(`prints.${i}.quantity`, qty);
-													}}
-													onRemove={async id => {
-														remove(i);
+												<div
+													key={i}
+													className={cn(
+														'rounded-xl transition-all',
+														isInvalidQuote &&
+															'border border-destructive/40 bg-destructive/5 p-1 shadow-sm ring-1 ring-destructive/20',
+													)}>
+													{isInvalidQuote && (
+														<div className='mb-3'>
+															<Alert variant='destructive'>
+																<AlertCircle className='h-4 w-4' />
+																<AlertTitle>Price unavailable</AlertTitle>
+																<AlertDescription>
+																	The price for the model was unable to be calculated. Please choose a
+																	different model.
+																</AlertDescription>
+															</Alert>
+														</div>
+													)}
+													<BasketItem
+														item={{
+															id: quote?.id || '',
+															model: {
+																filename,
+																filetype: (filename.split('.').pop() || 'stl') as 'stl' | '3mf',
+															},
+															price: quote?.sliceResult.price || null,
+															time: quote?.sliceResult.times.total || null,
+															printingOptions: {
+																colour: p.material.colour,
+																plastic: p.material.plastic,
+																infill: p.printingOptions.infill,
+																layerHeight: p.printingOptions.layerHeight,
+																preset: p.printingOptions.preset,
+															},
+															quantity: p.quantity,
+														}}
+														progress={uploadProgress.get(i)?.progress}
+														onQuantityChange={(id, qty) => {
+															form.setValue(`prints.${i}.quantity`, qty);
+														}}
+														canChangeQuantity={false}
+														onRemove={async id => {
+															remove(i);
 
-														const updatedQuotes = new Map(quotes);
-														updatedQuotes.delete(i);
+															const updatedQuotes = new Map(quotes);
+															updatedQuotes.delete(i);
 
-														const reindexedQuotes = new Map<
-															number,
-															NonNullable<typeof updatedQuotes extends Map<number, infer T> ? T : never>
-														>();
-														updatedQuotes.forEach((quote, index) => {
-															if (quote && index > i) {
-																reindexedQuotes.set(index - 1, quote);
-															} else if (quote) {
-																reindexedQuotes.set(index, quote);
-															}
-														});
-
-														setQuotes(reindexedQuotes);
-
-														// Also clean up progress tracking
-														setUploadProgress(prev => {
-															const updated = new Map(prev);
-															updated.delete(i);
-
-															// Re-index remaining progress entries
-															const reindexedProgress = new Map<
+															const reindexedQuotes = new Map<
 																number,
-																{ progress: number; currentChunk: number; chunkTotal: number }
+																NonNullable<typeof updatedQuotes extends Map<number, infer T> ? T : never>
 															>();
-															updated.forEach((progress, index) => {
-																if (index > i) {
-																	reindexedProgress.set(index - 1, progress);
-																} else {
-																	reindexedProgress.set(index, progress);
+															updatedQuotes.forEach((quote, index) => {
+																if (quote && index > i) {
+																	reindexedQuotes.set(index - 1, quote);
+																} else if (quote) {
+																	reindexedQuotes.set(index, quote);
 																}
 															});
 
-															return reindexedProgress;
-														});
+															setQuotes(reindexedQuotes);
 
-														try {
-															await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
-																method: 'DELETE',
+															// Also clean up progress tracking
+															setUploadProgress(prev => {
+																const updated = new Map(prev);
+																updated.delete(i);
+
+																// Re-index remaining progress entries
+																const reindexedProgress = new Map<
+																	number,
+																	{ progress: number; currentChunk: number; chunkTotal: number }
+																>();
+																updated.forEach((progress, index) => {
+																	if (index > i) {
+																		reindexedProgress.set(index - 1, progress);
+																	} else {
+																		reindexedProgress.set(index, progress);
+																	}
+																});
+
+																return reindexedProgress;
 															});
-															await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
-														} catch (error) {
-															console.error('Error cleaning up quote:', id, error);
-														}
-													}}
-													key={i}></BasketItem>
+
+															try {
+																await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
+																	method: 'DELETE',
+																});
+																await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
+															} catch (error) {
+																console.error('Error cleaning up quote:', id, error);
+															}
+														}}></BasketItem>
+												</div>
 											);
 										})}
 
@@ -1290,9 +1378,11 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 											if (isLoading || form.getValues().prints.length === 0) cancelQuote();
 											else confirmQuote();
 										}}
-										disabled={quotes.size !== form.getValues().prints.length}>
+										disabled={quotePageLocked || quotes.size !== form.getValues().prints.length || hasZeroPriceQuote}>
 										{isLoading || form.getValues().prints.length === 0 ? (
 											'Back to Form'
+										) : hasZeroPriceQuote ? (
+											'Choose a Different Model'
 										) : (
 											<>
 												Add {form.getValues().prints.reduce((c: number, p) => (c += p.quantity), 0)} Print

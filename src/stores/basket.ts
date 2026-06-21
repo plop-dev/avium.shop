@@ -9,7 +9,7 @@ export type CustomPrint = {
 		filetype: 'stl' | '3mf';
 	};
 	printingOptions: {
-		preset?: string; // relationship to presets
+		preset?: string; // relationship to presets, so an ID string is stored
 		layerHeight?: number;
 		infill?: number;
 		plastic: string;

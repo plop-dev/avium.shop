@@ -75,7 +75,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 				}}>
 				<div className='h-48 flex items-center justify-center rounded-t-lg'>
 					{typeof pic === 'string' ? (
-						<Image className='h-48 w-48 aspect-square bg-cover object-cover' src={pic} alt='Product Image' />
+						<Image className='h-48 w-48 aspect-square bg-cover object-cover' src={pic} alt='Product Image' loading='eager' />
 					) : (
 						<Image
 							className='h-48 w-48 aspect-square bg-cover object-cover'
@@ -83,6 +83,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 							width={pic?.width ?? 512}
 							height={pic?.height ?? pic?.width ?? 512}
 							alt={pic?.alt ?? product.name}
+							loading='eager'
 						/>
 					)}
 				</div>
@@ -115,6 +116,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 																src={p}
 																alt={`Product image ${idx + 1}`}
 																draggable={false}
+																loading='eager'
 															/>
 														) : (
 															<Image
@@ -124,6 +126,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 																height={p?.height ?? p?.width ?? 1024}
 																alt={p?.alt ?? product.name}
 																draggable={false}
+																loading='eager'
 															/>
 														)}
 													</div>

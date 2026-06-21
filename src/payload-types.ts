@@ -258,7 +258,7 @@ export interface Order {
         blockType: 'customPrint';
       }
   )[];
-  payment: {
+  payment?: {
     /**
      * Stripe Payment Intent ID
      */
