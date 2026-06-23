@@ -118,6 +118,7 @@ export default async function ClientPage() {
 
 	if (!user) redirect('/auth/login');
 
+	// user's orders
 	const orders = await payload.find({
 		collection: 'orders',
 		where: {
@@ -130,7 +131,22 @@ export default async function ClientPage() {
 		sort: '-createdAt',
 		overrideAccess: true,
 	});
-	// console.log('ClientPage orders:', orders.docs[0].prints);
+
+	// how many order have a higher priority
+	const queueMap = new Map<string, number>();
+
+	orders.docs.forEach(async order => {
+		const res = await payload.db.count({
+			collection: 'orders',
+			where: {
+				queue: {
+					greater_than: order.queue,
+				},
+			},
+		});
+
+		queueMap.set(order.id, res.totalDocs);
+	});
 
 	const totalOrders = orders.totalDocs;
 	const activeOrders = orders.docs.filter(order => !['shipped', 'cancelled'].includes(order.status.currentStatus)).length;
@@ -222,7 +238,7 @@ export default async function ClientPage() {
 												<div className='space-y-1'>
 													<div className='flex flex-wrap items-center gap-2'>
 														<CardTitle className='text-base'>{order.name}</CardTitle>
-														<Badge variant='secondary'>Queue #{order.queue}</Badge>
+														<Badge variant='secondary'>Queue #{queueMap.get(order.id) || 0 + 1}</Badge>
 													</div>
 													<CardDescription className='flex flex-wrap items-center gap-3 text-xs'>
 														<span className='inline-flex items-center gap-1.5'>
@@ -251,7 +267,9 @@ export default async function ClientPage() {
 														</p>
 														<div className='mt-2 grid grid-cols-2 gap-x-4 gap-y-2'>
 															<div className='text-muted-foreground'>Queue</div>
-															<div className='text-right font-medium tabular-nums'>#{order.queue}</div>
+															<div className='text-right font-medium tabular-nums'>
+																#{queueMap.get(order.id) || 0 + 1}
+															</div>
 															<div className='text-muted-foreground'>Placed</div>
 															<div className='text-right font-medium'>{formatOrderDate(order.createdAt)}</div>
 															<div className='text-muted-foreground'>Updated</div>
@@ -321,7 +339,7 @@ export default async function ClientPage() {
 																	<Badge
 																		variant={item.completed ? 'success' : 'outline'}
 																		className='shrink-0'>
-																		{item.completed ? 'Completed' : 'Pending'}
+																		{item.completed ? 'Printed' : 'Not yet printed'}
 																	</Badge>
 																</div>
 															</div>
