@@ -22,14 +22,8 @@ export const Orders: CollectionConfig = {
 				// ensure that customers can only set themselves as the customer on an order
 				if (req.user) {
 					if (data.customer != req.user.id && req.data?.customer) {
-						// console.log(data);
-						// console.log(data.customer);
-						// console.log(req.user);
-						// console.log(req.user.id);
 						throw new APIError('Cannot set customer to another user.', 400);
 					}
-					// console.log(data);
-					//data.customer = data.customer.replace("-", "");
 				} else {
 					// this shouldn't be reachable with proper access control
 					console.log('Unauthenticated request trying to create/update an order.');
@@ -50,35 +44,6 @@ export const Orders: CollectionConfig = {
 				}
 			},
 		],
-
-		//* old ↓
-		/*beforeChange: [
-			({ data }) => {
-				if (!data) return data;
-
-				// keep currentStatus in sync with the last history entry
-				const statuses = data?.status?.statuses;
-				if (Array.isArray(statuses) && statuses.length) {
-					const last = statuses[statuses.length - 1];
-					data.status = {
-						...data.status,
-						currentStatus: last.stage,
-					};
-				}
-
-				// compute order total from prints
-				if (Array.isArray(data?.prints)) {
-					let total = 0;
-					data.prints.forEach(print => {
-						const price = Number(print?.price ?? 0);
-						total += price;
-					});
-					data.total = total;
-				}
-
-				return data;
-			},
-		],*/
 	},
 	timestamps: true,
 	fields: [
@@ -100,6 +65,7 @@ export const Orders: CollectionConfig = {
 			},
 		},
 
+		// prints
 		{
 			name: 'prints',
 			type: 'blocks',
@@ -178,45 +144,267 @@ export const Orders: CollectionConfig = {
 			],
 		},
 
-		//! ABSOLUTELY NO IDEA: ASK ENY
+		// payment
 		{
 			name: 'payment',
 			type: 'group',
 			required: false,
 			fields: [
 				{
+					name: 'provider',
+					type: 'text',
+					admin: { description: 'Payment provider used for this order' },
+				},
+				{ name: 'stripeCustomerId', type: 'text', admin: { description: 'Stripe Customer ID' } },
+				{ name: 'stripeCheckoutSessionId', type: 'text', admin: { description: 'Stripe Checkout Session ID' } },
+				{
 					name: 'stripePaymentIntentId',
 					type: 'text',
 					admin: { description: 'Stripe Payment Intent ID' },
 				},
 				{
-					name: 'status',
-					type: 'select',
-					options: [
-						{ label: 'Pending', value: 'pending' },
-						{ label: 'Processing', value: 'processing' },
-						{ label: 'Succeeded', value: 'succeeded' },
-						{ label: 'Failed', value: 'failed' },
-						{ label: 'Cancelled', value: 'cancelled' },
-					],
-					defaultValue: 'pending',
+					name: 'stripeChargeId',
+					type: 'text',
+					admin: { description: 'Stripe Charge ID' },
+				},
+				{
+					name: 'currency',
+					type: 'text',
+					admin: { description: 'Currency used for this order' },
 				},
 				{
 					name: 'amount',
 					type: 'number',
-					admin: { description: 'Payment amount in cents' },
+					admin: { description: 'Amount paid' },
+				},
+				{
+					name: 'status',
+					type: 'select',
+					options: [
+						{
+							label: 'Awaiting Payment',
+							value: 'awaiting-payment',
+						},
+						{
+							label: 'Paid',
+							value: 'paid',
+						},
+						{
+							label: 'Failed',
+							value: 'failed',
+						},
+						{
+							label: 'Refunded',
+							value: 'refunded',
+						},
+						{
+							label: 'Partially Refunded',
+							value: 'partially-refunded',
+						},
+						{
+							label: 'Cancelled',
+							value: 'cancelled',
+						},
+					],
+					defaultValue: 'pending',
+				},
+				{
+					name: 'paidAt',
+					type: 'date',
+					admin: { description: 'Date and time when the payment was made' },
+				},
+				{
+					name: 'refunded',
+					type: 'checkbox',
+					admin: { description: 'Whether the payment was refunded' },
+				},
+				{
+					name: 'refundedAmount',
+					type: 'number',
+					admin: { description: 'Amount refunded' },
+				},
+				{
+					name: 'refundedAt',
+					type: 'date',
+					admin: { description: 'Date and time when the payment was refunded' },
+				},
+				{
+					name: 'receiptUrl',
+					type: 'text',
+					admin: { description: 'URL to the payment receipt' },
 				},
 			],
 		},
 
+		// shipping
 		{
-			name: 'total',
-			type: 'number',
+			name: 'shipping',
+			type: 'group',
+			required: false,
+			fields: [
+				{
+					name: 'address',
+					type: 'textarea',
+					admin: { description: 'Shipping address' },
+				},
+				{
+					name: 'shipmentId',
+					type: 'text',
+					admin: { description: 'Shipment ID' },
+				},
+				{
+					name: 'transactionId',
+					type: 'text',
+					admin: { description: 'Shipment transaction ID' },
+				},
+				{
+					name: 'carrier',
+					type: 'text',
+					admin: { description: 'Shipping carrier' },
+				},
+				{
+					name: 'service',
+					type: 'text',
+					admin: { description: 'Shipping service' },
+				},
+				{
+					name: 'trackingNumber',
+					type: 'text',
+					admin: { description: 'Tracking number' },
+				},
+				{
+					name: 'trackingUrl',
+					type: 'text',
+					admin: { description: 'Tracking URL' },
+				},
+				{
+					name: 'labelUrl',
+					type: 'text',
+					admin: { description: 'Shipping label URL' },
+				},
+				{
+					name: 'labelPurchasedAt',
+					type: 'date',
+					admin: { description: 'Date and time when the label was purchased' },
+				},
+				{
+					name: 'shippedAt',
+					type: 'date',
+					admin: { description: 'Date and time when the order was shipped' },
+				},
+				{
+					name: 'deliveredAt',
+					type: 'date',
+					admin: { description: 'Date and time when the order was delivered' },
+				},
+			],
+		},
+
+		// shipping address
+		{
+			name: 'shippingAddress',
+			type: 'group',
+			required: false,
+			fields: [
+				{
+					name: 'fullName',
+					type: 'text',
+				},
+				{
+					name: 'company',
+					type: 'text',
+				},
+				{
+					name: 'line1',
+					type: 'text',
+				},
+				{
+					name: 'line2',
+					type: 'text',
+				},
+				{
+					name: 'city',
+					type: 'text',
+				},
+				{
+					name: 'county',
+					type: 'text',
+				},
+				{
+					name: 'postcode',
+					type: 'text',
+				},
+				{
+					name: 'country',
+					type: 'text',
+				},
+				{
+					name: 'phone',
+					type: 'text',
+				},
+			],
+		},
+
+		// pricing
+		{
+			name: 'pricing',
+			type: 'group',
 			required: true,
 			admin: {
-				description: 'The total price of the order. Calculated from the prints.',
-				readOnly: true,
+				description: 'Pricing details for the order. EVERYTHING IN PENCE, ALWAYS.',
 			},
+			hooks: {
+				beforeChange: [
+					async ({ data }) => {
+						return {
+							...data,
+							pricing: {
+								...data?.pricing,
+								total: data?.pricing.subtotal + data?.pricing.shipping + data?.pricing.tax,
+							},
+						};
+					},
+				],
+			},
+			fields: [
+				{
+					name: 'subtotal',
+					type: 'number',
+					required: true,
+					admin: {
+						description:
+							'The subtotal of the order in pennies (or smallest equivalent of the currency). Calculated from the prints.',
+						readOnly: true,
+					},
+				},
+				{
+					name: 'shipping',
+					type: 'number',
+					required: true,
+					defaultValue: 300,
+					admin: {
+						description: 'The shipping cost of the order. Always 300p.',
+					},
+				},
+				{
+					name: 'tax',
+					type: 'number',
+					required: true,
+					defaultValue: 0,
+					admin: {
+						description: 'The tax of the order. Always £0 since we are not VAT registered, yet.',
+					},
+				},
+				{
+					name: 'total',
+					type: 'number',
+					required: true,
+					admin: {
+						description: 'Total Price of everything in this field (subtotal + shipping + tax).',
+						readOnly: true,
+					},
+				},
+			],
 		},
 
 		{
@@ -229,6 +417,7 @@ export const Orders: CollectionConfig = {
 			index: true,
 		},
 
+		// status
 		{
 			name: 'status',
 			type: 'group',
@@ -283,37 +472,6 @@ export const Orders: CollectionConfig = {
 				},
 			],
 		},
-
-		//! NEEDED?
-		// {
-		// 	name: 'shipping',
-		// 	type: 'group',
-		// 	fields: [
-		// 		{
-		// 			name: 'address',
-		// 			type: 'group',
-		// 			fields: [
-		// 				{ name: 'line1', type: 'text', required: true },
-		// 				{ name: 'line2', type: 'text' },
-		// 				{ name: 'city', type: 'text', required: true },
-		// 				{ name: 'state', type: 'text' },
-		// 				{ name: 'postalCode', type: 'text', required: true },
-		// 				{ name: 'country', type: 'text', required: true },
-		// 			],
-		// 		},
-		// 		{
-		// 			name: 'trackingNumber',
-		// 			type: 'text',
-		// 			admin: { description: 'Shipping carrier tracking number' },
-		// 		},
-		// 		{
-		// 			name: 'carrier',
-		// 			type: 'text',
-		// 			admin: { description: 'Shipping carrier name' },
-		// 		},
-		// 	],
-		// },
-		//! --------
 
 		{
 			name: 'comments',
