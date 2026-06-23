@@ -1,5 +1,9 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+
+import { signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
 	DropdownMenu,
@@ -18,6 +22,25 @@ import getInitials from '@/utils/getInitials';
 
 export function NavUser({ user }: { user: User | null }) {
 	const { isMobile } = useSidebar();
+	const router = useRouter();
+	const [logoutLoading, setLogoutLoading] = useState(false);
+
+	async function handleLogout(): Promise<{ success: boolean; error?: string }> {
+		if (logoutLoading) return { success: false, error: 'Logout already in progress' };
+
+		setLogoutLoading(true);
+
+		try {
+			await signOut({ redirect: false });
+			router.push('/');
+
+			setLogoutLoading(false);
+			return { success: true };
+		} catch (error) {
+			setLogoutLoading(false);
+			return { success: false, error: 'Failed to logout' };
+		}
+	}
 
 	// Skeleton loading state when user is null
 	if (!user) {
@@ -87,7 +110,7 @@ export function NavUser({ user }: { user: User | null }) {
 							</div>
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem>
+						<DropdownMenuItem onClick={handleLogout} disabled={logoutLoading}>
 							<LogOut />
 							Log out
 						</DropdownMenuItem>
