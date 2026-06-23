@@ -7,30 +7,7 @@ import { headers as nextHeaders } from 'next/headers';
 import { getUser } from '@/utils/getUser';
 
 export default async function HomeLayout({ children }: { children: React.ReactNode }) {
-	const headers = await nextHeaders();
-
 	const user = await getUser();
-
-	// console.log('auth user:', session?.user);
-	// console.log('payload user:', user.user);
-
-	const options: NavbarListItemProps[] = [
-		{
-			title: 'PETG',
-			href: '#?plastic=petg',
-			description: 'A strong and durable filament suitable for functional parts.',
-		},
-		{
-			title: 'TPU',
-			href: '#?plastic=tpu',
-			description: 'A flexible filament perfect for creating rubber-like parts.',
-		},
-		{
-			title: 'See more',
-			href: '#',
-			description: 'Explore our range of printing materials and services.',
-		},
-	];
 
 	const items: NavMenuItem[] = [
 		{
@@ -70,12 +47,12 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 					{
 						title: 'Shop',
 						description: 'Browse our complete catalog of 3D printing services.',
-						href: '#',
+						href: '/order',
 					},
 					{
 						title: 'Custom Print',
 						description: 'Submit your own 3D model for printing.',
-						href: '#',
+						href: '/order',
 					},
 				],
 			},
