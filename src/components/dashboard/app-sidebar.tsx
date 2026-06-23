@@ -28,15 +28,15 @@ export type SidebarData = {
 		url: string;
 		icon: React.ElementType;
 	}[];
-	navSecondary: {
+	navSecondary?: {
 		title: string;
 		url: string;
 		icon: React.ElementType;
 	}[];
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-	const data: SidebarData = {
+export function AppSidebar({ isAdmin, ...props }: React.ComponentProps<typeof Sidebar> & { isAdmin: boolean }) {
+	let data: SidebarData = {
 		navMain: [
 			{
 				title: 'Home',
@@ -44,14 +44,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				icon: Home,
 			},
 		],
-		navSecondary: [
-			{
-				title: 'Settings',
-				url: '/admin/account',
-				icon: Settings,
-			},
-		],
+		// navSecondary: [
+		// 	{
+		// 		title: 'Settings',
+		// 		url: '/admin/account',
+		// 		icon: Settings,
+		// 	},
+		// ],
 	};
+
+	if (isAdmin) {
+		data.navMain.push({
+			title: 'Admin Panel',
+			url: '/admin',
+			icon: UserLock,
+		});
+	}
 
 	const [userData, setUserData] = useState<User | null>(null);
 
