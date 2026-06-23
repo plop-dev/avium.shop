@@ -55,6 +55,7 @@ export const Products: CollectionConfig = {
 			type: 'number',
 			required: true,
 			admin: {
+				readOnly: true,
 				description: 'The price of the product in GBP (£) (e.g. 1.5)',
 			},
 		},
