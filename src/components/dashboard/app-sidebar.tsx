@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import { NavMain } from '@/components/dashboard/nav-main';
-import { NavSecondary } from '@/components/dashboard/nav-secondary';
+import { NavSecondary, ServerData } from '@/components/dashboard/nav-secondary';
 import { NavUser } from '@/components/dashboard/nav-user';
 import {
 	Sidebar,

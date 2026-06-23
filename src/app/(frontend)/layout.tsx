@@ -12,6 +12,7 @@ import { auth } from '@/auth';
 import { MessageToaster } from '@/components/MessageToaster';
 import CustomToaster from '@/components/layouts/CustomToaster';
 import NanostoreManager from '@/components/NanostoreManager';
+import { ServerStatus } from '@/components/ServerStatus';
 
 export const metadata: Metadata = {
 	title: 'Avium',
@@ -43,6 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 									<MessageToaster></MessageToaster>
 									<NanostoreManager></NanostoreManager>
 								</Suspense>
+								<ServerStatus></ServerStatus>
 								{children}
 							</ThemeProvider>
 						</SessionProvider>
