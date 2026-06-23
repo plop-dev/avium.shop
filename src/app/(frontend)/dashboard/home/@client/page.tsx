@@ -46,7 +46,7 @@ function formatPaymentAmount(order: PayloadOrder) {
 		return numToGBP(order.payment.amount / 100);
 	}
 
-	return numToGBP(order.total);
+	return numToGBP(order.pricing.total);
 }
 
 function getPrintTitle(print: PayloadOrder['prints'][number]) {
@@ -106,7 +106,7 @@ function getTimelineNodes(status: PayloadOrder['status']['currentStatus'], statu
 }
 
 function getPaymentStatusVariant(status?: NonNullable<PayloadOrder['payment']>['status']) {
-	if (status === 'succeeded') return 'default' as const;
+	if (status === 'paid') return 'default' as const;
 	if (status === 'failed') return 'destructive' as const;
 
 	return 'outline' as const;
@@ -150,7 +150,7 @@ export default async function ClientPage() {
 
 	const totalOrders = orders.totalDocs;
 	const activeOrders = orders.docs.filter(order => !['shipped', 'cancelled'].includes(order.status.currentStatus)).length;
-	const totalSpent = orders.docs.reduce((sum, order) => sum + order.total, 0);
+	const totalSpent = orders.docs.reduce((sum, order) => sum + order.pricing.total, 0);
 	const latestOrder = orders.docs[0];
 
 	return (
@@ -253,7 +253,7 @@ export default async function ClientPage() {
 												</div>
 												<div className='text-right'>
 													<p className='text-xs text-muted-foreground'>Order total</p>
-													<p className='text-lg font-semibold tabular-nums'>{numToGBP(order.total)}</p>
+													<p className='text-lg font-semibold tabular-nums'>{numToGBP(order.pricing.total)}</p>
 												</div>
 											</div>
 										</CardHeader>
@@ -278,7 +278,7 @@ export default async function ClientPage() {
 															</div>
 															<div className='text-muted-foreground'>Total</div>
 															<div className='text-right font-medium tabular-nums'>
-																{numToGBP(order.total)}
+																{numToGBP(order.pricing.total)}
 															</div>
 														</div>
 													</div>

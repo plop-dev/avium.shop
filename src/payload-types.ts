@@ -260,19 +260,133 @@ export interface Order {
   )[];
   payment?: {
     /**
+     * Payment provider used for this order
+     */
+    provider?: string | null;
+    /**
+     * Stripe Customer ID
+     */
+    stripeCustomerId?: string | null;
+    /**
+     * Stripe Checkout Session ID
+     */
+    stripeCheckoutSessionId?: string | null;
+    /**
      * Stripe Payment Intent ID
      */
     stripePaymentIntentId?: string | null;
-    status?: ('pending' | 'processing' | 'succeeded' | 'failed' | 'cancelled') | null;
     /**
-     * Payment amount in cents
+     * Stripe Charge ID
+     */
+    stripeChargeId?: string | null;
+    /**
+     * Currency used for this order
+     */
+    currency?: string | null;
+    /**
+     * Amount paid
      */
     amount?: number | null;
+    status?: ('awaiting-payment' | 'paid' | 'failed' | 'refunded' | 'partially-refunded' | 'cancelled') | null;
+    /**
+     * Date and time when the payment was made
+     */
+    paidAt?: string | null;
+    /**
+     * Whether the payment was refunded
+     */
+    refunded?: boolean | null;
+    /**
+     * Amount refunded
+     */
+    refundedAmount?: number | null;
+    /**
+     * Date and time when the payment was refunded
+     */
+    refundedAt?: string | null;
+    /**
+     * URL to the payment receipt
+     */
+    receiptUrl?: string | null;
+  };
+  shipping?: {
+    /**
+     * Shipping address
+     */
+    address?: string | null;
+    /**
+     * Shipment ID
+     */
+    shipmentId?: string | null;
+    /**
+     * Shipment transaction ID
+     */
+    transactionId?: string | null;
+    /**
+     * Shipping carrier
+     */
+    carrier?: string | null;
+    /**
+     * Shipping service
+     */
+    service?: string | null;
+    /**
+     * Tracking number
+     */
+    trackingNumber?: string | null;
+    /**
+     * Tracking URL
+     */
+    trackingUrl?: string | null;
+    /**
+     * Shipping label URL
+     */
+    labelUrl?: string | null;
+    /**
+     * Date and time when the label was purchased
+     */
+    labelPurchasedAt?: string | null;
+    /**
+     * Date and time when the order was shipped
+     */
+    shippedAt?: string | null;
+    /**
+     * Date and time when the order was delivered
+     */
+    deliveredAt?: string | null;
+  };
+  shippingAddress?: {
+    fullName?: string | null;
+    company?: string | null;
+    line1?: string | null;
+    line2?: string | null;
+    city?: string | null;
+    county?: string | null;
+    postcode?: string | null;
+    country?: string | null;
+    phone?: string | null;
   };
   /**
-   * The total price of the order. Calculated from the prints.
+   * Pricing details for the order. EVERYTHING IN PENCE, ALWAYS.
    */
-  total: number;
+  pricing: {
+    /**
+     * The subtotal of the order in pennies (or smallest equivalent of the currency). Calculated from the prints.
+     */
+    subtotal: number;
+    /**
+     * The shipping cost of the order. Always 300p.
+     */
+    shipping: number;
+    /**
+     * The tax of the order. Always £0 since we are not VAT registered, yet.
+     */
+    tax: number;
+    /**
+     * Total Price of everything in this field (subtotal + shipping + tax).
+     */
+    total: number;
+  };
   /**
    * The print queue this order is assigned to
    */
@@ -697,11 +811,56 @@ export interface OrdersSelect<T extends boolean = true> {
   payment?:
     | T
     | {
+        provider?: T;
+        stripeCustomerId?: T;
+        stripeCheckoutSessionId?: T;
         stripePaymentIntentId?: T;
-        status?: T;
+        stripeChargeId?: T;
+        currency?: T;
         amount?: T;
+        status?: T;
+        paidAt?: T;
+        refunded?: T;
+        refundedAmount?: T;
+        refundedAt?: T;
+        receiptUrl?: T;
       };
-  total?: T;
+  shipping?:
+    | T
+    | {
+        address?: T;
+        shipmentId?: T;
+        transactionId?: T;
+        carrier?: T;
+        service?: T;
+        trackingNumber?: T;
+        trackingUrl?: T;
+        labelUrl?: T;
+        labelPurchasedAt?: T;
+        shippedAt?: T;
+        deliveredAt?: T;
+      };
+  shippingAddress?:
+    | T
+    | {
+        fullName?: T;
+        company?: T;
+        line1?: T;
+        line2?: T;
+        city?: T;
+        county?: T;
+        postcode?: T;
+        country?: T;
+        phone?: T;
+      };
+  pricing?:
+    | T
+    | {
+        subtotal?: T;
+        shipping?: T;
+        tax?: T;
+        total?: T;
+      };
   queue?: T;
   status?:
     | T

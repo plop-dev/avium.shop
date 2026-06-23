@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { LoadingSwap } from './ui/loading-swap';
 import { useRouter } from 'next/navigation';
+import { Order } from '@/payload-types';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -112,8 +113,6 @@ export default function Basket() {
 			name: (orderValidation && orderValidation.orderName) || `Order ${new Date().toISOString()}`,
 			customer: userId,
 			prints,
-			// payment, (need to add)
-			total,
 			queue,
 			status: {
 				statuses: [
@@ -125,6 +124,12 @@ export default function Basket() {
 				currentStatus: 'in-queue',
 			},
 			comments: orderDetails.comments,
+			pricing: {
+				subtotal: total,
+				shipping: 300,
+				tax: 0,
+				total: total + 300,
+			},
 		};
 
 		const res = await fetch('/api/orders', {
@@ -153,8 +158,6 @@ export default function Basket() {
 		resetBasket();
 
 		router.push('/dashboard/home');
-
-		// TODO: redirect to payment (get rid of toast?)
 	};
 
 	return (
