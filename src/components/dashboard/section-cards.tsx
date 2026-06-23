@@ -12,7 +12,7 @@ export async function SectionCards() {
 	const orders = await payload.find({
 		collection: 'orders',
 		select: {
-			total: true,
+			pricing: true,
 			prints: true,
 			createdAt: true,
 		},
@@ -27,9 +27,9 @@ export async function SectionCards() {
 			},
 		},
 		select: {
-			total: true,
 			prints: true,
 			createdAt: true,
+			pricing: true,
 		},
 		limit: 0,
 	});

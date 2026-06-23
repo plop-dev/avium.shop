@@ -373,19 +373,19 @@ export interface Order {
     /**
      * The subtotal of the order in pennies (or smallest equivalent of the currency). Calculated from the prints.
      */
-    subtotal: number;
+    subtotal?: number | null;
     /**
      * The shipping cost of the order. Always 300p.
      */
-    shipping: number;
+    shipping?: number | null;
     /**
      * The tax of the order. Always £0 since we are not VAT registered, yet.
      */
-    tax: number;
+    tax?: number | null;
     /**
      * Total Price of everything in this field (subtotal + shipping + tax).
      */
-    total: number;
+    total?: number | null;
   };
   /**
    * The print queue this order is assigned to

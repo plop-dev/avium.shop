@@ -21,7 +21,7 @@ export const Orders: CollectionConfig = {
 			async ({ operation, data, req }) => {
 				// ensure that customers can only set themselves as the customer on an order
 				if (req.user) {
-					if (data.customer != req.user.id && req.data?.customer) {
+					if (data.customer !== req.user.id && data.customer) {
 						throw new APIError('Cannot set customer to another user.', 400);
 					}
 				} else {
@@ -29,6 +29,18 @@ export const Orders: CollectionConfig = {
 					console.log('Unauthenticated request trying to create/update an order.');
 					throw new APIError('Unauthenticated requests cannot create or modify orders.', 401);
 				}
+
+				// pricing calculation
+				const subtotal = Number(data.pricing?.subtotal) || 0;
+				const shipping = Number(data.pricing?.shipping) || 300;
+				const tax = Number(data.pricing?.tax) || 0;
+				data.pricing = {
+					...data.pricing,
+					subtotal,
+					shipping,
+					tax,
+					total: subtotal + shipping + tax,
+				};
 
 				// queue priority stuff
 				if (operation === 'create') {
@@ -39,9 +51,9 @@ export const Orders: CollectionConfig = {
 					});
 
 					data.queue = lastOrder.docs[0] ? lastOrder.docs[0].queue + 1 : 1;
-
-					return data;
 				}
+
+				return data;
 			},
 		],
 	},
@@ -180,6 +192,7 @@ export const Orders: CollectionConfig = {
 				{
 					name: 'status',
 					type: 'select',
+					defaultValue: 'awaiting-payment',
 					options: [
 						{
 							label: 'Awaiting Payment',
@@ -206,7 +219,6 @@ export const Orders: CollectionConfig = {
 							value: 'cancelled',
 						},
 					],
-					defaultValue: 'pending',
 				},
 				{
 					name: 'paidAt',
@@ -353,34 +365,19 @@ export const Orders: CollectionConfig = {
 			admin: {
 				description: 'Pricing details for the order. EVERYTHING IN PENCE, ALWAYS.',
 			},
-			hooks: {
-				beforeChange: [
-					async ({ data }) => {
-						return {
-							...data,
-							pricing: {
-								...data?.pricing,
-								total: data?.pricing.subtotal + data?.pricing.shipping + data?.pricing.tax,
-							},
-						};
-					},
-				],
-			},
 			fields: [
 				{
 					name: 'subtotal',
 					type: 'number',
-					required: true,
 					admin: {
+						readOnly: true,
 						description:
 							'The subtotal of the order in pennies (or smallest equivalent of the currency). Calculated from the prints.',
-						readOnly: true,
 					},
 				},
 				{
 					name: 'shipping',
 					type: 'number',
-					required: true,
 					defaultValue: 300,
 					admin: {
 						description: 'The shipping cost of the order. Always 300p.',
@@ -389,7 +386,6 @@ export const Orders: CollectionConfig = {
 				{
 					name: 'tax',
 					type: 'number',
-					required: true,
 					defaultValue: 0,
 					admin: {
 						description: 'The tax of the order. Always £0 since we are not VAT registered, yet.',
@@ -398,10 +394,9 @@ export const Orders: CollectionConfig = {
 				{
 					name: 'total',
 					type: 'number',
-					required: true,
 					admin: {
-						description: 'Total Price of everything in this field (subtotal + shipping + tax).',
 						readOnly: true,
+						description: 'Total Price of everything in this field (subtotal + shipping + tax).',
 					},
 				},
 			],

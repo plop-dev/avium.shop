@@ -82,7 +82,7 @@ export default function Basket() {
 					},
 					printingOptions: item.printingOptions,
 					quantity: item.quantity,
-					price: item.price,
+					price: (item.price || 0) * 100,
 				};
 			}
 
@@ -92,11 +92,11 @@ export default function Basket() {
 				blockType: 'shopProduct',
 				product: shopItem.id,
 				quantity: shopItem.quantity,
-				price: shopItem.price,
+				price: (shopItem.price || 0) * 100,
 			};
 		});
 
-		const total = basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+		const total = basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0) * 100;
 
 		const me = await fetch('/api/users/me');
 		if (me.status !== 200) {
@@ -129,6 +129,9 @@ export default function Basket() {
 				shipping: 300,
 				tax: 0,
 				total: total + 300,
+			},
+			payment: {
+				status: 'awaiting-payment',
 			},
 		};
 
