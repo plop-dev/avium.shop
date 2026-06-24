@@ -1,3 +1,4 @@
+import { Order } from '@/payload-types';
 import { APIError, CollectionConfig } from 'payload';
 
 export const Orders: CollectionConfig = {
@@ -54,6 +55,33 @@ export const Orders: CollectionConfig = {
 				}
 
 				return data;
+			},
+		],
+		afterOperation: [
+			async ({ operation, req, result }) => {
+				if (operation === 'create') {
+					// increment the total orders number for each product, if shop products are bought
+
+					if (result.prints.some((print: Order['prints'][number]) => print.blockType === 'shopProduct')) {
+						const shopProducts = result.prints.filter((print: Order['prints'][number]) => print.blockType === 'shopProduct');
+						for (const print of shopProducts) {
+							const productId = typeof print.product === 'string' ? print.product : print.product.id;
+
+							const product = await req.payload.findByID({
+								collection: 'products',
+								id: productId,
+							});
+
+							await req.payload.update({
+								collection: 'products',
+								id: productId,
+								data: {
+									orders: (product.orders || 0) + print.quantity,
+								},
+							});
+						}
+					}
+				}
 			},
 		],
 	},

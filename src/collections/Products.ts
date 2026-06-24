@@ -1,4 +1,4 @@
-import { anyoneAccess } from '@/access/anyone';
+import { anyoneAccess, noAccess } from '@/access/anyone';
 import { adminAccess } from '@/access/elevated';
 import { Plastic } from '@/blocks/Plastic';
 import { CollectionConfig } from 'payload';
@@ -13,13 +13,13 @@ export const Products: CollectionConfig = {
 	admin: {
 		useAsTitle: 'name',
 		//? defaultColumns: ['name', 'customer', 'currentStatus', 'createdAt'],
-		description: 'Products available for purchase in the shop. DO NOT DELETE PRODUCTS, HIDE INSTEAD.',
+		description: 'Products available for purchase in the shop. DO NOT DELETE PRODUCTS, ARCHIVE INSTEAD.',
 	},
 	access: {
 		read: anyoneAccess,
 		create: adminAccess,
 		update: adminAccess,
-		delete: adminAccess,
+		delete: noAccess,
 	},
 	timestamps: true,
 	fields: [

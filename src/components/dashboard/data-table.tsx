@@ -788,7 +788,7 @@ function TableCellViewer({ item }: { item: Order }) {
 							<span className='border rounded-md p-4 font-medium'>{numToGBP(item.total)}</span>
 						</div>
 						<div className='flex flex-col gap-2'>
-							<Label>Queue Position</Label>
+							<Label>Priority</Label>
 							<span className='border rounded-md p-4 font-medium'>{item.queue}</span>
 						</div>
 					</div>

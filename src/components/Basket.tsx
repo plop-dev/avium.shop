@@ -82,21 +82,22 @@ export default function Basket() {
 					},
 					printingOptions: item.printingOptions,
 					quantity: item.quantity,
-					price: (item.price || 0) * 100,
+					price: item.price || 0,
 				};
 			}
 
 			// shop product shape
 			const shopItem = item as ShopProduct;
+			console.log('shopItem price:', shopItem.price);
 			return {
 				blockType: 'shopProduct',
 				product: shopItem.id,
 				quantity: shopItem.quantity,
-				price: (shopItem.price || 0) * 100,
+				price: shopItem.price || 0,
 			};
 		});
 
-		const total = basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0) * 100;
+		const total = basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
 
 		const me = await fetch('/api/users/me');
 		if (me.status !== 200) {
@@ -135,6 +136,7 @@ export default function Basket() {
 			},
 		};
 
+		// create order
 		const res = await fetch('/api/orders', {
 			method: 'POST',
 			headers: {
@@ -145,7 +147,6 @@ export default function Basket() {
 		});
 
 		if (!res.ok) {
-			// TODO: typing?
 			const text = await res.json();
 			console.log('Failed to create order: ', text.errors.join('\n'));
 			toast.error('Failed to create order');

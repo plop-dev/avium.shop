@@ -412,7 +412,7 @@ export interface Order {
   createdAt: string;
 }
 /**
- * Products available for purchase in the shop. DO NOT DELETE PRODUCTS, HIDE INSTEAD.
+ * Products available for purchase in the shop. DO NOT DELETE PRODUCTS, ARCHIVE INSTEAD.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
