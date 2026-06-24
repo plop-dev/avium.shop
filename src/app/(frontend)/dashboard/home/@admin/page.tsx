@@ -454,7 +454,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 			customer: order.customer as { id: string; name: string },
 			shopProducts: prints.filter(p => p.blockType === 'shopProduct').length,
 			customPrints: prints.filter(p => p.blockType === 'customPrint').length,
-			total: order.pricing.total,
+			total: order.pricing.total || 0, // technically will never be 0 since a hook controls the value
 			queue: order.queue || 0,
 			currentStatus: order.status.currentStatus,
 			statuses: order.status.statuses || [],
