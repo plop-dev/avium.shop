@@ -1,5 +1,7 @@
 import { Order } from '@/payload-types';
 import { APIError, CollectionConfig } from 'payload';
+import { adminAccess } from '@/access/elevated';
+import { noAccess, selfAcess } from '@/access/anyone';
 
 export const Orders: CollectionConfig = {
 	slug: 'orders',
@@ -12,21 +14,24 @@ export const Orders: CollectionConfig = {
 		defaultColumns: ['name', 'customer', 'status.currentStatus', 'total', 'createdAt'],
 	},
 	access: {
-		read: () => true,
+		read: selfAcess, // this is fine because the beforeChange hook ensures only the customer can read their own order
 		create: () => true,
-		update: () => true,
-		delete: () => false,
+		update: adminAccess,
+		delete: noAccess,
 	},
 	hooks: {
 		beforeChange: [
 			async ({ operation, data, req }) => {
 				// ensure that customers can only set themselves as the customer on an order
 				if (req.user) {
-					if (data.customer !== req.user.id && data.customer) {
+					if (
+						data.customer !== req.user.id ||
+						!(req.user.role?.includes('admin') || req.user.role?.includes('developer') || req.user.role?.includes('employee'))
+					) {
 						throw new APIError('Cannot set customer to another user.', 400);
 					}
 				} else {
-					// this shouldn't be reachable with proper access control
+					// this shouldn't be reachable with proper authentication/middleware
 					console.log('Unauthenticated request trying to create/update an order.');
 					throw new APIError('Unauthenticated requests cannot create or modify orders.', 401);
 				}

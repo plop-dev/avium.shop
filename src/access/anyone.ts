@@ -7,3 +7,10 @@ export const anyoneAccess: Access = () => {
 export const noAccess: Access = () => {
 	return false;
 };
+
+export const selfAcess: Access = ({ req }) => {
+	if (req.user) {
+		return { id: { equals: req.user.id } };
+	}
+	return false;
+};
