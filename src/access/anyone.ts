@@ -8,7 +8,7 @@ export const noAccess: Access = () => {
 	return false;
 };
 
-export const selfAcess: Access = ({ req }) => {
+export const selfAccess: Access = ({ req }) => {
 	if (req.user) {
 		return { id: { equals: req.user.id } };
 	}

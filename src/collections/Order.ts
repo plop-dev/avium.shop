@@ -1,7 +1,9 @@
 import { Order } from '@/payload-types';
 import { APIError, CollectionConfig } from 'payload';
 import { adminAccess } from '@/access/elevated';
-import { noAccess, selfAcess } from '@/access/anyone';
+import { noAccess, selfAccess } from '@/access/anyone';
+
+const MAX_QUANTITY = 50;
 
 export const Orders: CollectionConfig = {
 	slug: 'orders',
@@ -14,14 +16,14 @@ export const Orders: CollectionConfig = {
 		defaultColumns: ['name', 'customer', 'status.currentStatus', 'total', 'createdAt'],
 	},
 	access: {
-		read: selfAcess, // this is fine because the beforeChange hook ensures only the customer can read their own order
+		read: selfAccess || adminAccess, // this is fine because the beforeChange hook ensures only the customer can read their own order
 		create: () => true,
 		update: adminAccess,
 		delete: noAccess,
 	},
 	hooks: {
 		beforeChange: [
-			async ({ operation, data, req }) => {
+			async ({ operation, data, req, originalDoc }) => {
 				// ensure that customers can only set themselves as the customer on an order
 				if (req.user) {
 					if (
@@ -36,10 +38,70 @@ export const Orders: CollectionConfig = {
 					throw new APIError('Unauthenticated requests cannot create or modify orders.', 401);
 				}
 
+				// make sure the price from products is from the db, not client
+
+				const sourcePrints = Array.isArray(data.prints) && data.prints.length > 0 ? data.prints : originalDoc?.prints || [];
+
+				const normalizedPrints = await Promise.all(
+					sourcePrints.map(async (print: any) => {
+						const quantity = Number(print.quantity);
+
+						if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
+							throw new APIError(`Print quantity must be between 1 and ${MAX_QUANTITY}.`, 400);
+						}
+
+						if (print.blockType === 'shopProduct') {
+							const productId = typeof print.product === 'string' ? print.product : print.product?.id;
+
+							if (!productId) {
+								throw new APIError('Shop product prints must include a product.', 400);
+							}
+
+							const product = await req.payload.findByID({
+								collection: 'products',
+								id: productId,
+							});
+
+							return {
+								...print,
+								product: productId,
+								quantity,
+								price: Number(product.price) || 0,
+							};
+						}
+
+						const quoteId = typeof print.quote === 'string' ? print.quote : print.quote?.id;
+
+						if (!quoteId) {
+							throw new APIError('Custom print must include a quote reference.', 400);
+						}
+
+						const quote = await req.payload.findByID({
+							collection: 'quotes',
+							id: quoteId,
+						});
+
+						const price = Number(quote.price);
+
+						if (!Number.isFinite(price) || price < 0) {
+							throw new APIError('Quote price must be a non-negative number.', 400);
+						}
+
+						return {
+							...print,
+							quote: quoteId,
+							quantity,
+							price,
+						};
+					}),
+				);
+
+				data.prints = normalizedPrints;
+
 				// pricing calculation
-				const subtotal = Number(data.pricing?.subtotal) || 0;
-				const shipping = Number(data.pricing?.shipping) || 300;
-				const tax = Number(data.pricing?.tax) || 0;
+				const subtotal = normalizedPrints.reduce((sum, print) => sum + (Number(print.price) || 0) * Number(print.quantity || 0), 0);
+				const shipping = Number(data.pricing?.shipping ?? originalDoc?.pricing?.shipping) || 300;
+				const tax = Number(data.pricing?.tax ?? originalDoc?.pricing?.tax) || 0;
 				data.pricing = {
 					...data.pricing,
 					subtotal,
@@ -123,8 +185,13 @@ export const Orders: CollectionConfig = {
 					labels: { singular: 'Shop Product', plural: 'Shop Products' },
 					fields: [
 						{ name: 'product', type: 'relationship', relationTo: 'products', required: true },
-						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
-						{ name: 'price', type: 'number', required: true },
+						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1, max: MAX_QUANTITY },
+						{
+							name: 'price',
+							type: 'number',
+							required: true,
+							admin: { readOnly: true, description: 'Price fetched from product at order time' },
+						},
 						{ name: 'completed', type: 'checkbox', defaultValue: false, admin: { description: 'Mark as printed' } },
 					],
 				},
@@ -132,6 +199,13 @@ export const Orders: CollectionConfig = {
 					slug: 'customPrint',
 					labels: { singular: 'Custom Print', plural: 'Custom Prints' },
 					fields: [
+						{
+							name: 'quote',
+							type: 'relationship',
+							relationTo: 'quotes',
+							required: true,
+							admin: { readOnly: true, description: 'Reference to the original quote' },
+						},
 						{
 							name: 'model',
 							type: 'group',
@@ -181,8 +255,13 @@ export const Orders: CollectionConfig = {
 							type: 'number',
 							admin: { description: 'Estimated filament usage in grams as returned by the slicer' },
 						},
-						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1 },
-						{ name: 'price', type: 'number', required: true },
+						{ name: 'quantity', type: 'number', required: true, defaultValue: 1, min: 1, max: MAX_QUANTITY },
+						{
+							name: 'price',
+							type: 'number',
+							required: true,
+							admin: { readOnly: true, description: 'Price fetched from quote at order time' },
+						},
 						{ name: 'completed', type: 'checkbox', defaultValue: false, admin: { description: 'Mark as printed' } },
 					],
 				},

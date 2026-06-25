@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { LoadingSwap } from './ui/loading-swap';
 import { useRouter } from 'next/navigation';
 import { Order } from '@/payload-types';
+import { Where } from 'payload';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -74,30 +75,23 @@ export default function Basket() {
 				// custom print shape
 				return {
 					blockType: 'customPrint',
-					model: {
-						filename: item.model.filename,
-						filetype: item.model.filetype,
-						modelUrl: item.model.modelUrl,
-						gcodeUrl: item.model.gcodeUrl,
-					},
+					quote: item.id,
+					model: item.model,
 					printingOptions: item.printingOptions,
 					quantity: item.quantity,
-					price: item.price || 0,
+					price: 0,
 				};
 			}
 
 			// shop product shape
 			const shopItem = item as ShopProduct;
-			console.log('shopItem price:', shopItem.price);
 			return {
 				blockType: 'shopProduct',
 				product: shopItem.id,
 				quantity: shopItem.quantity,
-				price: shopItem.price || 0,
+				price: 0,
 			};
 		});
-
-		const total = basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
 
 		const me = await fetch('/api/users/me');
 		if (me.status !== 200) {
@@ -107,7 +101,11 @@ export default function Basket() {
 		}
 		const userId = (await me.json()).user.id;
 
-		const orders = await (await fetch(`/api/orders?sort=-queue`)).json();
+		const orders = await (
+			await fetch(`/api/orders?sort=-queue&limit=1&select[queue]=true&depth=0`, {
+				method: 'GET',
+			})
+		).json();
 		const queue = orders?.docs?.[0]?.queue ? orders.docs[0].queue + 1 : 1;
 
 		const payload = {
@@ -126,10 +124,8 @@ export default function Basket() {
 			},
 			comments: orderDetails.comments,
 			pricing: {
-				subtotal: total,
 				shipping: 300,
 				tax: 0,
-				total: total + 300,
 			},
 			payment: {
 				status: 'awaiting-payment',
@@ -248,7 +244,7 @@ export default function Basket() {
 
 				<DrawerFooter>
 					<div className=''>
-						<h3 className='font-bold text-xl'>Total:</h3>
+						<h3 className='font-bold text-xl'>Estimated total:</h3>
 						<p>{numToGBP(basketItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0))}</p>
 					</div>
 

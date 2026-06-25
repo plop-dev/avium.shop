@@ -1,4 +1,4 @@
-import { anyoneAccess } from '@/access/anyone';
+import { anyoneAccess, selfAccess } from '@/access/anyone';
 import { adminAccess, devAccess } from '@/access/elevated';
 import { getServerSideURL } from '@/utils/getServerSideUrl';
 import type { CollectionConfig } from 'payload';
@@ -9,11 +9,11 @@ export const Users: CollectionConfig = {
 		useAsTitle: 'name',
 	},
 	access: {
-		read: anyoneAccess,
-		update: anyoneAccess,
+		read: adminAccess || selfAccess,
+		update: adminAccess,
 		create: anyoneAccess,
 		delete: () => false,
-		unlock: anyoneAccess,
+		unlock: selfAccess,
 	},
 	auth: {
 		verify: {
