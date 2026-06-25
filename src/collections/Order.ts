@@ -62,11 +62,17 @@ export const Orders: CollectionConfig = {
 								id: productId,
 							});
 
+							const price = Number(product?.price);
+
+							if (!Number.isFinite(price) || price <= 0) {
+								throw new APIError(`Product price is invalid or missing. Got: ${product?.price}`, 400);
+							}
+
 							return {
 								...print,
 								product: productId,
 								quantity,
-								price: Number(product.price) || 0,
+								price: Math.round(price),
 							};
 						}
 
@@ -83,8 +89,8 @@ export const Orders: CollectionConfig = {
 
 						const price = Number(quote.price);
 
-						if (!Number.isFinite(price) || price < 0) {
-							throw new APIError('Quote price must be a non-negative number.', 400);
+						if (!Number.isFinite(price) || price <= 0) {
+							throw new APIError(`Quote price is invalid or missing. Got: ${quote?.price}`, 400);
 						}
 
 						return {

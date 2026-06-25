@@ -207,6 +207,9 @@ export interface Order {
     | {
         product: string | Product;
         quantity: number;
+        /**
+         * Price fetched from product at order time
+         */
         price: number;
         /**
          * Mark as printed
@@ -217,6 +220,10 @@ export interface Order {
         blockType: 'shopProduct';
       }
     | {
+        /**
+         * Reference to the original quote
+         */
+        quote: string | Quote;
         /**
          * The 3D model associated with this item
          */
@@ -248,6 +255,9 @@ export interface Order {
          */
         filament?: number | null;
         quantity: number;
+        /**
+         * Price fetched from quote at order time
+         */
         price: number;
         /**
          * Mark as printed
@@ -496,27 +506,6 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "presets".
- */
-export interface Preset {
-  id: string;
-  /**
-   * The name of the preset
-   */
-  name: string;
-  /**
-   * A brief description of the preset
-   */
-  description?: string | null;
-  /**
-   * The filename of the profile of the preset (process) in Bambu Studio/Orca Slicer. DO NOT INCLUDE FILE EXTENSION. See C:\Program Files\OrcaSlicer\resources\profiles\BBL\process
-   */
-  bambulabName?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "quotes".
  */
 export interface Quote {
@@ -562,6 +551,27 @@ export interface Quote {
    */
   time?: string | null;
   price?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "presets".
+ */
+export interface Preset {
+  id: string;
+  /**
+   * The name of the preset
+   */
+  name: string;
+  /**
+   * A brief description of the preset
+   */
+  description?: string | null;
+  /**
+   * The filename of the profile of the preset (process) in Bambu Studio/Orca Slicer. DO NOT INCLUDE FILE EXTENSION. See C:\Program Files\OrcaSlicer\resources\profiles\BBL\process
+   */
+  bambulabName?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -782,6 +792,7 @@ export interface OrdersSelect<T extends boolean = true> {
         customPrint?:
           | T
           | {
+              quote?: T;
               model?:
                 | T
                 | {

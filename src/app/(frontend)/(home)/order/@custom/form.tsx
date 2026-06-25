@@ -985,6 +985,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 							plastic: item.material.plastic,
 							...item.printingOptions,
 						},
+						price: quote.sliceResult.price || 0,
+						time: quote.sliceResult.times?.total || '',
+						filament: Number.parseFloat(quote.sliceResult.filament?.used_g || '') || undefined,
 					}),
 				});
 
