@@ -1,7 +1,7 @@
 import { Order } from '@/payload-types';
 import { APIError, CollectionConfig } from 'payload';
 import { adminAccess } from '@/access/elevated';
-import { noAccess, selfAccess } from '@/access/anyone';
+import { noAccess, selfAccessOrders } from '@/access/anyone';
 
 const MAX_QUANTITY = 50;
 
@@ -16,9 +16,9 @@ export const Orders: CollectionConfig = {
 		defaultColumns: ['name', 'customer', 'status.currentStatus', 'total', 'createdAt'],
 	},
 	access: {
-		read: selfAccess || adminAccess, // this is fine because the beforeChange hook ensures only the customer can read their own order
+		read: selfAccessOrders || adminAccess,
 		create: () => true,
-		update: adminAccess,
+		update: selfAccessOrders || adminAccess,
 		delete: noAccess,
 	},
 	hooks: {
@@ -32,10 +32,6 @@ export const Orders: CollectionConfig = {
 					) {
 						throw new APIError('Cannot set customer to another user.', 400);
 					}
-				} else {
-					// this shouldn't be reachable with proper authentication/middleware
-					console.log('Unauthenticated request trying to create/update an order.');
-					throw new APIError('Unauthenticated requests cannot create or modify orders.', 401);
 				}
 
 				// make sure the price from products is from the db, not client
@@ -310,7 +306,6 @@ export const Orders: CollectionConfig = {
 				{
 					name: 'status',
 					type: 'select',
-					defaultValue: 'awaiting-payment',
 					options: [
 						{
 							label: 'Awaiting Payment',
@@ -335,6 +330,10 @@ export const Orders: CollectionConfig = {
 						{
 							label: 'Cancelled',
 							value: 'cancelled',
+						},
+						{
+							label: 'Expired',
+							value: 'expired',
 						},
 					],
 				},

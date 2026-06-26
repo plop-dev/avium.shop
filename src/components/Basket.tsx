@@ -17,6 +17,7 @@ import { LoadingSwap } from './ui/loading-swap';
 import { useRouter } from 'next/navigation';
 import { Order } from '@/payload-types';
 import { Where } from 'payload';
+import { checkout } from '@/actions/checkout';
 
 // Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -79,7 +80,7 @@ export default function Basket() {
 					model: item.model,
 					printingOptions: item.printingOptions,
 					quantity: item.quantity,
-					price: 0,
+					price: 0, // price will be calculated server-side based on the quote
 				};
 			}
 
@@ -89,7 +90,7 @@ export default function Basket() {
 				blockType: 'shopProduct',
 				product: shopItem.id,
 				quantity: shopItem.quantity,
-				price: 0,
+				price: 0, // price will be calculated server-side based on the product
 			};
 		});
 
@@ -150,14 +151,23 @@ export default function Basket() {
 			return;
 		}
 
+		const resJSON = await res.json();
+
 		toast.success('Order created successfully.');
 
-		setIsSubmitting(false); //? maybe
 		setOrderDetails({ orderName: '', comments: '' });
 		setOrderNameValid(false, '');
 		resetBasket();
 
-		router.push('/dashboard/home');
+		toast.info('Redirecting to checkout...');
+		const checkoutRes = await checkout(resJSON.doc.id);
+		if (!checkoutRes.success) {
+			toast.error(checkoutRes.message || 'Failed to create checkout session.');
+			setIsSubmitting(false);
+			return;
+		}
+
+		//! WAIT FOR STRIPE CHECKOUT REDIRECT BEFORE CREATING ORDER??
 	};
 
 	return (

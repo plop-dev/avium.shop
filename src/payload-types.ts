@@ -297,7 +297,9 @@ export interface Order {
      * Amount paid
      */
     amount?: number | null;
-    status?: ('awaiting-payment' | 'paid' | 'failed' | 'refunded' | 'partially-refunded' | 'cancelled') | null;
+    status?:
+      | ('awaiting-payment' | 'paid' | 'failed' | 'refunded' | 'partially-refunded' | 'cancelled' | 'expired')
+      | null;
     /**
      * Date and time when the payment was made
      */
