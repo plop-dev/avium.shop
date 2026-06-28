@@ -25,11 +25,11 @@ export const Orders: CollectionConfig = {
 		beforeChange: [
 			async ({ operation, data, req, originalDoc }) => {
 				// ensure that customers can only set themselves as the customer on an order
-				if (req.user) {
-					if (
-						data.customer !== req.user.id ||
-						!(req.user.role?.includes('admin') || req.user.role?.includes('developer') || req.user.role?.includes('employee'))
-					) {
+				if (req.user && typeof data.customer !== 'undefined') {
+					const roles = Array.isArray(req.user.role) ? req.user.role : req.user.role ? [req.user.role] : [];
+					const isPrivileged = roles.some(role => ['admin', 'developer', 'employee'].includes(role));
+
+					if (data.customer !== req.user.id && !isPrivileged) {
 						throw new APIError('Cannot set customer to another user.', 400);
 					}
 				}
@@ -105,12 +105,16 @@ export const Orders: CollectionConfig = {
 				const shipping = Number(data.pricing?.shipping ?? originalDoc?.pricing?.shipping) || 300;
 				const tax = Number(data.pricing?.tax ?? originalDoc?.pricing?.tax) || 0;
 				data.pricing = {
-					...data.pricing,
 					subtotal,
 					shipping,
 					tax,
 					total: subtotal + shipping + tax,
 				};
+
+				if (operation === 'update') {
+					data.queue = originalDoc?.queue ?? data.queue;
+					data.shippingAddress = originalDoc?.shippingAddress ?? data.shippingAddress;
+				}
 
 				// queue priority stuff
 				if (operation === 'create') {

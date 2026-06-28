@@ -118,6 +118,56 @@ export const schema = z.object({
 	currentStatus: z.enum(['in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
 	comments: z.string().optional(),
 	createdAt: z.string(),
+	payment: z
+		.object({
+			provider: z.string().optional(),
+			stripeCustomerId: z.string().optional(),
+			stripeCheckoutSessionId: z.string().optional(),
+			stripePaymentIntentId: z.string().optional(),
+			stripeChargeId: z.string().optional(),
+			currency: z.string().optional(),
+			amount: z.number().optional(),
+			status: z.string().optional(),
+			paidAt: z.string().optional(),
+			refunded: z.boolean().optional(),
+			refundedAmount: z.number().optional(),
+			refundedAt: z.string().optional(),
+			receiptUrl: z.string().optional(),
+		})
+		.optional(),
+	shipping: z
+		.object({
+			shipmentId: z.string().optional(),
+			transactionId: z.string().optional(),
+			carrier: z.string().optional(),
+			service: z.string().optional(),
+			trackingNumber: z.string().optional(),
+			trackingUrl: z.string().optional(),
+			labelUrl: z.string().optional(),
+			labelPurchasedAt: z.string().optional(),
+			shippedAt: z.string().optional(),
+			deliveredAt: z.string().optional(),
+		})
+		.optional(),
+	shippingAddress: z
+		.object({
+			fullName: z.string().optional(),
+			line1: z.string().optional(),
+			line2: z.string().optional(),
+			city: z.string().optional(),
+			county: z.string().optional(),
+			postcode: z.string().optional(),
+			country: z.string().optional(),
+		})
+		.optional(),
+	pricing: z
+		.object({
+			subtotal: z.number().optional(),
+			shipping: z.number().optional(),
+			tax: z.number().optional(),
+			total: z.number().optional(),
+		})
+		.optional(),
 	prints: z
 		.array(
 			z.union([
@@ -667,8 +717,42 @@ function TableCellViewer({ item }: { item: Order }) {
 	const isMobile = useIsMobile();
 	const [currentStatus, setCurrentStatus] = React.useState(item.currentStatus);
 	const [statusHistory, setStatusHistory] = React.useState(item.statuses);
-	const [completedPrints, setCompletedPrints] = React.useState<string[]>();
 	const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+	const [orderName, setOrderName] = React.useState(item.name);
+	const [customerId, setCustomerId] = React.useState(item.customer.id);
+	const [customerName, setCustomerName] = React.useState(item.customer.name);
+	const [comments, setComments] = React.useState(item.comments || '');
+	const [payment, setPayment] = React.useState(item.payment);
+	const [shipping, setShipping] = React.useState(item.shipping);
+	const [shippingAddress, setShippingAddress] = React.useState(item.shippingAddress);
+	const pricing = item.pricing;
+	const queue = item.queue;
+	const [prints, setPrints] = React.useState(item.prints || []);
+
+	React.useEffect(() => {
+		setCurrentStatus(item.currentStatus);
+		setStatusHistory(item.statuses);
+		setOrderName(item.name);
+		setCustomerId(item.customer.id);
+		setCustomerName(item.customer.name);
+		setComments(item.comments || '');
+		setPayment(item.payment);
+		setShipping(item.shipping);
+		setShippingAddress(item.shippingAddress);
+		setPrints(item.prints || []);
+	}, [
+		item.id,
+		item.name,
+		item.customer.id,
+		item.customer.name,
+		item.comments,
+		item.currentStatus,
+		item.statuses,
+		item.payment,
+		item.shipping,
+		item.shippingAddress,
+		item.prints,
+	]);
 
 	const statusList = statusSteps.map(step => step.value);
 
@@ -686,31 +770,23 @@ function TableCellViewer({ item }: { item: Order }) {
 
 			return [...previousStatuses, { stage: newStatus as z.infer<typeof schema>['currentStatus'], timestamp: now }];
 		});
-
-		// toast.success(`Order status updated to ${newStatus}`);
-	};
-
-	const handleMarkAsCompleted = (id: string, completed: boolean) => {
-		if (completed) setCompletedPrints(prev => (prev ? [...prev, id] : [id]));
-		else setCompletedPrints(prev => (prev ? prev.filter(id => id !== id) : []));
 	};
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const formData = new FormData(e.currentTarget);
+
 		const data = {
-			orderId: item.id,
+			name: orderName.trim(),
+			customer: customerId || item.customer.id,
 			status: {
 				statuses: statusHistory,
 				currentStatus: currentStatus,
 			},
-			prints: item.prints?.map(print => {
-				if (print.id === completedPrints?.find(id => id === print.id)) {
-					return { ...print, completed: true };
-				}
-				return print;
-			}),
-			comments: formData.get('comments') || '',
+			prints: prints.map(print => ({ ...print })),
+			comments,
+			payment,
+			shipping,
+			shippingAddress,
 		};
 
 		const where: Where = {
@@ -738,8 +814,8 @@ function TableCellViewer({ item }: { item: Order }) {
 		}
 	};
 
-	const customPrints = item.prints?.filter(p => p.blockType === 'customPrint') || [];
-	const shopProducts = item.prints?.filter(p => p.blockType === 'shopProduct') || [];
+	const customPrints = prints.filter(p => p.blockType === 'customPrint') || [];
+	const shopProducts = prints.filter(p => p.blockType === 'shopProduct') || [];
 
 	const handleDownload = (url: string, filename: string) => {
 		const link = document.createElement('a');
@@ -768,315 +844,832 @@ function TableCellViewer({ item }: { item: Order }) {
 					{item.name}
 				</Button>
 			</DrawerTrigger>
-			<DrawerContent>
+			<DrawerContent className='max-h-[95vh]'>
 				<DrawerHeader className='gap-1'>
 					<DrawerTitle>
-						{item.name}
+						{orderName}
 						<p className='text-sm text-muted-foreground'>{item.id}</p>
 					</DrawerTitle>
-					<DrawerDescription>View order details and edit the status</DrawerDescription>
+					<DrawerDescription>Review and update the full order record.</DrawerDescription>
 				</DrawerHeader>
-				<form onSubmit={handleSubmit} id='order-form' className='flex flex-col gap-4 overflow-y-auto px-4 text-sm'>
-					<div className='flex flex-col gap-3'>
-						<Label htmlFor='name'>Name</Label>
-						<div className='border rounded-md p-4 font-medium'>{item.name}</div>
-					</div>
-
-					<div className='grid grid-cols-[2fr_1fr] grid-rows-1 gap-y-3 gap-x-2'>
-						<div className='flex flex-col gap-2'>
-							<Label>Price</Label>
-							<span className='border rounded-md p-4 font-medium'>{numToGBP(item.total)}</span>
-						</div>
-						<div className='flex flex-col gap-2'>
-							<Label>Priority</Label>
-							<span className='border rounded-md p-4 font-medium'>{item.queue}</span>
-						</div>
-					</div>
-
-					<div className='rounded-xl flex flex-col gap-3'>
-						<Label>Customer</Label>
-						<span className='flex gap-x-2 border rounded-md p-4'>
-							<User size={16}></User> {item.customer.name}
-						</span>
-					</div>
-
-					<div className='flex flex-col gap-3'>
-						<Label>Order Status</Label>
-						<div className='border rounded-md p-4'>
-							<StatusTimeline
-								currentStatus={currentStatus}
-								statusHistory={statusHistory}
-								onUpdateStatus={handleStatusUpdate}
-							/>
-						</div>
-					</div>
-
-					<div className='flex flex-col gap-3'>
-						<div className='flex items-center justify-between'>
-							<Label className='text-base'>Prints</Label>
-							<div className='flex gap-2 text-xs text-muted-foreground'>
-								<span>Custom: {customPrints.length}</span>
-								<span>•</span>
-								<span>Shop: {shopProducts.length}</span>
+				<form onSubmit={handleSubmit} id='order-form' className='flex flex-col gap-4 overflow-y-auto px-4 pb-4 text-sm'>
+					<div className='flex flex-col gap-4'>
+						<div className='rounded-xl border bg-card p-4'>
+							<div className='flex flex-col gap-3'>
+								<Label htmlFor='order-name'>Order Name</Label>
+								<Input id='order-name' value={orderName} onChange={e => setOrderName(e.target.value)} />
+							</div>
+							<div className='mt-3 grid gap-3 md:grid-cols-2'>
+								<div className='flex flex-col gap-2'>
+									<Label htmlFor='customer-id'>Customer ID</Label>
+									<Input id='customer-id' value={customerId} onChange={e => setCustomerId(e.target.value)} />
+								</div>
+								<div className='flex flex-col gap-2'>
+									<Label htmlFor='customer-name'>Customer Name</Label>
+									<Input id='customer-name' value={customerName} readOnly />
+								</div>
 							</div>
 						</div>
 
-						{/* prints view */}
-						<div className='flex flex-col gap-4'>
-							<Accordion type='multiple' className=''>
-								{customPrints.length > 0 && (
-									<div className='flex flex-col gap-2'>
-										<AccordionItem value='custom-prints-details'>
-											<AccordionTrigger>
-												<h4 className='text-sm font-semibold text-muted-foreground'>
-													Custom Prints
-													<Badge
-														variant={'secondary'}
-														className='ml-2 bg-muted-foreground/30 size-5 rounded-full px-1'>
-														{customPrints.length}
-													</Badge>
-												</h4>
-											</AccordionTrigger>
-											<AccordionContent>
-												<div className='flex flex-col gap-3'>
-													{customPrints.map((print, index) => {
-														if (print.blockType !== 'customPrint') return null;
-														return (
-															<Card key={print.id}>
-																<CardHeader className='pb-3'>
-																	<div className='flex items-start justify-between'>
-																		<div className='space-y-1 flex-1'>
-																			<CardTitle className='text-sm font-medium'>
-																				{print.model.filename}
-																			</CardTitle>
-																			<CardDescription className='text-xs'>
-																				Custom Print #{index + 1}
-																			</CardDescription>
-																		</div>
-																		<Badge variant='secondary' className='ml-2'>
-																			{numToGBP(print.price)}
-																		</Badge>
-																	</div>
-																</CardHeader>
-																<CardContent className='space-y-3 pt-0'>
-																	<div className='grid grid-cols-2 gap-2 text-xs'>
-																		<div className='space-y-1'>
-																			<Label className='text-muted-foreground'>File Type</Label>
-																			<p className='font-medium uppercase'>{print.model.filetype}</p>
-																		</div>
-																		<div className='space-y-1'>
-																			<Label className='text-muted-foreground'>Quantity</Label>
-																			<p className='font-medium'>{print.quantity}</p>
-																		</div>
-																	</div>
+						<div className='rounded-xl border bg-card p-4'>
+							<div className='flex flex-col gap-3'>
+								<div className='flex items-center justify-between'>
+									<Label className='text-base'>Order Status</Label>
+									<Badge variant='secondary'>{currentStatus}</Badge>
+								</div>
+								<StatusTimeline
+									currentStatus={currentStatus}
+									statusHistory={statusHistory}
+									onUpdateStatus={handleStatusUpdate}
+								/>
+							</div>
+						</div>
 
-																	<div className='space-y-2'>
-																		<Label className='text-xs text-muted-foreground'>
-																			Printing Options
-																		</Label>
-																		<div className='grid grid-cols-2 gap-2 text-xs'>
-																			<div className='space-y-1'>
-																				<Label className='text-muted-foreground'>Material</Label>
-																				<p className='font-medium'>
-																					{print.printingOptions.plastic}
-																				</p>
+						<div className='rounded-xl border bg-card p-4'>
+							<div className='flex items-center justify-between'>
+								<Label className='text-base'>Prints</Label>
+								<div className='flex gap-2 text-xs text-muted-foreground'>
+									<span>Custom: {customPrints.length}</span>
+									<span>•</span>
+									<span>Shop: {shopProducts.length}</span>
+								</div>
+							</div>
+
+							<div className='mt-3 flex flex-col gap-4'>
+								<Accordion type='multiple'>
+									{customPrints.length > 0 && (
+										<div className='flex flex-col gap-2'>
+											<AccordionItem value='custom-prints-details'>
+												<AccordionTrigger>
+													<h4 className='text-sm font-semibold text-muted-foreground'>
+														Custom Prints
+														<Badge
+															variant='secondary'
+															className='ml-2 bg-muted-foreground/30 size-5 rounded-full px-1'>
+															{customPrints.length}
+														</Badge>
+													</h4>
+												</AccordionTrigger>
+												<AccordionContent>
+													<div className='flex flex-col gap-3'>
+														{customPrints.map((print, index) => {
+															if (print.blockType !== 'customPrint') return null;
+															return (
+																<Card key={print.id}>
+																	<CardHeader className='pb-3'>
+																		<div className='flex items-start justify-between'>
+																			<div className='space-y-1 flex-1'>
+																				<CardTitle className='text-sm font-medium'>
+																					{print.model.filename}
+																				</CardTitle>
+																				<CardDescription className='text-xs'>
+																					Custom Print #{index + 1}
+																				</CardDescription>
 																			</div>
-																			<div className='space-y-1'>
-																				<Label className='text-muted-foreground'>Colour</Label>
-																				<p className='font-medium'>
-																					{print.printingOptions.colour}
-																				</p>
+																			<Badge variant='secondary'>{numToGBP(print.price)}</Badge>
+																		</div>
+																	</CardHeader>
+																	<CardContent className='space-y-3 pt-0'>
+																		<div className='grid gap-3 md:grid-cols-2'>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Filename</Label>
+																				<Input
+																					value={print.model.filename}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											model: {
+																												...item.model,
+																												filename: e.target.value,
+																											},
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
 																			</div>
-																			{print.printingOptions.layerHeight && (
-																				<div className='space-y-1'>
-																					<Label className='text-muted-foreground'>
-																						Layer Height
-																					</Label>
-																					<p className='font-medium'>
-																						{print.printingOptions.layerHeight}mm
-																					</p>
-																				</div>
-																			)}
-																			{print.printingOptions.infill !== undefined && (
-																				<div className='space-y-1'>
-																					<Label className='text-muted-foreground'>Infill</Label>
-																					<p className='font-medium'>
-																						{print.printingOptions.infill}%
-																					</p>
-																				</div>
-																			)}
+																			<div className='flex flex-col gap-2'>
+																				<Label>File Type</Label>
+																				<Select
+																					value={print.model.filetype}
+																					onValueChange={value =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											model: {
+																												...item.model,
+																												filetype: value as
+																													| 'stl'
+																													| '3mf',
+																											},
+																										}
+																									: item,
+																							),
+																						)
+																					}>
+																					<SelectTrigger>
+																						<SelectValue />
+																					</SelectTrigger>
+																					<SelectContent>
+																						<SelectItem value='stl'>STL</SelectItem>
+																						<SelectItem value='3mf'>3MF</SelectItem>
+																					</SelectContent>
+																				</Select>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Model URL</Label>
+																				<Input
+																					value={print.model.modelUrl}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											model: {
+																												...item.model,
+																												modelUrl: e.target.value,
+																											},
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>G-code URL</Label>
+																				<Input
+																					value={print.model.gcodeUrl}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											model: {
+																												...item.model,
+																												gcodeUrl: e.target.value,
+																											},
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
 																		</div>
-																	</div>
 
-																	{(print.time || print.filament) && (
-																		<div className='grid grid-cols-2 gap-2 text-xs'>
-																			{print.time && (
-																				<div className='space-y-1'>
-																					<Label className='text-muted-foreground'>
-																						Estimated Time
-																					</Label>
-																					<p className='font-medium'>{print.time}</p>
-																				</div>
-																			)}
-																			{print.filament && (
-																				<div className='space-y-1'>
-																					<Label className='text-muted-foreground'>
-																						Filament
-																					</Label>
-																					<p className='font-medium'>{print.filament}g</p>
-																				</div>
-																			)}
+																		<div className='grid gap-3 md:grid-cols-2'>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Preset</Label>
+																				<Input
+																					value={print.printingOptions.preset || ''}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											printingOptions: {
+																												...item.printingOptions,
+																												preset: e.target.value,
+																											},
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Layer Height</Label>
+																				<Input
+																					type='number'
+																					value={print.printingOptions.layerHeight ?? ''}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											printingOptions: {
+																												...item.printingOptions,
+																												layerHeight: Number(
+																													e.target.value,
+																												),
+																											},
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Infill %</Label>
+																				<Input
+																					type='number'
+																					value={print.printingOptions.infill ?? ''}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											printingOptions: {
+																												...item.printingOptions,
+																												infill: Number(
+																													e.target.value,
+																												),
+																											},
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Material</Label>
+																				<Input
+																					value={print.printingOptions.plastic}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											printingOptions: {
+																												...item.printingOptions,
+																												plastic: e.target.value,
+																											},
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Colour</Label>
+																				<Input
+																					value={print.printingOptions.colour}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											printingOptions: {
+																												...item.printingOptions,
+																												colour: e.target.value,
+																											},
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Estimated Time</Label>
+																				<Input
+																					value={print.time || ''}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											time:
+																												e.target.value || undefined,
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Filament (g)</Label>
+																				<Input
+																					type='number'
+																					value={print.filament ?? ''}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id &&
+																								item.blockType === 'customPrint'
+																									? {
+																											...item,
+																											filament:
+																												Number(e.target.value) ||
+																												undefined,
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Quantity</Label>
+																				<Input
+																					type='number'
+																					value={print.quantity}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id
+																									? {
+																											...item,
+																											quantity: Number(
+																												e.target.value,
+																											),
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Price</Label>
+																				<Input type='number' value={print.price} readOnly />
+																			</div>
 																		</div>
-																	)}
 
-																	<Separator />
+																		<div className='flex gap-2'>
+																			<Button
+																				type='button'
+																				variant='outline'
+																				size='sm'
+																				onClick={() =>
+																					handleDownload(
+																						print.model.modelUrl,
+																						print.model.filename,
+																					)
+																				}>
+																				<Download className='mr-2 size-3.5' />
+																				STL
+																			</Button>
+																			<Button
+																				type='button'
+																				variant='outline'
+																				size='sm'
+																				onClick={() =>
+																					handleDownload(
+																						print.model.gcodeUrl,
+																						print.model.filename.replace(
+																							/\.(stl|3mf)$/i,
+																							'.gcode',
+																						),
+																					)
+																				}>
+																				<Download className='mr-2 size-3.5' />
+																				G-code
+																			</Button>
+																		</div>
 
-																	<div className='grid grid-cols-2 gap-2'>
+																		<Toggle
+																			variant='outline'
+																			size='sm'
+																			pressed={print.completed}
+																			onPressedChange={value =>
+																				setPrints(prev =>
+																					prev.map(item =>
+																						item.id === print.id
+																							? { ...item, completed: value }
+																							: item,
+																					),
+																				)
+																			}
+																			className='cursor-pointer justify-center data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full transition-colors'>
+																			<Check className='mr-2 size-4' />
+																			Mark as Completed
+																		</Toggle>
+																	</CardContent>
+																</Card>
+															);
+														})}
+													</div>
+												</AccordionContent>
+											</AccordionItem>
+										</div>
+									)}
+
+									{shopProducts.length > 0 && (
+										<div className='flex flex-col gap-2'>
+											<AccordionItem value='shop-products-details'>
+												<AccordionTrigger>
+													<h4 className='text-sm font-semibold text-muted-foreground'>
+														Shop Products
+														<Badge
+															variant='secondary'
+															className='ml-2 bg-muted-foreground/30 size-5 rounded-full px-1'>
+															{shopProducts.length}
+														</Badge>
+													</h4>
+												</AccordionTrigger>
+												<AccordionContent>
+													<div className='flex flex-col gap-3'>
+														{shopProducts.map((print, index) => {
+															if (print.blockType !== 'shopProduct') return null;
+															return (
+																<Card key={print.id}>
+																	<CardHeader className='pb-3'>
+																		<div className='flex items-start justify-between'>
+																			<div className='space-y-1 flex-1'>
+																				<CardTitle className='text-sm font-medium'>
+																					{print.product}
+																				</CardTitle>
+																				<CardDescription className='text-xs'>
+																					Shop Product #{index + 1}
+																				</CardDescription>
+																			</div>
+																			<Badge variant='secondary'>{numToGBP(print.price)}</Badge>
+																		</div>
+																	</CardHeader>
+																	<CardContent className='space-y-3 pt-0'>
+																		<div className='grid gap-3 md:grid-cols-2'>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Product ID</Label>
+																				<Input
+																					value={print.product}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id
+																									? {
+																											...item,
+																											product: e.target.value,
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Quantity</Label>
+																				<Input
+																					type='number'
+																					value={print.quantity}
+																					onChange={e =>
+																						setPrints(prev =>
+																							prev.map(item =>
+																								item.id === print.id
+																									? {
+																											...item,
+																											quantity: Number(
+																												e.target.value,
+																											),
+																										}
+																									: item,
+																							),
+																						)
+																					}
+																				/>
+																			</div>
+																			<div className='flex flex-col gap-2'>
+																				<Label>Price</Label>
+																				<Input type='number' value={print.price} readOnly />
+																			</div>
+																		</div>
 																		<Button
 																			type='button'
 																			variant='outline'
 																			size='sm'
 																			className='w-full'
-																			onClick={() =>
-																				handleDownload(print.model.modelUrl, print.model.filename)
-																			}>
+																			onClick={() => handleProductDownload(print.id)}>
 																			<Download className='mr-2 size-3.5' />
 																			STL
 																		</Button>
-																		<Button
-																			type='button'
+																		<Toggle
 																			variant='outline'
 																			size='sm'
-																			className='w-full'
-																			onClick={() =>
-																				handleDownload(
-																					print.model.gcodeUrl,
-																					print.model.filename.replace(/\.(stl|3mf)$/i, '.gcode'),
+																			pressed={print.completed}
+																			onPressedChange={value =>
+																				setPrints(prev =>
+																					prev.map(item =>
+																						item.id === print.id
+																							? { ...item, completed: value }
+																							: item,
+																					),
 																				)
-																			}>
-																			<Download className='mr-2 size-3.5' />
-																			G-code
-																		</Button>
-																	</div>
+																			}
+																			className='cursor-pointer justify-center data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full transition-colors'>
+																			<Check className='mr-2 size-4' />
+																			Mark as Completed
+																		</Toggle>
+																	</CardContent>
+																</Card>
+															);
+														})}
+													</div>
+												</AccordionContent>
+											</AccordionItem>
+										</div>
+									)}
+								</Accordion>
 
-																	<Toggle
-																		variant='outline'
-																		size='sm'
-																		defaultPressed={print.completed}
-																		onPressedChange={e => handleMarkAsCompleted(print.id, e)}
-																		className='cursor-pointer justify-center data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full transition-colors'>
-																		<Check className='mr-2 size-4' />
-																		Mark as Completed
-																	</Toggle>
-																</CardContent>
-															</Card>
-														);
-													})}
-												</div>
-											</AccordionContent>
-										</AccordionItem>
+								{customPrints.length === 0 && shopProducts.length === 0 && (
+									<div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center'>
+										<Package className='mb-2 size-8 text-muted-foreground' />
+										<p className='text-sm text-muted-foreground'>No prints in this order</p>
 									</div>
 								)}
-
-								{customPrints.length > 0 && shopProducts.length > 0 && <Separator />}
-
-								{shopProducts.length > 0 && (
-									<div className='flex flex-col gap-2'>
-										<AccordionItem value='shop-products-details'>
-											<AccordionTrigger>
-												<h4 className='text-sm font-semibold text-muted-foreground'>
-													Shop Products
-													<Badge
-														variant={'secondary'}
-														className='ml-2 bg-muted-foreground/30 size-5 rounded-full px-1'>
-														{shopProducts.length}
-													</Badge>
-												</h4>
-											</AccordionTrigger>
-											<AccordionContent>
-												<div className='flex flex-col gap-3'>
-													{shopProducts.map((print, index) => {
-														if (print.blockType !== 'shopProduct') return null;
-														return (
-															<Card key={print.id}>
-																<CardHeader className='pb-3'>
-																	<div className='flex items-start justify-between'>
-																		<div className='space-y-1 flex-1'>
-																			<CardTitle className='text-sm font-medium'>
-																				{print.product}
-																			</CardTitle>
-																			<CardDescription className='text-xs'>
-																				Shop Product #{index + 1}
-																			</CardDescription>
-																		</div>
-																		<Badge variant='secondary' className='ml-2'>
-																			{numToGBP(print.price)}
-																		</Badge>
-																	</div>
-																</CardHeader>
-																<CardContent className='space-y-3 pt-0'>
-																	<div className='grid grid-cols-2 gap-2 text-xs'>
-																		<div className='space-y-1'>
-																			<Label className='text-muted-foreground'>Product ID</Label>
-																			<p className='font-medium font-mono text-xs truncate'>
-																				{print.product}
-																			</p>
-																		</div>
-																		<div className='space-y-1'>
-																			<Label className='text-muted-foreground'>Quantity</Label>
-																			<p className='font-medium'>{print.quantity}</p>
-																		</div>
-																	</div>
-
-																	<Button
-																		type='button'
-																		variant='outline'
-																		size='sm'
-																		className='w-full'
-																		onClick={() => handleProductDownload(print.id)}>
-																		<Download className='mr-2 size-3.5' />
-																		STL
-																	</Button>
-
-																	<Toggle
-																		variant='outline'
-																		size='sm'
-																		defaultPressed={print.completed}
-																		onPressedChange={e => handleMarkAsCompleted(print.id, e)}
-																		className='cursor-pointer justify-center data-[state=on]:border-green-600 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-600 w-full transition-colors'>
-																		<Check className='mr-2 size-4' />
-																		Mark as Completed
-																	</Toggle>
-																</CardContent>
-															</Card>
-														);
-													})}
-												</div>
-											</AccordionContent>
-										</AccordionItem>
-									</div>
-								)}
-							</Accordion>
-
-							{/* //* THIS SHOULD NEVER HAPPEN BUT WHO KNOWS  */}
-							{customPrints.length === 0 && shopProducts.length === 0 && (
-								<div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center'>
-									<Package className='mb-2 size-8 text-muted-foreground' />
-									<p className='text-sm text-muted-foreground'>No prints in this order</p>
-								</div>
-							)}
+							</div>
 						</div>
 					</div>
 
-					<div className='flex flex-col gap-3'>
-						<Label htmlFor='comments'>Comments</Label>
-						<Textarea
-							id='comments'
-							name='comments'
-							defaultValue={item.comments || ''}
-							placeholder='Add comments to this order...'
-							className='min-h-[100px]'
-						/>
+					<div className='flex flex-col gap-4'>
+						<div className='rounded-xl border bg-card p-4'>
+							<div className='grid gap-3 md:grid-cols-2'>
+								<div className='flex flex-col gap-2'>
+									<Label>Queue</Label>
+									<Input value={queue} readOnly />
+								</div>
+								<div className='flex flex-col gap-2'>
+									<Label>Price</Label>
+									<Input value={numToGBP(item.total)} readOnly />
+								</div>
+							</div>
+						</div>
+
+						<div className='rounded-xl border bg-card p-4'>
+							<div className='flex flex-col gap-3'>
+								<Label>Payment</Label>
+								<div className='grid gap-3 md:grid-cols-2'>
+									<div className='flex flex-col gap-2'>
+										<Label>Provider</Label>
+										<Input
+											value={payment?.provider || ''}
+											onChange={e => setPayment(prev => ({ ...prev, provider: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Status</Label>
+										<Select
+											value={payment?.status || 'awaiting-payment'}
+											onValueChange={value => setPayment(prev => ({ ...prev, status: value }))}>
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value='awaiting-payment'>Awaiting Payment</SelectItem>
+												<SelectItem value='paid'>Paid</SelectItem>
+												<SelectItem value='failed'>Failed</SelectItem>
+												<SelectItem value='refunded'>Refunded</SelectItem>
+												<SelectItem value='partially-refunded'>Partially Refunded</SelectItem>
+												<SelectItem value='cancelled'>Cancelled</SelectItem>
+												<SelectItem value='expired'>Expired</SelectItem>
+												<SelectItem value='checkout-failed'>Checkout Failed</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Currency</Label>
+										<Input
+											value={payment?.currency || ''}
+											onChange={e => setPayment(prev => ({ ...prev, currency: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Amount</Label>
+										<Input
+											type='number'
+											value={payment?.amount ?? ''}
+											onChange={e => setPayment(prev => ({ ...prev, amount: Number(e.target.value) }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Stripe Customer ID</Label>
+										<Input
+											value={payment?.stripeCustomerId || ''}
+											onChange={e => setPayment(prev => ({ ...prev, stripeCustomerId: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Checkout Session ID</Label>
+										<Input
+											value={payment?.stripeCheckoutSessionId || ''}
+											onChange={e => setPayment(prev => ({ ...prev, stripeCheckoutSessionId: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Payment Intent ID</Label>
+										<Input
+											value={payment?.stripePaymentIntentId || ''}
+											onChange={e => setPayment(prev => ({ ...prev, stripePaymentIntentId: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Receipt URL</Label>
+										<Input
+											value={payment?.receiptUrl || ''}
+											onChange={e => setPayment(prev => ({ ...prev, receiptUrl: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Paid At</Label>
+										<Input
+											type='datetime-local'
+											value={payment?.paidAt ? new Date(payment.paidAt).toISOString().slice(0, 16) : ''}
+											onChange={e => setPayment(prev => ({ ...prev, paidAt: e.target.value }))}
+										/>
+									</div>
+									<div className='flex items-center gap-2 pt-2'>
+										<Checkbox
+											checked={payment?.refunded || false}
+											onCheckedChange={value => setPayment(prev => ({ ...prev, refunded: !!value }))}
+										/>
+										<Label>Refunded</Label>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Refunded Amount</Label>
+										<Input
+											type='number'
+											value={payment?.refundedAmount ?? ''}
+											onChange={e => setPayment(prev => ({ ...prev, refundedAmount: Number(e.target.value) }))}
+										/>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div className='rounded-xl border bg-card p-4'>
+							<div className='flex flex-col gap-3'>
+								<Label>Shipping</Label>
+								<div className='grid gap-3 md:grid-cols-2'>
+									<div className='flex flex-col gap-2'>
+										<Label>Carrier</Label>
+										<Input
+											value={shipping?.carrier || ''}
+											onChange={e => setShipping(prev => ({ ...prev, carrier: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Service</Label>
+										<Input
+											value={shipping?.service || ''}
+											onChange={e => setShipping(prev => ({ ...prev, service: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Tracking Number</Label>
+										<Input
+											value={shipping?.trackingNumber || ''}
+											onChange={e => setShipping(prev => ({ ...prev, trackingNumber: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Tracking URL</Label>
+										<Input
+											value={shipping?.trackingUrl || ''}
+											onChange={e => setShipping(prev => ({ ...prev, trackingUrl: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Label URL</Label>
+										<Input
+											value={shipping?.labelUrl || ''}
+											onChange={e => setShipping(prev => ({ ...prev, labelUrl: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Shipment ID</Label>
+										<Input
+											value={shipping?.shipmentId || ''}
+											onChange={e => setShipping(prev => ({ ...prev, shipmentId: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Transaction ID</Label>
+										<Input
+											value={shipping?.transactionId || ''}
+											onChange={e => setShipping(prev => ({ ...prev, transactionId: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Label Purchased At</Label>
+										<Input
+											type='datetime-local'
+											value={
+												shipping?.labelPurchasedAt
+													? new Date(shipping.labelPurchasedAt).toISOString().slice(0, 16)
+													: ''
+											}
+											onChange={e => setShipping(prev => ({ ...prev, labelPurchasedAt: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Shipped At</Label>
+										<Input
+											type='datetime-local'
+											value={shipping?.shippedAt ? new Date(shipping.shippedAt).toISOString().slice(0, 16) : ''}
+											onChange={e => setShipping(prev => ({ ...prev, shippedAt: e.target.value }))}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Delivered At</Label>
+										<Input
+											type='datetime-local'
+											value={shipping?.deliveredAt ? new Date(shipping.deliveredAt).toISOString().slice(0, 16) : ''}
+											onChange={e => setShipping(prev => ({ ...prev, deliveredAt: e.target.value }))}
+										/>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div className='rounded-xl border bg-card p-4'>
+							<div className='flex flex-col gap-3'>
+								<Label>Pricing</Label>
+								<div className='grid gap-3 md:grid-cols-2'>
+									<div className='flex flex-col gap-2'>
+										<Label>Subtotal</Label>
+										<Input value={pricing?.subtotal ?? ''} readOnly />
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Shipping</Label>
+										<Input value={pricing?.shipping ?? ''} readOnly />
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Tax</Label>
+										<Input value={pricing?.tax ?? ''} readOnly />
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Total</Label>
+										<Input value={pricing?.total ?? ''} readOnly />
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div className='rounded-xl border bg-card p-4'>
+							<div className='flex flex-col gap-3'>
+								<Label>Shipping Address</Label>
+								<div className='grid gap-3 md:grid-cols-2'>
+									<div className='flex flex-col gap-2 md:col-span-2'>
+										<Label>Full Name</Label>
+										<Input value={shippingAddress?.fullName || ''} readOnly />
+									</div>
+									<div className='flex flex-col gap-2 md:col-span-2'>
+										<Label>Address Line 1</Label>
+										<Input value={shippingAddress?.line1 || ''} readOnly />
+									</div>
+									<div className='flex flex-col gap-2 md:col-span-2'>
+										<Label>Address Line 2</Label>
+										<Input value={shippingAddress?.line2 || ''} readOnly />
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>City</Label>
+										<Input value={shippingAddress?.city || ''} readOnly />
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>County</Label>
+										<Input value={shippingAddress?.county || ''} readOnly />
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Postcode</Label>
+										<Input value={shippingAddress?.postcode || ''} readOnly />
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Country</Label>
+										<Input value={shippingAddress?.country || ''} readOnly />
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div className='rounded-xl border bg-card p-4'>
+							<Label htmlFor='comments'>Comments</Label>
+							<Textarea
+								id='comments'
+								value={comments}
+								onChange={e => setComments(e.target.value)}
+								placeholder='Add comments to this order...'
+								className='mt-2 min-h-[100px]'
+							/>
+						</div>
 					</div>
 				</form>
 				<DrawerFooter>

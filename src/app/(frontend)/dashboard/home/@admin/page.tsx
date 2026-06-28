@@ -460,6 +460,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 			statuses: order.status.statuses || [],
 			comments: order.comments || undefined,
 			createdAt: order.createdAt,
+			payment: order.payment,
+			shipping: order.shipping,
+			shippingAddress: order.shippingAddress,
+			pricing: order.pricing,
 			prints,
 		};
 	});
