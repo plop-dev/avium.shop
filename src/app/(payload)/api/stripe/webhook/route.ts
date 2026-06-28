@@ -37,6 +37,7 @@ export async function POST(req: Request) {
 			});
 
 			const chargeId = (await stripe.paymentIntents.retrieve(session.payment_intent as string)).latest_charge?.toString();
+			const shippingDetails = session.collected_information?.shipping_details;
 
 			await payload.update({
 				collection: 'orders',
@@ -54,21 +55,33 @@ export async function POST(req: Request) {
 						stripeChargeId: chargeId,
 						receiptUrl: chargeId && (await stripe.charges.retrieve(chargeId)).receipt_url,
 					},
+					shippingAddress: {
+						fullName: shippingDetails?.name,
+						line1: shippingDetails?.address?.line1,
+						line2: shippingDetails?.address?.line2,
+						city: shippingDetails?.address?.city,
+						county: shippingDetails?.address?.state,
+						postcode: shippingDetails?.address?.postal_code,
+						country: shippingDetails?.address?.country,
+					},
 				},
 			});
 
 			// now that the order has been paid, we can delete all quotes used for this order
-			const quoteIds = order.prints.filter(p => p.blockType === 'customPrint').map(p => p.quote);
-			await payload.delete({
-				collection: 'quotes',
-				where: {
-					id: {
-						in: {
-							quoteIds,
+			const quoteIds = order.prints
+				.filter(p => p.blockType === 'customPrint')
+				.map(p => (typeof p.quote === 'string' ? p.quote : p.quote?.id));
+
+			if (quoteIds.length > 0) {
+				await payload.delete({
+					collection: 'quotes',
+					where: {
+						id: {
+							in: quoteIds,
 						},
 					},
-				},
-			});
+				});
+			}
 
 			revalidatePath(`/dashboard/home`);
 

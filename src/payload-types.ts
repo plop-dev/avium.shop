@@ -330,11 +330,10 @@ export interface Order {
      */
     receiptUrl?: string | null;
   };
+  /**
+   * GoShippo details details for the order
+   */
   shipping?: {
-    /**
-     * Shipping address
-     */
-    address?: string | null;
     /**
      * Shipment ID
      */
@@ -378,14 +377,12 @@ export interface Order {
   };
   shippingAddress?: {
     fullName?: string | null;
-    company?: string | null;
     line1?: string | null;
     line2?: string | null;
     city?: string | null;
     county?: string | null;
     postcode?: string | null;
     country?: string | null;
-    phone?: string | null;
   };
   /**
    * Pricing details for the order. EVERYTHING IN PENCE, ALWAYS.
@@ -852,7 +849,6 @@ export interface OrdersSelect<T extends boolean = true> {
   shipping?:
     | T
     | {
-        address?: T;
         shipmentId?: T;
         transactionId?: T;
         carrier?: T;
@@ -868,14 +864,12 @@ export interface OrdersSelect<T extends boolean = true> {
     | T
     | {
         fullName?: T;
-        company?: T;
         line1?: T;
         line2?: T;
         city?: T;
         county?: T;
         postcode?: T;
         country?: T;
-        phone?: T;
       };
   pricing?:
     | T

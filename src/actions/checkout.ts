@@ -41,6 +41,7 @@ export async function checkout(orderId: string): Promise<{ success: boolean; mes
 		customer_creation: 'always',
 		customer_email: typeof order.customer === 'string' ? undefined : order.customer.email,
 		client_reference_id: order.id,
+
 		metadata: {
 			orderId: order.id,
 			userId: typeof order.customer === 'string' ? order.customer : order.customer.id,
@@ -64,7 +65,7 @@ export async function checkout(orderId: string): Promise<{ success: boolean; mes
 							currency: 'gbp',
 							product_data: {
 								name: `Custom Print - ${print.model.filename}`,
-								description: `Printing options: ${print.printingOptions.colour} ${print.printingOptions.plastic}, Quality: ${print.printingOptions.layerHeight || print.printingOptions.preset}, Infill: ${print.printingOptions.infill}`,
+								description: `Printing options: ${print.printingOptions.colour} ${print.printingOptions.plastic}, Quality: ${print.printingOptions.layerHeight || (typeof print.printingOptions.preset === 'string' ? print.printingOptions.preset : print.printingOptions.preset?.name)}, Infill: ${print.printingOptions.infill}`,
 							},
 							unit_amount: print.price,
 						},
@@ -91,8 +92,15 @@ export async function checkout(orderId: string): Promise<{ success: boolean; mes
 		shipping_address_collection: {
 			allowed_countries: ['GB'],
 		},
+		billing_address_collection: 'required',
 	});
 
+	if (!checkout.url) {
+		return {
+			success: false,
+			message: 'Failed to create checkout session.',
+		};
+	}
 	await payload.update({
 		id: orderId,
 		collection: 'orders',
@@ -103,13 +111,6 @@ export async function checkout(orderId: string): Promise<{ success: boolean; mes
 			},
 		},
 	});
-
-	if (!checkout.url) {
-		return {
-			success: false,
-			message: 'Failed to create checkout session.',
-		};
-	}
 
 	return {
 		success: true,

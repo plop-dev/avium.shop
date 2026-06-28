@@ -165,9 +165,6 @@ export default function Basket() {
 
 			router.push(checkoutRes.message);
 		} else {
-			toast.error(checkoutRes.message || 'Failed to create checkout session. Please try again, or visit your dashboard.');
-			setIsSubmitting(false);
-
 			// mark the checkout as failed
 			await fetch(`/api/orders/${resJSON.doc.id}`, {
 				method: 'PATCH',
@@ -180,7 +177,12 @@ export default function Basket() {
 					},
 				}),
 				credentials: 'include',
+			}).catch(err => {
+				console.error('Failed to mark order as checkout-failed: ', err);
 			});
+
+			toast.error(checkoutRes.message || 'Failed to create checkout session. Please try again, or visit your dashboard.');
+			setIsSubmitting(false);
 
 			return;
 		}
@@ -216,6 +218,7 @@ export default function Basket() {
 											item={item}
 											onQuantityChange={handleQuantityChange}
 											onRemove={handleRemoveItem}
+											progress={100}
 										/>
 									))}
 
@@ -255,6 +258,7 @@ export default function Basket() {
 											item={item}
 											onQuantityChange={handleQuantityChange}
 											onRemove={handleRemoveItem}
+											progress={100}
 										/>
 									))}
 								</div>

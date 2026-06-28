@@ -374,12 +374,8 @@ export const Orders: CollectionConfig = {
 			name: 'shipping',
 			type: 'group',
 			required: false,
+			admin: { description: 'GoShippo details details for the order' },
 			fields: [
-				{
-					name: 'address',
-					type: 'textarea',
-					admin: { description: 'Shipping address' },
-				},
 				{
 					name: 'shipmentId',
 					type: 'text',
@@ -444,10 +440,6 @@ export const Orders: CollectionConfig = {
 					type: 'text',
 				},
 				{
-					name: 'company',
-					type: 'text',
-				},
-				{
 					name: 'line1',
 					type: 'text',
 				},
@@ -469,10 +461,6 @@ export const Orders: CollectionConfig = {
 				},
 				{
 					name: 'country',
-					type: 'text',
-				},
-				{
-					name: 'phone',
 					type: 'text',
 				},
 			],

@@ -50,7 +50,7 @@ export default function BasketItem({
 }) {
 	const presetId = isCustomPrint(item) && item.printingOptions.preset ? item.printingOptions.preset : null;
 	const [isDone, setIsDone] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
+	const [isLoading, setIsLoading] = useState(!progress || progress < 100);
 
 	const { data: presetData, isLoading: presetLoading, error } = usePreset(presetId);
 	const { data: plasticData, isLoading: plasticLoading } = usePlastic();

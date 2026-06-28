@@ -649,27 +649,29 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 		setOrderDetails({ ...orderDetails, orderName: orderValidation.orderName });
 	}, [orderValidation.orderName]);
 
-	useEffect(() => {
-		const handleBeforeUnload = () => {
-			const quoteIds = getQuoteIds();
-			if (quoteIds.length > 0) {
-				const cleanup = async () => {
-					for (const quoteId of quoteIds) {
-						try {
-							await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' });
-							await fetch(`/api/quotes/${quoteId}`, { method: 'DELETE' });
-						} catch (error) {
-							console.error('Error cleaning up on unload:', error);
-						}
-					}
-				};
-				cleanup();
-			}
-		};
+	//? we only get rid of quotes and uploads once an order is paid or cancelled/removed,
+	//? but in this case the user may reload the page and submit the order again, since the basket is stored in local storage (persistent)
+	// useEffect(() => {
+	// 	const handleBeforeUnload = () => {
+	// 		const quoteIds = getQuoteIds();
+	// 		if (quoteIds.length > 0) {
+	// 			const cleanup = async () => {
+	// 				for (const quoteId of quoteIds) {
+	// 					try {
+	// 						await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' });
+	// 						await fetch(`/api/quotes/${quoteId}`, { method: 'DELETE' });
+	// 					} catch (error) {
+	// 						console.error('Error cleaning up on unload:', error);
+	// 					}
+	// 				}
+	// 			};
+	// 			cleanup();
+	// 		}
+	// 	};
 
-		window.addEventListener('beforeunload', handleBeforeUnload);
-		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-	}, [quotes]);
+	// 	window.addEventListener('beforeunload', handleBeforeUnload);
+	// 	return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+	// }, [quotes]);
 
 	function hasSettingsChanged(printIndex: number, currentPrint: CustomOrderFormValues['prints'][0]): boolean {
 		const quote = quotes.get(printIndex);
@@ -1019,10 +1021,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		const cleanupPromises = quotesToCleanup.map(async quoteId => {
 			try {
-				await Promise.all([
-					fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' }),
-					fetch(`/api/quotes/${quoteId}`, { method: 'DELETE' }),
-				]);
+				await Promise.all([fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' })]);
 			} catch (error) {
 				console.error('Error cleaning up quote:', quoteId, error);
 			}
@@ -1352,7 +1351,10 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 																await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
 																	method: 'DELETE',
 																});
-																await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
+																await fetch(`/api/quotes/${id}`, {
+																	method: 'DELETE',
+																	credentials: 'include',
+																});
 															} catch (error) {
 																console.error('Error cleaning up quote:', id, error);
 															}
