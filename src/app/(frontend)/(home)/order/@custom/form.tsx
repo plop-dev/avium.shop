@@ -767,7 +767,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify({
-					user: userData.id,
+					customer: userData.id,
 					printingOptions: {
 						...print.printingOptions,
 						colour: print.material.colour,

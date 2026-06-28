@@ -52,6 +52,8 @@ export async function POST(req: Request) {
 				},
 			});
 
+			// now that the order has been paid, we can delete all quotes used for this order
+
 			revalidatePath(`/dashboard/home`);
 
 			break;

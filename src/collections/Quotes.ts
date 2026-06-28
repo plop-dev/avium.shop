@@ -6,7 +6,10 @@ export const Quotes: CollectionConfig = {
 		singular: 'Quote',
 		plural: 'Quotes',
 	},
-	admin: {},
+	admin: {
+		description: 'Quotes generated for 3D models, used to create orders',
+	},
+	access: {},
 	fields: [
 		{
 			name: 'model',
@@ -48,7 +51,7 @@ export const Quotes: CollectionConfig = {
 			],
 		},
 		{
-			name: 'user',
+			name: 'customer',
 			type: 'relationship',
 			relationTo: 'users',
 			required: true,
