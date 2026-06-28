@@ -15,3 +15,11 @@ export const devAccess: Access = ({ req }) => {
 		return false;
 	}
 };
+
+export const backendAccess: Access = ({ req }) => {
+	if (req.headers.get('X-Internal-Token') === process.env.AVIUM_BACKEND_PASSWORD) {
+		return true;
+	} else {
+		return false;
+	}
+};

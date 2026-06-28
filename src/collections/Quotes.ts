@@ -1,3 +1,5 @@
+import { selfAccessOrders } from '@/access/anyone';
+import { adminAccess, backendAccess } from '@/access/elevated';
 import type { CollectionConfig } from 'payload';
 
 export const Quotes: CollectionConfig = {
@@ -9,7 +11,12 @@ export const Quotes: CollectionConfig = {
 	admin: {
 		description: 'Quotes generated for 3D models, used to create orders',
 	},
-	access: {},
+	access: {
+		read: selfAccessOrders || adminAccess,
+		create: selfAccessOrders || adminAccess,
+		delete: adminAccess,
+		update: selfAccessOrders || adminAccess || backendAccess,
+	},
 	fields: [
 		{
 			name: 'model',
