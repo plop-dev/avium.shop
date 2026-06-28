@@ -335,6 +335,10 @@ export const Orders: CollectionConfig = {
 							label: 'Expired',
 							value: 'expired',
 						},
+						{
+							label: 'Checkout Failed',
+							value: 'checkout-failed',
+						},
 					],
 				},
 				{

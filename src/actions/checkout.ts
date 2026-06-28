@@ -5,7 +5,6 @@ import config from '@/payload.config';
 import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
 import { getUser } from '@/utils/getUser';
-import { redirect } from 'next/navigation';
 
 export async function checkout(orderId: string): Promise<{ success: boolean; message: string }> {
 	const payload = await getPayload({ config });
@@ -112,5 +111,8 @@ export async function checkout(orderId: string): Promise<{ success: boolean; mes
 		};
 	}
 
-	redirect(checkout.url);
+	return {
+		success: true,
+		message: checkout.url,
+	};
 }

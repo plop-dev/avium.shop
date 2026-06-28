@@ -298,7 +298,16 @@ export interface Order {
      */
     amount?: number | null;
     status?:
-      | ('awaiting-payment' | 'paid' | 'failed' | 'refunded' | 'partially-refunded' | 'cancelled' | 'expired')
+      | (
+          | 'awaiting-payment'
+          | 'paid'
+          | 'failed'
+          | 'refunded'
+          | 'partially-refunded'
+          | 'cancelled'
+          | 'expired'
+          | 'checkout-failed'
+        )
       | null;
     /**
      * Date and time when the payment was made

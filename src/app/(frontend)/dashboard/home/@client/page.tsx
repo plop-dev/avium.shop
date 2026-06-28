@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import type { Order as PayloadOrder } from '@/payload-types';
 import { getUser } from '@/utils/getUser';
 import numToGBP from '@/utils/numToGBP';
+import { RetryCheckoutButton } from '@/components/dashboard/RetryCheckoutButton';
 import { AlertCircle, ArrowRight, CalendarDays, Clock3, CreditCard, Package2 } from 'lucide-react';
 
 const statusMeta: Record<
@@ -107,7 +108,7 @@ function getTimelineNodes(status: PayloadOrder['status']['currentStatus'], statu
 
 function getPaymentStatusVariant(status?: NonNullable<PayloadOrder['payment']>['status']) {
 	if (status === 'paid') return 'default' as const;
-	if (status === 'failed') return 'destructive' as const;
+	if (status === 'failed' || status === 'checkout-failed') return 'destructive' as const;
 
 	return 'outline' as const;
 }
@@ -291,6 +292,11 @@ export default async function ClientPage() {
 															<div className='text-muted-foreground'>Status</div>
 															<div className='text-right'>
 																<Badge variant={paymentVariant}>{order.payment?.status || 'unpaid'}</Badge>
+																{order.payment?.status === 'checkout-failed' ? (
+																	<div className='mt-2 flex justify-end'>
+																		<RetryCheckoutButton orderId={order.id} />
+																	</div>
+																) : null}
 															</div>
 															<div className='text-muted-foreground'>Amount</div>
 															<div className='text-right font-medium tabular-nums'>

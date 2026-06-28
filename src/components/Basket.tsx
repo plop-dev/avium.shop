@@ -155,19 +155,35 @@ export default function Basket() {
 
 		toast.success('Order created successfully.');
 
-		setOrderDetails({ orderName: '', comments: '' });
-		setOrderNameValid(false, '');
-		resetBasket();
-
 		toast.info('Redirecting to checkout...');
 		const checkoutRes = await checkout(resJSON.doc.id);
-		if (!checkoutRes.success) {
-			toast.error(checkoutRes.message || 'Failed to create checkout session.');
+
+		if (checkoutRes.success && checkoutRes.message) {
+			setOrderDetails({ orderName: '', comments: '' });
+			setOrderNameValid(false, '');
+			resetBasket();
+
+			router.push(checkoutRes.message);
+		} else {
+			toast.error(checkoutRes.message || 'Failed to create checkout session. Please try again, or visit your dashboard.');
 			setIsSubmitting(false);
+
+			// mark the checkout as failed
+			await fetch(`/api/orders/${resJSON.doc.id}`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					payment: {
+						status: 'checkout-failed',
+					},
+				}),
+				credentials: 'include',
+			});
+
 			return;
 		}
-
-		//! WAIT FOR STRIPE CHECKOUT REDIRECT BEFORE CREATING ORDER??
 	};
 
 	return (
