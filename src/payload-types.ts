@@ -516,6 +516,8 @@ export interface Media {
   focalY?: number | null;
 }
 /**
+ * Quotes generated for 3D models, used to create orders
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "quotes".
  */
@@ -552,7 +554,7 @@ export interface Quote {
   /**
    * The user who requested the quote
    */
-  user: string | User;
+  customer: string | User;
   /**
    * Estimated filament usage in grams as returned by the slicer
    */
@@ -989,7 +991,7 @@ export interface QuotesSelect<T extends boolean = true> {
         plastic?: T;
         colour?: T;
       };
-  user?: T;
+  customer?: T;
   filament?: T;
   time?: T;
   price?: T;

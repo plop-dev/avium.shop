@@ -31,6 +31,11 @@ export async function POST(req: Request) {
 				return new Response('Webhook Error: No orderId found', { status: 500 });
 			}
 
+			const order = await payload.findByID({
+				collection: 'orders',
+				id: orderId,
+			});
+
 			const chargeId = (await stripe.paymentIntents.retrieve(session.payment_intent as string)).latest_charge?.toString();
 
 			await payload.update({
@@ -53,6 +58,17 @@ export async function POST(req: Request) {
 			});
 
 			// now that the order has been paid, we can delete all quotes used for this order
+			const quoteIds = order.prints.filter(p => p.blockType === 'customPrint').map(p => p.quote);
+			await payload.delete({
+				collection: 'quotes',
+				where: {
+					id: {
+						in: {
+							quoteIds,
+						},
+					},
+				},
+			});
 
 			revalidatePath(`/dashboard/home`);
 

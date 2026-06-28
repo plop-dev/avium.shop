@@ -14,7 +14,7 @@ export const Quotes: CollectionConfig = {
 	access: {
 		read: selfAccessOrders || adminAccess,
 		create: selfAccessOrders || adminAccess,
-		delete: adminAccess,
+		delete: selfAccessOrders || adminAccess,
 		update: selfAccessOrders || adminAccess || backendAccess,
 	},
 	fields: [
