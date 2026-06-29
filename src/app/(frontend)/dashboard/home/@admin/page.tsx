@@ -1,7 +1,7 @@
 'use server';
 
 import { ChartAreaInteractive } from '@/components/dashboard/chart-area-interactive';
-import { DataTable, type Order } from '@/components/dashboard/data-table';
+import { DataTable, type ZodOrder } from '@/components/dashboard/data-table';
 import { SectionCards } from '@/components/dashboard/section-cards';
 import { getPayload } from 'payload';
 import { loadSearchParams } from './searchParams';
@@ -402,71 +402,69 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 		limit,
 		sort: '-queue',
 		page,
-		populate: {
-			users: {
-				name: true,
-			},
-		},
+		depth: 2,
 	});
 
-	const orderData: Order[] = orders.docs.map(order => {
-		const prints = order.prints.map(print => {
-			const baseProps = {
-				id: print.id || '',
-				blockType: print.blockType,
-				quantity: print.quantity,
-				price: print.price,
-				completed: print.completed || false,
-			};
+	// const orderData: Order[] = orders.docs.map(order => {
+	// 	const prints = order.prints.map(print => {
+	// 		const baseProps = {
+	// 			id: print.id || '',
+	// 			blockType: print.blockType,
+	// 			quantity: print.quantity,
+	// 			price: print.price,
+	// 			completed: print.completed || false,
+	// 		};
 
-			if (print.blockType === 'shopProduct') {
-				return {
-					...baseProps,
-					blockType: 'shopProduct' as const,
-					product: typeof print.product === 'string' ? print.product : print.product.id,
-				};
-			}
+	// 		if (print.blockType === 'shopProduct') {
+	// 			return {
+	// 				...baseProps,
+	// 				blockType: 'shopProduct' as const,
+	// 				product: typeof print.product === 'string' ? print.product : print.product.id,
+	// 			};
+	// 		}
 
-			return {
-				...baseProps,
-				blockType: 'customPrint' as const,
-				model: print.model,
-				printingOptions: {
-					preset:
-						print.printingOptions.preset === null
-							? undefined
-							: typeof print.printingOptions.preset === 'string'
-								? print.printingOptions.preset
-								: print.printingOptions.preset?.id,
-					layerHeight: print.printingOptions.layerHeight || undefined,
-					infill: print.printingOptions.infill || undefined,
-					plastic: print.printingOptions.plastic,
-					colour: print.printingOptions.colour,
-				},
-				time: print.time || undefined,
-				filament: print.filament || undefined,
-			};
-		});
+	// 		return {
+	// 			...baseProps,
+	// 			blockType: 'customPrint' as const,
+	// 			model: print.model,
+	// 			printingOptions: {
+	// 				preset:
+	// 					print.printingOptions.preset === null
+	// 						? undefined
+	// 						: typeof print.printingOptions.preset === 'string'
+	// 							? print.printingOptions.preset
+	// 							: print.printingOptions.preset?.id,
+	// 				layerHeight: print.printingOptions.layerHeight || undefined,
+	// 				infill: print.printingOptions.infill || undefined,
+	// 				plastic: print.printingOptions.plastic,
+	// 				colour: print.printingOptions.colour,
+	// 			},
+	// 			time: print.time || undefined,
+	// 			filament: print.filament || undefined,
+	// 		};
+	// 	});
 
-		return {
-			id: order.id,
-			name: order.name,
-			customer: order.customer as { id: string; name: string },
-			shopProducts: prints.filter(p => p.blockType === 'shopProduct').length,
-			customPrints: prints.filter(p => p.blockType === 'customPrint').length,
-			total: order.pricing.total || 0, // technically will never be 0 since a hook controls the value
-			queue: order.queue || 0,
-			currentStatus: order.status.currentStatus,
-			statuses: order.status.statuses || [],
-			comments: order.comments || undefined,
-			createdAt: order.createdAt,
-			payment: order.payment,
-			shipping: order.shipping,
-			shippingAddress: order.shippingAddress,
-			pricing: order.pricing,
-			prints,
-		};
-	});
+	// 	return {
+	// 		id: order.id,
+	// 		name: order.name,
+	// 		customer: order.customer as { id: string; name: string },
+	// 		shopProducts: prints.filter(p => p.blockType === 'shopProduct').length,
+	// 		customPrints: prints.filter(p => p.blockType === 'customPrint').length,
+	// 		total: order.pricing.total || 0, // technically will never be 0 since a hook controls the value
+	// 		queue: order.queue || 0,
+	// 		currentStatus: order.status.currentStatus,
+	// 		statuses: order.status.statuses || [],
+	// 		comments: order.comments || undefined,
+	// 		createdAt: order.createdAt,
+	// 		payment: order.payment,
+	// 		shipping: order.shipping,
+	// 		shippingAddress: order.shippingAddress,
+	// 		pricing: order.pricing,
+	// 		prints,
+	// 	};
+	// });
+
+	const orderData: ZodOrder[] = orders.docs;
 
 	return (
 		<div className='@container/main flex flex-1 flex-col gap-2'>

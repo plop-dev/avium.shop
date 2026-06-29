@@ -93,120 +93,11 @@ import { Textarea } from '../ui/textarea';
 import { parseAsInteger, useQueryState } from 'nuqs';
 import { useEffect } from 'react';
 import { Where } from 'payload';
+import { orderSchema } from '@/schemas';
 
 // server actions
 
-export const schema = z.object({
-	id: z.string(),
-	name: z.string(),
-	customer: z.object({
-		id: z.string(),
-		name: z.string(),
-	}),
-	shopProducts: z.number().default(0),
-	customPrints: z.number().default(0),
-	total: z.number(),
-	queue: z.number().default(0),
-	statuses: z
-		.array(
-			z.object({
-				stage: z.enum(['in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
-				timestamp: z.string(),
-			}),
-		)
-		.default([]),
-	currentStatus: z.enum(['in-queue', 'printing', 'packaging', 'shipped', 'cancelled']),
-	comments: z.string().optional(),
-	createdAt: z.string(),
-	payment: z
-		.object({
-			provider: z.string().optional(),
-			stripeCustomerId: z.string().optional(),
-			stripeCheckoutSessionId: z.string().optional(),
-			stripePaymentIntentId: z.string().optional(),
-			stripeChargeId: z.string().optional(),
-			currency: z.string().optional(),
-			amount: z.number().optional(),
-			status: z.string().optional(),
-			paidAt: z.string().optional(),
-			refunded: z.boolean().optional(),
-			refundedAmount: z.number().optional(),
-			refundedAt: z.string().optional(),
-			receiptUrl: z.string().optional(),
-		})
-		.optional(),
-	shipping: z
-		.object({
-			shipmentId: z.string().optional(),
-			transactionId: z.string().optional(),
-			carrier: z.string().optional(),
-			service: z.string().optional(),
-			trackingNumber: z.string().optional(),
-			trackingUrl: z.string().optional(),
-			labelUrl: z.string().optional(),
-			labelPurchasedAt: z.string().optional(),
-			shippedAt: z.string().optional(),
-			deliveredAt: z.string().optional(),
-		})
-		.optional(),
-	shippingAddress: z
-		.object({
-			fullName: z.string().optional(),
-			line1: z.string().optional(),
-			line2: z.string().optional(),
-			city: z.string().optional(),
-			county: z.string().optional(),
-			postcode: z.string().optional(),
-			country: z.string().optional(),
-		})
-		.optional(),
-	pricing: z
-		.object({
-			subtotal: z.number().optional(),
-			shipping: z.number().optional(),
-			tax: z.number().optional(),
-			total: z.number().optional(),
-		})
-		.optional(),
-	prints: z
-		.array(
-			z.union([
-				z.object({
-					blockType: z.literal('shopProduct'),
-					id: z.string(),
-					product: z.string(),
-					quantity: z.number(),
-					price: z.number(),
-					completed: z.boolean().default(false),
-				}),
-				z.object({
-					blockType: z.literal('customPrint'),
-					id: z.string(),
-					model: z.object({
-						filename: z.string(),
-						filetype: z.enum(['stl', '3mf']),
-						modelUrl: z.string(),
-						gcodeUrl: z.string(),
-					}),
-					printingOptions: z.object({
-						preset: z.string().optional(),
-						layerHeight: z.number().optional(),
-						infill: z.number().optional(),
-						plastic: z.string(),
-						colour: z.string(),
-					}),
-					time: z.string().optional(),
-					filament: z.number().optional(),
-					quantity: z.number(),
-					price: z.number(),
-					completed: z.boolean().default(false),
-				}),
-			]),
-		)
-		.default([]),
-});
-
-export type Order = z.infer<typeof schema>;
+export type ZodOrder = z.infer<typeof orderSchema>;
 
 // Define the status order and metadata
 const statusSteps = [
@@ -242,7 +133,7 @@ declare module '@tanstack/react-table' {
 	}
 }
 
-const columns: ColumnDef<Order>[] = [
+const columns: ColumnDef<ZodOrder>[] = [
 	{
 		id: 'order',
 		header: () => <div className='w-6 text-right text-xs font-medium text-muted-foreground'>#</div>,
@@ -293,26 +184,26 @@ const columns: ColumnDef<Order>[] = [
 	{
 		accessorKey: 'customer',
 		header: 'Customer',
-		cell: ({ row }) => row.original.customer.name,
+		cell: ({ row }) => (typeof row.original.customer === 'string' ? row.original.customer : row.original.customer.name),
 	},
 	{
 		accessorKey: 'status',
 		header: 'Status',
 		cell: ({ row }) => (
 			<Badge variant='outline' className='text-muted-foreground px-1.5'>
-				{row.original.currentStatus}
+				{row.original.status.currentStatus}
 			</Badge>
 		),
 	},
 	{
 		accessorKey: 'shop-prints',
 		header: () => <div className='w-full'>Shop Prints</div>,
-		cell: ({ row }) => row.original.shopProducts || 0,
+		cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'shopProduct') || 0,
 	},
 	{
 		accessorKey: 'custom-prints',
 		header: () => <div className='w-full'>Custom Prints</div>,
-		cell: ({ row }) => row.original.customPrints || 0,
+		cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'customPrint') || 0,
 	},
 	{
 		accessorKey: 'created-at',
@@ -358,7 +249,7 @@ const columns: ColumnDef<Order>[] = [
 	// },
 ];
 
-function DraggableRow({ row }: { row: Row<Order> }) {
+function DraggableRow({ row }: { row: Row<ZodOrder> }) {
 	const { transform, transition, setNodeRef, isDragging } = useSortable({
 		id: row.original.id,
 	});
@@ -382,7 +273,7 @@ function DraggableRow({ row }: { row: Row<Order> }) {
 	);
 }
 
-export function DataTable({ data: initialData, limit, page }: { data: Order[]; limit: number; page: number }) {
+export function DataTable({ data: initialData, limit, page }: { data: ZodOrder[]; limit: number; page: number }) {
 	const [data, setData] = React.useState(() => initialData);
 	const [rowSelection, setRowSelection] = React.useState({});
 	const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -402,8 +293,8 @@ export function DataTable({ data: initialData, limit, page }: { data: Order[]; l
 	const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}));
 
 	const sortedData = React.useMemo(() => {
-		return data.reduce<Record<string, Order[]>>((acc, status) => {
-			(acc[status.currentStatus] ??= []).push(status);
+		return data.reduce<Record<string, ZodOrder[]>>((acc, status) => {
+			(acc[status.status.currentStatus] ??= []).push(status);
 			return acc;
 		}, {});
 	}, [data]);
@@ -444,7 +335,7 @@ export function DataTable({ data: initialData, limit, page }: { data: Order[]; l
 		getFacetedUniqueValues: getFacetedUniqueValues(),
 	});
 
-	const dragQueueRef = React.useRef<Array<{ data: Order; newPriority: number; over: Over }>>([]);
+	const dragQueueRef = React.useRef<Array<{ data: ZodOrder; newPriority: number; over: Over }>>([]);
 	const isProcessingRef = React.useRef(false);
 
 	const processDragQueue = async () => {
@@ -714,14 +605,17 @@ export function DataTable({ data: initialData, limit, page }: { data: Order[]; l
 	);
 }
 
-function TableCellViewer({ item }: { item: Order }) {
+function TableCellViewer({ item }: { item: ZodOrder }) {
+	const customerIdValue = typeof item.customer === 'string' ? item.customer : item.customer.id;
+	const customerNameValue = typeof item.customer === 'string' ? '' : item.customer.name;
+
 	const isMobile = useIsMobile();
-	const [currentStatus, setCurrentStatus] = React.useState(item.currentStatus);
-	const [statusHistory, setStatusHistory] = React.useState(item.statuses);
+	const [currentStatus, setCurrentStatus] = React.useState(item.status.currentStatus);
+	const [statusHistory, setStatusHistory] = React.useState(item.status.statuses);
 	const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 	const [orderName, setOrderName] = React.useState(item.name);
-	const [customerId, setCustomerId] = React.useState(item.customer.id);
-	const [customerName, setCustomerName] = React.useState(item.customer.name);
+	const [customerId, setCustomerId] = React.useState(customerIdValue);
+	const [customerName, setCustomerName] = React.useState(customerNameValue);
 	const [comments, setComments] = React.useState(item.comments || '');
 	const [payment, setPayment] = React.useState(item.payment);
 	const [shipping, setShipping] = React.useState(item.shipping);
@@ -731,11 +625,11 @@ function TableCellViewer({ item }: { item: Order }) {
 	const [prints, setPrints] = React.useState(item.prints || []);
 
 	React.useEffect(() => {
-		setCurrentStatus(item.currentStatus);
-		setStatusHistory(item.statuses);
+		setCurrentStatus(item.status.currentStatus);
+		setStatusHistory(item.status.statuses);
 		setOrderName(item.name);
-		setCustomerId(item.customer.id);
-		setCustomerName(item.customer.name);
+		setCustomerId(customerIdValue);
+		setCustomerName(typeof item.customer === 'string' ? '' : item.customer.name);
 		setComments(item.comments || '');
 		setPayment(item.payment);
 		setShipping(item.shipping);
@@ -744,11 +638,11 @@ function TableCellViewer({ item }: { item: Order }) {
 	}, [
 		item.id,
 		item.name,
-		item.customer.id,
-		item.customer.name,
+		customerIdValue,
+		customerNameValue,
 		item.comments,
-		item.currentStatus,
-		item.statuses,
+		item.status.currentStatus,
+		item.status.statuses,
 		item.payment,
 		item.shipping,
 		item.shippingAddress,
@@ -758,18 +652,21 @@ function TableCellViewer({ item }: { item: Order }) {
 	const statusList = statusSteps.map(step => step.value);
 
 	const handleStatusUpdate = (newStatus: string) => {
-		setCurrentStatus(newStatus as z.infer<typeof schema>['currentStatus']);
+		setCurrentStatus(newStatus as z.infer<typeof orderSchema>['status']['currentStatus']);
 
 		setStatusHistory(prev => {
+			const safePrev = prev ?? [];
 			const newIndex = statusList.indexOf(newStatus);
 			const now = new Date().toISOString();
 
-			const previousStatuses = prev.filter(item => {
+	
+
+			const previousStatuses = safePrev.filter(item => {
 				const itemIndex = statusList.indexOf(item.stage);
 				return itemIndex < newIndex;
 			});
 
-			return [...previousStatuses, { stage: newStatus as z.infer<typeof schema>['currentStatus'], timestamp: now }];
+			return [...previousStatuses, { stage: newStatus as z.infer<typeof orderSchema>['status']['currentStatus'], timestamp: now }];
 		});
 	};
 
@@ -778,7 +675,7 @@ function TableCellViewer({ item }: { item: Order }) {
 
 		const data = {
 			name: orderName.trim(),
-			customer: customerId || item.customer.id,
+			customer: customerId || customerIdValue,
 			status: {
 				statuses: statusHistory,
 				currentStatus: currentStatus,
@@ -790,19 +687,7 @@ function TableCellViewer({ item }: { item: Order }) {
 			shippingAddress,
 		};
 
-		const where: Where = {
-			id: {
-				equals: item.id,
-			},
-		};
-		const stringifiedQuery = stringify(
-			{
-				where,
-			},
-			{ addQueryPrefix: true },
-		);
-
-		const res = await fetch(`/api/orders${stringifiedQuery}`, {
+		const res = await fetch(`/api/orders/${item.id}`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			credentials: 'include',
@@ -881,7 +766,7 @@ function TableCellViewer({ item }: { item: Order }) {
 								</div>
 								<StatusTimeline
 									currentStatus={currentStatus}
-									statusHistory={statusHistory}
+									statusHistory={statusHistory ?? []}
 									onUpdateStatus={handleStatusUpdate}
 								/>
 							</div>
@@ -1036,7 +921,7 @@ function TableCellViewer({ item }: { item: Order }) {
 																			<div className='flex flex-col gap-2'>
 																				<Label>Preset</Label>
 																				<Input
-																					value={print.printingOptions.preset || ''}
+																					value={typeof print.printingOptions.preset === 'string' ? print.printingOptions.preset : ''}
 																					onChange={e =>
 																						setPrints(prev =>
 																							prev.map(item =>
@@ -1255,7 +1140,7 @@ function TableCellViewer({ item }: { item: Order }) {
 																		<Toggle
 																			variant='outline'
 																			size='sm'
-																			pressed={print.completed}
+																			pressed={print.completed ?? undefined}
 																			onPressedChange={value =>
 																				setPrints(prev =>
 																					prev.map(item =>
@@ -1302,7 +1187,7 @@ function TableCellViewer({ item }: { item: Order }) {
 																		<div className='flex items-start justify-between'>
 																			<div className='space-y-1 flex-1'>
 																				<CardTitle className='text-sm font-medium'>
-																					{print.product}
+																					{typeof print.product === 'string' ? print.product : print.product.id}
 																				</CardTitle>
 																				<CardDescription className='text-xs'>
 																					Shop Product #{index + 1}
@@ -1316,7 +1201,7 @@ function TableCellViewer({ item }: { item: Order }) {
 																			<div className='flex flex-col gap-2'>
 																				<Label>Product ID</Label>
 																				<Input
-																					value={print.product}
+																					value={typeof print.product === 'string' ? print.product : print.product.id}
 																					onChange={e =>
 																						setPrints(prev =>
 																							prev.map(item =>
@@ -1362,14 +1247,14 @@ function TableCellViewer({ item }: { item: Order }) {
 																			variant='outline'
 																			size='sm'
 																			className='w-full'
-																			onClick={() => handleProductDownload(print.id)}>
+																			onClick={() => handleProductDownload(print.id || '')}>
 																			<Download className='mr-2 size-3.5' />
 																			STL
 																		</Button>
 																		<Toggle
 																			variant='outline'
 																			size='sm'
-																			pressed={print.completed}
+																			pressed={print.completed ?? undefined}
 																			onPressedChange={value =>
 																				setPrints(prev =>
 																					prev.map(item =>
@@ -1407,9 +1292,13 @@ function TableCellViewer({ item }: { item: Order }) {
 						<Toggle
 							variant='outline'
 							size='sm'
-							pressed={item.currentStatus === 'cancelled'}
+							pressed={item.status.currentStatus === 'cancelled'}
 							onPressedChange={value =>
-								handleStatusUpdate(value ? 'cancelled' : statusHistory[statusHistory.length - 1]?.stage)
+								handleStatusUpdate(
+									value
+										? 'cancelled'
+										: (statusHistory?.[statusHistory.length - 1]?.stage ?? item.status.currentStatus)
+								)
 							}
 							className='cursor-pointer justify-center data-[state=on]:border-destructive data-[state=on]:bg-destructive/10 data-[state=on]:text-destructive w-full transition-colors'>
 							<Check className='mr-2 size-4' />
@@ -1426,7 +1315,7 @@ function TableCellViewer({ item }: { item: Order }) {
 								</div>
 								<div className='flex flex-col gap-2'>
 									<Label>Price</Label>
-									<Input value={numToGBP(item.total)} readOnly />
+									<Input value={numToGBP(item.pricing.subtotal || 0)} readOnly />
 								</div>
 							</div>
 						</div>
@@ -1446,7 +1335,12 @@ function TableCellViewer({ item }: { item: Order }) {
 										<Label>Status</Label>
 										<Select
 											value={payment?.status || 'awaiting-payment'}
-											onValueChange={value => setPayment(prev => ({ ...prev, status: value }))}>
+											onValueChange={value =>
+												setPayment(prev => ({
+													...prev,
+													status: value as NonNullable<typeof prev>['status'],
+												}))
+											}>
 											<SelectTrigger>
 												<SelectValue />
 											</SelectTrigger>
