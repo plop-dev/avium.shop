@@ -473,6 +473,7 @@ export function DataTable({ data: initialData, limit, page }: { data: Order[]; l
 					headers: {
 						'Content-Type': 'application/json',
 					},
+					credentials: 'include',
 					body: JSON.stringify({
 						queue: newPriority,
 					}),
@@ -804,6 +805,7 @@ function TableCellViewer({ item }: { item: Order }) {
 		const res = await fetch(`/api/orders${stringifiedQuery}`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
 			body: JSON.stringify(data),
 		});
 
@@ -844,7 +846,7 @@ function TableCellViewer({ item }: { item: Order }) {
 					{item.name}
 				</Button>
 			</DrawerTrigger>
-			<DrawerContent className='max-h-[95vh]'>
+			<DrawerContent className=''>
 				<DrawerHeader className='gap-1'>
 					<DrawerTitle>
 						{orderName}
@@ -929,7 +931,7 @@ function TableCellViewer({ item }: { item: Order }) {
 																			<Badge variant='secondary'>{numToGBP(print.price)}</Badge>
 																		</div>
 																	</CardHeader>
-																	<CardContent className='space-y-3 pt-0'>
+																	<CardContent className='flex flex-col gap-y-3 pt-0'>
 																		<div className='grid gap-3 md:grid-cols-2'>
 																			<div className='flex flex-col gap-2'>
 																				<Label>Filename</Label>
@@ -1216,8 +1218,9 @@ function TableCellViewer({ item }: { item: Order }) {
 																			</div>
 																		</div>
 
-																		<div className='flex gap-2'>
+																		<div className='grid grid-cols-2 gap-2'>
 																			<Button
+																				className='min-w-[50%-0.25rem]'
 																				type='button'
 																				variant='outline'
 																				size='sm'
@@ -1231,6 +1234,7 @@ function TableCellViewer({ item }: { item: Order }) {
 																				STL
 																			</Button>
 																			<Button
+																				className='min-w-[50%-0.25rem]'
 																				type='button'
 																				variant='outline'
 																				size='sm'
@@ -1398,6 +1402,19 @@ function TableCellViewer({ item }: { item: Order }) {
 								)}
 							</div>
 						</div>
+
+						{/* <Button variant={'destructive'}>Cancel Order</Button> */}
+						<Toggle
+							variant='outline'
+							size='sm'
+							pressed={item.currentStatus === 'cancelled'}
+							onPressedChange={value =>
+								handleStatusUpdate(value ? 'cancelled' : statusHistory[statusHistory.length - 1]?.stage)
+							}
+							className='cursor-pointer justify-center data-[state=on]:border-destructive data-[state=on]:bg-destructive/10 data-[state=on]:text-destructive w-full transition-colors'>
+							<Check className='mr-2 size-4' />
+							Mark as Cancelled
+						</Toggle>
 					</div>
 
 					<div className='flex flex-col gap-4'>

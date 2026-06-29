@@ -418,7 +418,7 @@ export interface Order {
         }[]
       | null;
     /**
-     * Current order status - auto-synced from status history
+     * Current order status
      */
     currentStatus: 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled';
   };

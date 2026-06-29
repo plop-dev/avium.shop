@@ -574,7 +574,7 @@ export const Orders: CollectionConfig = {
 						{ label: 'Cancelled', value: 'cancelled' },
 					],
 					admin: {
-						description: 'Current order status - auto-synced from status history',
+						description: 'Current order status',
 						readOnly: true,
 					},
 				},
