@@ -29,7 +29,7 @@ import {
 	IconLayoutColumns,
 	IconLoader,
 	IconPlus,
-	IconTrendingUp,
+	IconCancel,
 	IconPrinter,
 } from '@tabler/icons-react';
 import {
@@ -105,6 +105,7 @@ const statusSteps = [
 	{ value: 'printing', label: 'Printing', icon: <IconPrinter className='size-4' /> },
 	{ value: 'packaging', label: 'Packaging', icon: <IconPlus className='size-4' /> },
 	{ value: 'shipped', label: 'Shipped', icon: <IconCircleCheckFilled className='size-4' /> },
+	{ value: 'cancelled', label: 'Cancelled', icon: <IconCancel className='size-4' /> },
 ];
 
 // Create a separate component for the drag handle
@@ -646,6 +647,7 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 	const statusList = statusSteps.map(step => step.value);
 
 	const handleStatusUpdate = (newStatus: string) => {
+		console.log('Updating status to:', newStatus);
 		setCurrentStatus(newStatus as z.infer<typeof orderSchema>['status']['currentStatus']);
 
 		setStatusHistory(prev => {
@@ -660,6 +662,14 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 
 			return [...previousStatuses, { stage: newStatus as z.infer<typeof orderSchema>['status']['currentStatus'], timestamp: now }];
 		});
+
+		// in the scenario where a cancelled order becomes uncancelled, remove the cancelled timestamp
+		if (newStatus !== 'cancelled') {
+			setStatusHistory(prev => {
+				const safePrev = prev ?? [];
+				return safePrev.filter(item => item.stage !== 'cancelled');
+			});
+		}
 	};
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -1296,9 +1306,7 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 							size='sm'
 							pressed={currentStatus === 'cancelled'}
 							onPressedChange={value =>
-								handleStatusUpdate(
-									value ? 'cancelled' : (statusHistory?.[statusHistory.length - 1]?.stage ?? item.status.currentStatus),
-								)
+								handleStatusUpdate(value ? 'cancelled' : (statusHistory?.[statusHistory.length - 2]?.stage ?? 'in-queue'))
 							}
 							className='cursor-pointer justify-center data-[state=on]:border-destructive data-[state=on]:bg-destructive/10 data-[state=on]:text-destructive w-full transition-colors'>
 							<Check className='mr-2 size-4' />
