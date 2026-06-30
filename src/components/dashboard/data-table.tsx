@@ -94,6 +94,8 @@ import { parseAsInteger, useQueryState } from 'nuqs';
 import { useEffect } from 'react';
 import { Where } from 'payload';
 import { orderSchema } from '@/schemas';
+import { updateOrder } from '@/actions/updateOrder';
+import { Order } from '@/payload-types';
 
 // server actions
 
@@ -134,124 +136,6 @@ declare module '@tanstack/react-table' {
 	}
 }
 
-const columns: ColumnDef<ZodOrder>[] = [
-	{
-		id: 'order',
-		header: () => <div className='w-6 text-right text-xs font-medium text-muted-foreground'>#</div>,
-		cell: ({ row }) => <div className='w-6 text-right text-xs text-muted-foreground'>{row.index + 1}</div>,
-		enableSorting: false,
-		enableHiding: false,
-	},
-	{
-		id: 'drag',
-		header: () => <span className='sr-only'>Reorder</span>,
-		cell: ({ row }) => (
-			<div className='flex justify-center'>
-				<DragHandle id={row.original.id} />
-			</div>
-		),
-		meta: {
-			headerClassName: 'w-8 px-0',
-			cellClassName: 'w-8 px-0',
-		},
-	},
-	// {
-	// 	id: 'select',
-	// 	header: ({ table }) => (
-	// 		<div className='flex items-center justify-center'>
-	// 			<Checkbox
-	// 				checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-	// 				onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-	// 				aria-label='Select all'
-	// 			/>
-	// 		</div>
-	// 	),
-	// 	cell: ({ row }) => (
-	// 		<div className='flex items-center justify-center'>
-	// 			<Checkbox checked={row.getIsSelected()} onCheckedChange={value => row.toggleSelected(!!value)} aria-label='Select row' />
-	// 		</div>
-	// 	),
-	// 	enableSorting: false,
-	// 	enableHiding: false,
-	// },
-	{
-		accessorKey: 'name',
-		header: 'Name',
-		cell: ({ row }) => {
-			return <TableCellViewer item={row.original} />;
-		},
-		enableHiding: false,
-	},
-	{
-		accessorKey: 'customer',
-		header: 'Customer',
-		cell: ({ row }) => (typeof row.original.customer === 'string' ? row.original.customer : row.original.customer.name),
-	},
-	{
-		accessorKey: 'status',
-		header: 'Status',
-		cell: ({ row }) => (
-			<Badge
-				variant={row.original.status.currentStatus === 'cancelled' ? 'destructive' : `outline`}
-				className='text-muted-foreground px-1.5'>
-				{row.original.status.currentStatus}
-			</Badge>
-		),
-	},
-	{
-		accessorKey: 'shop-prints',
-		header: () => <div className='w-full'>Shop Prints</div>,
-		cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'shopProduct').length || 0,
-	},
-	{
-		accessorKey: 'custom-prints',
-		header: () => <div className='w-full'>Custom Prints</div>,
-		cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'customPrint').length || 0,
-	},
-	{
-		accessorKey: 'created-at',
-		header: () => <div className='w-full'>Created At</div>,
-		cell: ({ row }) => (
-			<Popover>
-				<PopoverTrigger asChild>
-					<Button variant='link' className='px-0 flex'>
-						{format(new Date(row.original.createdAt), 'PPp')} (
-						{Math.floor((Date.now() - new Date(row.original.createdAt).getTime()) / (1000 * 60 * 60 * 24))} days ago)
-					</Button>
-				</PopoverTrigger>
-				<PopoverContent className='w-auto p-0'>
-					<Calendar
-						mode='single'
-						selected={new Date(row.original.createdAt)}
-						disabled
-						className='**:[td[role="gridcell"]]:!text-foreground **:!opacity-100'
-					/>
-				</PopoverContent>
-			</Popover>
-		),
-	},
-	// {
-	// 	id: 'actions',
-	// 	cell: () => (
-	// 		<DropdownMenu>
-	// 			<DropdownMenuTrigger asChild>
-	// 				<Button variant='ghost' className='data-[state=open]:bg-muted text-muted-foreground flex size-8' size='icon'>
-	// 					<IconDotsVertical />
-	// 					<span className='sr-only'>Open menu</span>
-	// 				</Button>
-	// 			</DropdownMenuTrigger>
-	// 			<DropdownMenuContent align='end' className='w-32'>
-	// 				<DropdownMenuItem>Edit</DropdownMenuItem>
-	// 				<DropdownMenuItem>Make a copy</DropdownMenuItem>
-	// 				<DropdownMenuItem>Favorite</DropdownMenuItem>
-	// 				<DropdownMenuSeparator />
-	// 				<DropdownMenuItem variant='destructive'>Delete</DropdownMenuItem>
-	// 			</DropdownMenuContent>
-	// 		</DropdownMenu>
-	// 	),
-	// },
-];
-
 function DraggableRow({ row }: { row: Row<ZodOrder> }) {
 	const { transform, transition, setNodeRef, isDragging } = useSortable({
 		id: row.original.id,
@@ -286,6 +170,7 @@ export function DataTable({ data: initialData, limit, page }: { data: ZodOrder[]
 		'limit',
 		parseAsInteger.withDefault(10).withOptions({ shallow: false }),
 	);
+	const [currentTab, setCurrentTab] = React.useState('in-queue');
 	const [selectedPage, setSelectedPage] = useQueryState('page', parseAsInteger.withDefault(1).withOptions({ shallow: false }));
 
 	const [pagination, setPagination] = React.useState({
@@ -309,9 +194,125 @@ export function DataTable({ data: initialData, limit, page }: { data: ZodOrder[]
 		setSelectedPage(pagination.pageIndex + 1);
 	}, [pagination]);
 
-	const [currentTab, setCurrentTab] = React.useState('in-queue');
-
 	const tableData = React.useMemo(() => (currentTab ? sortedData[currentTab] || [] : data), [currentTab, data, sortedData]);
+
+	const columns: ColumnDef<ZodOrder>[] = [
+		{
+			id: 'order',
+			header: () => <div className='w-6 text-right text-xs font-medium text-muted-foreground'>#</div>,
+			cell: ({ row }) => <div className='w-6 text-right text-xs text-muted-foreground'>{row.index + 1}</div>,
+			enableSorting: false,
+			enableHiding: false,
+		},
+		{
+			id: 'drag',
+			header: () => <span className='sr-only'>Reorder</span>,
+			cell: ({ row }) => (
+				<div className='flex justify-center'>
+					<DragHandle id={row.original.id} />
+				</div>
+			),
+			meta: {
+				headerClassName: 'w-8 px-0',
+				cellClassName: 'w-8 px-0',
+			},
+		},
+		// {
+		// 	id: 'select',
+		// 	header: ({ table }) => (
+		// 		<div className='flex items-center justify-center'>
+		// 			<Checkbox
+		// 				checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+		// 				onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
+		// 				aria-label='Select all'
+		// 			/>
+		// 		</div>
+		// 	),
+		// 	cell: ({ row }) => (
+		// 		<div className='flex items-center justify-center'>
+		// 			<Checkbox checked={row.getIsSelected()} onCheckedChange={value => row.toggleSelected(!!value)} aria-label='Select row' />
+		// 		</div>
+		// 	),
+		// 	enableSorting: false,
+		// 	enableHiding: false,
+		// },
+		{
+			accessorKey: 'name',
+			header: 'Name',
+			cell: ({ row }) => {
+				return <TableCellViewer setData={setData} item={row.original} />;
+			},
+			enableHiding: false,
+		},
+		{
+			accessorKey: 'customer',
+			header: 'Customer',
+			cell: ({ row }) => (typeof row.original.customer === 'string' ? row.original.customer : row.original.customer.name),
+		},
+		{
+			accessorKey: 'status',
+			header: 'Status',
+			cell: ({ row }) => (
+				<Badge
+					variant={row.original.status.currentStatus === 'cancelled' ? 'destructive' : `outline`}
+					className='text-muted-foreground px-1.5'>
+					{row.original.status.currentStatus}
+				</Badge>
+			),
+		},
+		{
+			accessorKey: 'shop-prints',
+			header: () => <div className='w-full'>Shop Prints</div>,
+			cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'shopProduct').length || 0,
+		},
+		{
+			accessorKey: 'custom-prints',
+			header: () => <div className='w-full'>Custom Prints</div>,
+			cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'customPrint').length || 0,
+		},
+		{
+			accessorKey: 'created-at',
+			header: () => <div className='w-full'>Created At</div>,
+			cell: ({ row }) => (
+				<Popover>
+					<PopoverTrigger asChild>
+						<Button variant='link' className='px-0 flex'>
+							{format(new Date(row.original.createdAt), 'PPp')} (
+							{Math.floor((Date.now() - new Date(row.original.createdAt).getTime()) / (1000 * 60 * 60 * 24))} days ago)
+						</Button>
+					</PopoverTrigger>
+					<PopoverContent className='w-auto p-0'>
+						<Calendar
+							mode='single'
+							selected={new Date(row.original.createdAt)}
+							disabled
+							className='**:[td[role="gridcell"]]:!text-foreground **:!opacity-100'
+						/>
+					</PopoverContent>
+				</Popover>
+			),
+		},
+		// {
+		// 	id: 'actions',
+		// 	cell: () => (
+		// 		<DropdownMenu>
+		// 			<DropdownMenuTrigger asChild>
+		// 				<Button variant='ghost' className='data-[state=open]:bg-muted text-muted-foreground flex size-8' size='icon'>
+		// 					<IconDotsVertical />
+		// 					<span className='sr-only'>Open menu</span>
+		// 				</Button>
+		// 			</DropdownMenuTrigger>
+		// 			<DropdownMenuContent align='end' className='w-32'>
+		// 				<DropdownMenuItem>Edit</DropdownMenuItem>
+		// 				<DropdownMenuItem>Make a copy</DropdownMenuItem>
+		// 				<DropdownMenuItem>Favorite</DropdownMenuItem>
+		// 				<DropdownMenuSeparator />
+		// 				<DropdownMenuItem variant='destructive'>Delete</DropdownMenuItem>
+		// 			</DropdownMenuContent>
+		// 		</DropdownMenu>
+		// 	),
+		// },
+	];
 
 	const table = useReactTable({
 		data: tableData,
@@ -600,7 +601,7 @@ export function DataTable({ data: initialData, limit, page }: { data: ZodOrder[]
 	);
 }
 
-function TableCellViewer({ item }: { item: ZodOrder }) {
+function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dispatch<React.SetStateAction<ZodOrder[]>> }) {
 	const customerIdValue = typeof item.customer === 'string' ? item.customer : item.customer.id;
 	const customerNameValue = typeof item.customer === 'string' ? '' : item.customer.name;
 
@@ -675,7 +676,7 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
-		const data = {
+		const data: Omit<Order, 'pricing' | 'id' | 'queue' | 'updatedAt' | 'createdAt'> = {
 			name: orderName.trim(),
 			customer: customerId || customerIdValue,
 			status: {
@@ -689,15 +690,11 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 			shippingAddress,
 		};
 
-		const res = await fetch(`/api/orders/${item.id}`, {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json' },
-			credentials: 'include',
-			body: JSON.stringify(data),
-		});
+		const res = await updateOrder(item.id, data);
 
-		if (!res.ok) toast.error('Failed to update order.');
+		if (typeof res === 'string') toast.error(res);
 		else {
+			setData((prevData: ZodOrder[]) => prevData.map(order => (order.id === item.id ? { ...order, ...res } : order)));
 			toast.success('Order updated successfully');
 			setIsDrawerOpen(false);
 		}

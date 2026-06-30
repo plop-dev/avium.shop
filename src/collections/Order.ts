@@ -2,6 +2,7 @@ import { Order } from '@/payload-types';
 import { APIError, CollectionConfig } from 'payload';
 import { adminAccess } from '@/access/elevated';
 import { noAccess, selfAccessOrders } from '@/access/anyone';
+import { getServerSideURL } from '@/utils/getServerSideUrl';
 
 const MAX_QUANTITY = 50;
 
@@ -39,7 +40,7 @@ export const Orders: CollectionConfig = {
 				//* we cannot keep on trying to update the prices according to quotes/products because:
 				//* 1. the quotes will be deleted after the order is created
 				//* 2. the quotes will never update in price anyways
-				//* 3. the product price shouldn't change, but might, so not updating it will keep the price consistent
+				//* 3. the product price should NEVER change, but might, so not updating it will keep the price consistent
 
 				const sourcePrints: Order['prints'] =
 					Array.isArray(data.prints) && data.prints.length > 0 ? data.prints : originalDoc?.prints || [];
@@ -109,21 +110,23 @@ export const Orders: CollectionConfig = {
 						throw new APIError('Failed to normalize prints. ' + (err instanceof Error ? err.message : String(err)), 400);
 					});
 					data.prints = normalizedPrints;
-				}
 
-				// pricing calculation
-				const subtotal = (normalizedPrints ?? data.prints).reduce(
-					(sum: number, print: Order['prints'][number]) => sum + (Number(print.price) || 0) * Number(print.quantity || 0),
-					0,
-				);
-				const shipping = Number(data.pricing?.shipping ?? originalDoc?.pricing?.shipping) || 300;
-				const tax = Number(data.pricing?.tax ?? originalDoc?.pricing?.tax) || 0;
-				data.pricing = {
-					subtotal,
-					shipping,
-					tax,
-					total: subtotal + shipping + tax,
-				};
+					// pricing calculation
+					const subtotal = normalizedPrints.reduce(
+						(sum: number, print: Order['prints'][number]) => sum + (Number(print.price) || 0) * Number(print.quantity || 0),
+						0,
+					);
+					const shipping = Number(data.pricing?.shipping ?? originalDoc?.pricing?.shipping) || 300;
+					const tax = Number(data.pricing?.tax ?? originalDoc?.pricing?.tax) || 0;
+					data.pricing = {
+						subtotal,
+						shipping,
+						tax,
+						total: subtotal + shipping + tax,
+					};
+				} else {
+					data.pricing = originalDoc?.pricing ?? data.pricing; //* if the prices are already set, disable updating prices
+				}
 
 				// makes the shippingAddress readonly
 				//? keep?
@@ -168,6 +171,103 @@ export const Orders: CollectionConfig = {
 								},
 							});
 						}
+					}
+				} else if (operation === 'update') {
+					// send email to customer with the new status
+
+					for (const doc of result.docs as Order[]) {
+						const customer =
+							typeof doc.customer === 'string'
+								? await req.payload.findByID({ collection: 'users', id: doc.customer })
+								: doc.customer;
+
+						req.payload.sendEmail({
+							to: customer.email,
+							subject: `Your order is now ${doc.status.currentStatus}`,
+							html: `
+							<!DOCTYPE html>
+							<html>
+							<head>
+							<meta charset="utf-8">
+							<meta name="viewport" content="width=device-width, initial-scale=1.0">
+							<title>Your order status has been updated</title>
+							</head>
+							<body style="margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; color: #18181b;">
+							<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin: 0; padding: 0; width: 100%; background-color: #f4f4f5;">
+								<tr>
+								<td align="center" style="padding: 40px 0;">
+									<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin: 0; padding: 0; width: 100%; max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+									<!-- Header -->
+									<tr>
+										<td style="padding: 32px 40px; text-align: center; background-color: #2a2e58; border-radius: 8px 8px 0 0;">
+										<h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #ffffff;">Avium</h1>
+										</td>
+									</tr>
+
+									<!-- Content -->
+									<tr>
+										<td style="padding: 40px;">
+										<p style="margin: 0 0 16px; font-size: 16px; line-height: 24px; color: #18181b;">Hi ${customer.name || 'there'},</p>
+
+										<p style="margin: 0 0 24px; font-size: 16px; line-height: 24px; color: #18181b;">
+											${
+												doc.status.currentStatus === 'cancelled'
+													? "Your order has been cancelled. If you have not made this change please consult the order's comments to find the reason."
+													: 'Your order status has been updated. Please review the latest details below.'
+											}
+										</p>
+
+										<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin: 0 0 24px; background-color: #f8fafc; border: 1px solid #e4e4e7; border-radius: 8px;">
+											<tr>
+											<td style="padding: 20px 24px;">
+												<p style="margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.04em;">Order update</p>
+												<p style="margin: 0 0 8px; font-size: 20px; font-weight: 600; color: #18181b;">Order #${doc.id}</p>
+												<p style="margin: 0 0 8px; font-size: 16px; line-height: 24px; color: #18181b;">
+												<strong>New status:</strong> ${doc.status}
+												</p>
+												<p style="margin: 0; font-size: 14px; line-height: 22px; color: #71717a;">
+												Updated on: ${doc.updatedAt || new Date().toLocaleString()}
+												</p>
+											</td>
+											</tr>
+										</table>
+
+										<p style="margin: 0 0 24px; font-size: 16px; line-height: 24px; color: #18181b;">
+											You can view the latest details of your order by clicking the button below.
+										</p>
+
+										<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+											<tr>
+											<td align="center" style="padding: 8px 0 24px;">
+												<a href="${getServerSideURL()}/dashboard/home" target="_blank" style="display: inline-block; padding: 10px 16px; background-color: #fca644; border-radius: 6px; font-size: 14px; font-weight: 500; color: #ffffff; text-decoration: none; text-align: center; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+												View Order
+												</a>
+											</td>
+											</tr>
+										</table>
+
+										<p style="margin: 0; font-size: 16px; line-height: 24px; color: #18181b;">
+											If you have any questions, feel free to reply to this email and we’ll be happy to help.
+										</p>
+										</td>
+									</tr>
+
+									<!-- Footer -->
+									<tr>
+										<td style="padding: 24px 40px; text-align: center; background-color: #eee; border-radius: 0 0 8px 8px;">
+										<p style="margin: 0; font-size: 14px; line-height: 20px; color: #121212;">
+											&copy; ${new Date().getFullYear()} Avium. All rights reserved.
+										</p>
+										</td>
+									</tr>
+									</table>
+								</td>
+								</tr>
+							</table>
+							</body>
+							</html>
+							`,
+						});
 					}
 				}
 			},
