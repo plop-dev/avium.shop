@@ -458,6 +458,10 @@ export interface Product {
    * The number of times this product has been bought
    */
   orders?: number | null;
+  /**
+   * If true, the product will not be shown in the shop and cannot be purchased.
+   */
+  archived?: boolean | null;
   printingOptions: {
     plastic: {
       /**
@@ -918,6 +922,7 @@ export interface ProductsSelect<T extends boolean = true> {
   price?: T;
   time?: T;
   orders?: T;
+  archived?: T;
   printingOptions?:
     | T
     | {

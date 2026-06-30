@@ -18,8 +18,7 @@ export const Orders: CollectionConfig = {
 	access: {
 		read: selfAccessOrders || adminAccess,
 		create: () => true,
-		// update: selfAccessOrders || adminAccess,
-		update: () => true,
+		update: selfAccessOrders || adminAccess,
 		delete: noAccess,
 	},
 	hooks: {

@@ -9,7 +9,6 @@ export const Products: CollectionConfig = {
 		singular: 'Product',
 		plural: 'Products',
 	},
-	// indexes: [{ unique: true, fields: ['name'] }],
 	admin: {
 		useAsTitle: 'name',
 		//? defaultColumns: ['name', 'customer', 'currentStatus', 'createdAt'],
@@ -22,11 +21,23 @@ export const Products: CollectionConfig = {
 		delete: noAccess,
 	},
 	timestamps: true,
+	hooks: {
+		beforeChange: [
+			async ({ req, data, operation }) => {
+				if (operation === 'update') {
+					delete data.price;
+				}
+
+				return data;
+			},
+		],
+	},
 	fields: [
 		{
 			name: 'name',
 			type: 'text',
 			required: true,
+			index: true,
 			admin: {
 				description: 'The name of the product.',
 			},
@@ -76,6 +87,16 @@ export const Products: CollectionConfig = {
 			admin: {
 				description: 'The number of times this product has been bought',
 				readOnly: true,
+			},
+		},
+
+		{
+			name: 'archived',
+			type: 'checkbox',
+			defaultValue: false,
+			required: false,
+			admin: {
+				description: 'If true, the product will not be shown in the shop and cannot be purchased.',
 			},
 		},
 

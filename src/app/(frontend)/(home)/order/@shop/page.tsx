@@ -41,9 +41,11 @@ export default async function Shop({ searchParams }: { searchParams: Promise<Sea
 			</div>
 
 			<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-0.5'>
-				{products.docs.map((product, i) => (
-					<ShopProduct key={i} product={product}></ShopProduct>
-				))}
+				{products.docs
+					.filter(p => !p.archived)
+					.map((product, i) => (
+						<ShopProduct key={i} product={product}></ShopProduct>
+					))}
 			</div>
 		</div>
 	);
