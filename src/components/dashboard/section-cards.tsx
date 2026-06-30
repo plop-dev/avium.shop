@@ -16,6 +16,11 @@ export async function SectionCards() {
 			prints: true,
 			createdAt: true,
 		},
+		where: {
+			'status.currentStatus': {
+				not_equals: 'cancelled',
+			},
+		},
 		limit: 0,
 	});
 
@@ -24,6 +29,9 @@ export async function SectionCards() {
 		where: {
 			createdAt: {
 				greater_than: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
+			},
+			'status.currentStatus': {
+				not_equals: 'cancelled',
 			},
 		},
 		select: {
