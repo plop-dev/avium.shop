@@ -429,6 +429,7 @@ export function DataTable({ data: initialData, limit, page }: { data: ZodOrder[]
 						<SelectItem value='printing'>Printing</SelectItem>
 						<SelectItem value='packaging'>Packaging</SelectItem>
 						<SelectItem value='shipped'>Shipped</SelectItem>
+						<SelectItem value='cancelled'>Cancelled</SelectItem>
 					</SelectContent>
 				</Select>
 				<TabsList className='**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex'>
@@ -443,6 +444,9 @@ export function DataTable({ data: initialData, limit, page }: { data: ZodOrder[]
 					</TabsTrigger>
 					<TabsTrigger value='shipped'>
 						Shipped <Badge variant='secondary'>{sortedData['shipped'] ? sortedData['shipped'].length : 0}</Badge>
+					</TabsTrigger>
+					<TabsTrigger value='cancelled'>
+						Cancelled <Badge variant='secondary'>{sortedData['cancelled'] ? sortedData['cancelled'].length : 0}</Badge>
 					</TabsTrigger>
 				</TabsList>
 				<div className='flex items-center gap-2'>
