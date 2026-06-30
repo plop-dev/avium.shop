@@ -190,7 +190,9 @@ const columns: ColumnDef<ZodOrder>[] = [
 		accessorKey: 'status',
 		header: 'Status',
 		cell: ({ row }) => (
-			<Badge variant='outline' className='text-muted-foreground px-1.5'>
+			<Badge
+				variant={row.original.status.currentStatus === 'cancelled' ? 'destructive' : `outline`}
+				className='text-muted-foreground px-1.5'>
 				{row.original.status.currentStatus}
 			</Badge>
 		),
@@ -748,7 +750,7 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 							<div className='flex flex-col gap-3'>
 								<div className='flex items-center justify-between'>
 									<Label className='text-base'>Order Status</Label>
-									<Badge variant='secondary'>{currentStatus}</Badge>
+									<Badge variant={currentStatus === 'cancelled' ? 'destructive' : `secondary`}>{currentStatus}</Badge>
 								</div>
 								<StatusTimeline
 									currentStatus={currentStatus}
@@ -1288,7 +1290,7 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 						<Toggle
 							variant='outline'
 							size='sm'
-							pressed={item.status.currentStatus === 'cancelled'}
+							pressed={currentStatus === 'cancelled'}
 							onPressedChange={value =>
 								handleStatusUpdate(
 									value ? 'cancelled' : (statusHistory?.[statusHistory.length - 1]?.stage ?? item.status.currentStatus),
@@ -1607,14 +1609,14 @@ function StatusTimeline({
 	};
 
 	return (
-		<div className='flex flex-col space-y-1'>
+		<div className={cn(`flex flex-col space-y-1`, currentStatus === 'cancelled' && 'opacity-40')}>
 			{statusSteps.map((step, index) => {
 				const isCompleted = index < currentIndex;
 				const isCurrent = index === currentIndex;
 				const isFuture = index > currentIndex;
 				const canAdvance = index === currentIndex + 1;
 				const canRevert = index === currentIndex - 1;
-				const canChange = canRevert || canAdvance;
+				const canChange = currentStatus === 'cancelled' ? false : canRevert || canAdvance;
 
 				const timestamp = getStatusTimestamp(step.value);
 
