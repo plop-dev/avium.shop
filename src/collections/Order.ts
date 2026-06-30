@@ -130,7 +130,7 @@ export const Orders: CollectionConfig = {
 
 				// makes the shippingAddress readonly
 				//? keep?
-				if (operation === 'update') {
+				if (operation === 'update' && !data.shippingAddress) {
 					data.shippingAddress = originalDoc?.shippingAddress ?? data.shippingAddress;
 				}
 
@@ -181,10 +181,11 @@ export const Orders: CollectionConfig = {
 								? await req.payload.findByID({ collection: 'users', id: doc.customer })
 								: doc.customer;
 
-						req.payload.sendEmail({
-							to: customer.email,
-							subject: `Your order is now ${doc.status.currentStatus}`,
-							html: `
+						if (process.env.SEND_EMAILS === 'true') {
+							req.payload.sendEmail({
+								to: customer.email,
+								subject: `Your order is now ${doc.status.currentStatus}`,
+								html: `
 							<!DOCTYPE html>
 							<html>
 							<head>
@@ -267,7 +268,8 @@ export const Orders: CollectionConfig = {
 							</body>
 							</html>
 							`,
-						});
+							});
+						}
 					}
 				}
 			},

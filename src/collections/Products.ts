@@ -23,9 +23,9 @@ export const Products: CollectionConfig = {
 	timestamps: true,
 	hooks: {
 		beforeChange: [
-			async ({ req, data, operation }) => {
+			async ({ req, data, operation, originalDoc }) => {
 				if (operation === 'update') {
-					delete data.price;
+					data.price = originalDoc.price;
 				}
 
 				return data;

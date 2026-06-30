@@ -18,8 +18,18 @@ import { useRouter } from 'next/navigation';
 import { Order } from '@/payload-types';
 import { Where } from 'payload';
 import { checkout } from '@/actions/checkout';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
-// Type guards
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
 	return 'model' in item;
 };
@@ -61,14 +71,12 @@ export default function Basket() {
 	const isCheckoutDisabled = basketItems.length === 0 || !orderValidation.orderNameValid;
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [message, setMessage] = useState<string | null>(null);
 
 	// New: handle checkout - create order in Payload via REST API (/api/orders)
 	const handleCheckout = async () => {
 		if (isCheckoutDisabled) return;
 
 		setIsSubmitting(true);
-		setMessage(null);
 
 		// Map basket items to Payload Order.prints shapes
 		const prints = basketItems.map(item => {
@@ -285,20 +293,32 @@ export default function Basket() {
 						</div>
 					)}
 
-					<Button disabled={isCheckoutDisabled || isSubmitting} onClick={handleCheckout}>
-						<LoadingSwap isLoading={isSubmitting}>
-							<div className='flex'>
-								<ShoppingBasket className='mr-2' />
-								Checkout ({totalItems} {totalItems === 1 ? 'item' : 'items'})
-							</div>
-						</LoadingSwap>
-					</Button>
-
-					{message && (
-						<div className='text-sm mt-2'>
-							<p>{message}</p>
-						</div>
-					)}
+					<AlertDialog>
+						<AlertDialogTrigger asChild>
+							<Button disabled={isCheckoutDisabled || isSubmitting}>
+								<LoadingSwap isLoading={isSubmitting}>
+									<div className='flex'>
+										<ShoppingBasket className='mr-2' />
+										Checkout ({totalItems} {totalItems === 1 ? 'item' : 'items'})
+									</div>
+								</LoadingSwap>
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>You are responsible for your delivery address</AlertDialogTitle>
+								<AlertDialogDescription>
+									If you enter your delivery address incorrectly and your order is not able to be delivered, you will be
+									responsible for any additional shipping costs. Please double-check your delivery address before
+									proceeding with checkout.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel>Cancel</AlertDialogCancel>
+								<AlertDialogAction onClick={handleCheckout}>Continue with Checkout</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
 				</DrawerFooter>
 			</DrawerContent>
 		</Drawer>

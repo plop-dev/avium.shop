@@ -39,33 +39,43 @@ export async function POST(req: Request) {
 			const chargeId = (await stripe.paymentIntents.retrieve(session.payment_intent as string)).latest_charge?.toString();
 			const shippingDetails = session.collected_information?.shipping_details;
 
-			await payload.update({
-				collection: 'orders',
-				id: orderId,
-				data: {
-					payment: {
-						paidAt: new Date().toISOString(),
-						stripeCheckoutSessionId: session.id,
-						stripePaymentIntentId: session.payment_intent?.toString(),
-						amount: session.amount_total,
-						currency: session.currency,
-						provider: 'stripe',
-						status: 'paid',
-						stripeCustomerId: session.customer?.toString(),
-						stripeChargeId: chargeId,
-						receiptUrl: chargeId && (await stripe.charges.retrieve(chargeId)).receipt_url,
+			if (!shippingDetails || !shippingDetails.address) {
+				console.error('No shipping details found in session');
+				return new Response('Webhook Error: No shipping details found', { status: 500 });
+			}
+
+			await payload
+				.update({
+					collection: 'orders',
+					id: orderId,
+					data: {
+						payment: {
+							paidAt: new Date().toISOString(),
+							stripeCheckoutSessionId: session.id,
+							stripePaymentIntentId: session.payment_intent?.toString(),
+							amount: session.amount_total,
+							currency: session.currency,
+							provider: 'stripe',
+							status: 'paid',
+							stripeCustomerId: session.customer?.toString(),
+							stripeChargeId: chargeId,
+							receiptUrl: chargeId && (await stripe.charges.retrieve(chargeId)).receipt_url,
+						},
+						shippingAddress: {
+							fullName: shippingDetails.name,
+							line1: shippingDetails.address?.line1,
+							line2: shippingDetails.address?.line2,
+							city: shippingDetails.address?.city,
+							county: shippingDetails.address?.state,
+							postcode: shippingDetails.address?.postal_code,
+							country: shippingDetails.address?.country,
+						},
 					},
-					shippingAddress: {
-						fullName: shippingDetails?.name,
-						line1: shippingDetails?.address?.line1,
-						line2: shippingDetails?.address?.line2,
-						city: shippingDetails?.address?.city,
-						county: shippingDetails?.address?.state,
-						postcode: shippingDetails?.address?.postal_code,
-						country: shippingDetails?.address?.country,
-					},
-				},
-			});
+				})
+				.catch(err => {
+					console.error('Error updating order after checkout.session.completed:', err);
+					return new Response('Webhook Error: Failed to update order', { status: 500 });
+				});
 
 			// now that the order has been paid, we can delete all quotes used for this order
 			const quoteIds = order.prints
