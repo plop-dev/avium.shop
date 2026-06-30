@@ -36,73 +36,87 @@ export const Orders: CollectionConfig = {
 				}
 
 				// make sure the price from products is from the db, not client
+				//* this should only happen if the prices are not set
+				//* we cannot keep on trying to update the prices according to quotes/products because:
+				//* 1. the quotes will be deleted after the order is created
+				//* 2. the quotes will never update in price anyways
+				//* 3. the product price shouldn't change, but might, so not updating it will keep the price consistent
 
-				const sourcePrints = Array.isArray(data.prints) && data.prints.length > 0 ? data.prints : originalDoc?.prints || [];
+				const sourcePrints: Order['prints'] =
+					Array.isArray(data.prints) && data.prints.length > 0 ? data.prints : originalDoc?.prints || [];
+				let normalizedPrints: Order['prints'] | undefined;
 
-				const normalizedPrints = await Promise.all(
-					sourcePrints.map(async (print: any) => {
-						const quantity = Number(print.quantity);
+				if (!sourcePrints[0].price) {
+					normalizedPrints = await Promise.all(
+						sourcePrints.map(async (print: Order['prints'][number]) => {
+							const quantity = Number(print.quantity);
 
-						if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
-							throw new APIError(`Print quantity must be between 1 and ${MAX_QUANTITY}.`, 400);
-						}
-
-						if (print.blockType === 'shopProduct') {
-							const productId = typeof print.product === 'string' ? print.product : print.product?.id;
-
-							if (!productId) {
-								throw new APIError('Shop product prints must include a product.', 400);
+							if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
+								throw new APIError(`Print quantity must be between 1 and ${MAX_QUANTITY}.`, 400);
 							}
 
-							const product = await req.payload.findByID({
-								collection: 'products',
-								id: productId,
+							if (print.blockType === 'shopProduct') {
+								const productId = typeof print.product === 'string' ? print.product : print.product?.id;
+
+								if (!productId) {
+									throw new APIError('Shop product prints must include a product.', 400);
+								}
+
+								const product = await req.payload.findByID({
+									collection: 'products',
+									id: productId,
+								});
+
+								const price = Number(product?.price);
+
+								if (!Number.isFinite(price) || price <= 0) {
+									throw new APIError(`Product price is invalid or missing. Got: ${product?.price}`, 400);
+								}
+
+								return {
+									...print,
+									product: productId,
+									quantity,
+									price: Math.round(price), // the only field actually getting updated
+								};
+							}
+
+							const quoteId = typeof print.quote === 'string' ? print.quote : print.quote?.id;
+
+							if (!quoteId) {
+								throw new APIError('Custom print must include a quote reference.', 400);
+							}
+
+							const quote = await req.payload.findByID({
+								collection: 'quotes',
+								id: quoteId,
 							});
 
-							const price = Number(product?.price);
+							const price = Number(quote.price);
 
 							if (!Number.isFinite(price) || price <= 0) {
-								throw new APIError(`Product price is invalid or missing. Got: ${product?.price}`, 400);
+								throw new APIError(`Quote price is invalid or missing. Got: ${quote?.price}`, 400);
 							}
 
 							return {
 								...print,
-								product: productId,
+								quote: quoteId,
 								quantity,
-								price: Math.round(price),
+								price, // the only field actually getting updated
 							};
-						}
-
-						const quoteId = typeof print.quote === 'string' ? print.quote : print.quote?.id;
-
-						if (!quoteId) {
-							throw new APIError('Custom print must include a quote reference.', 400);
-						}
-
-						const quote = await req.payload.findByID({
-							collection: 'quotes',
-							id: quoteId,
-						});
-
-						const price = Number(quote.price);
-
-						if (!Number.isFinite(price) || price <= 0) {
-							throw new APIError(`Quote price is invalid or missing. Got: ${quote?.price}`, 400);
-						}
-
-						return {
-							...print,
-							quote: quoteId,
-							quantity,
-							price,
-						};
-					}),
-				);
-
-				data.prints = normalizedPrints;
+						}),
+					).catch(err => {
+						console.error('Error normalizing prints:', err);
+						throw new APIError('Failed to normalize prints. ' + (err instanceof Error ? err.message : String(err)), 400);
+					});
+					data.prints = normalizedPrints;
+				}
 
 				// pricing calculation
-				const subtotal = normalizedPrints.reduce((sum, print) => sum + (Number(print.price) || 0) * Number(print.quantity || 0), 0);
+				const subtotal = (normalizedPrints ?? data.prints).reduce(
+					(sum: number, print: Order['prints'][number]) => sum + (Number(print.price) || 0) * Number(print.quantity || 0),
+					0,
+				);
 				const shipping = Number(data.pricing?.shipping ?? originalDoc?.pricing?.shipping) || 300;
 				const tax = Number(data.pricing?.tax ?? originalDoc?.pricing?.tax) || 0;
 				data.pricing = {
@@ -112,8 +126,9 @@ export const Orders: CollectionConfig = {
 					total: subtotal + shipping + tax,
 				};
 
+				// makes the shippingAddress readonly
+				//? keep?
 				if (operation === 'update') {
-					data.queue = originalDoc?.queue ?? data.queue;
 					data.shippingAddress = originalDoc?.shippingAddress ?? data.shippingAddress;
 				}
 

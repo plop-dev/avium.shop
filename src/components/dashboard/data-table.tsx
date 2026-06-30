@@ -198,12 +198,12 @@ const columns: ColumnDef<ZodOrder>[] = [
 	{
 		accessorKey: 'shop-prints',
 		header: () => <div className='w-full'>Shop Prints</div>,
-		cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'shopProduct') || 0,
+		cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'shopProduct').length || 0,
 	},
 	{
 		accessorKey: 'custom-prints',
 		header: () => <div className='w-full'>Custom Prints</div>,
-		cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'customPrint') || 0,
+		cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'customPrint').length || 0,
 	},
 	{
 		accessorKey: 'created-at',
@@ -346,20 +346,8 @@ export function DataTable({ data: initialData, limit, page }: { data: ZodOrder[]
 		while (dragQueueRef.current.length > 0) {
 			const { data: queueItem, newPriority, over } = dragQueueRef.current.shift()!;
 
-			const where: Where = {
-				id: {
-					equals: queueItem.id,
-				},
-			};
-			const stringifiedQuery = stringify(
-				{
-					where,
-				},
-				{ addQueryPrefix: true },
-			);
-
 			try {
-				const res = await fetch(`/api/orders${stringifiedQuery}`, {
+				const res = await fetch(`/api/orders/${queueItem.id}`, {
 					method: 'PATCH',
 					headers: {
 						'Content-Type': 'application/json',
@@ -659,8 +647,6 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 			const newIndex = statusList.indexOf(newStatus);
 			const now = new Date().toISOString();
 
-	
-
 			const previousStatuses = safePrev.filter(item => {
 				const itemIndex = statusList.indexOf(item.stage);
 				return itemIndex < newIndex;
@@ -921,7 +907,11 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 																			<div className='flex flex-col gap-2'>
 																				<Label>Preset</Label>
 																				<Input
-																					value={typeof print.printingOptions.preset === 'string' ? print.printingOptions.preset : ''}
+																					value={
+																						typeof print.printingOptions.preset === 'string'
+																							? print.printingOptions.preset
+																							: ''
+																					}
 																					onChange={e =>
 																						setPrints(prev =>
 																							prev.map(item =>
@@ -1187,7 +1177,9 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 																		<div className='flex items-start justify-between'>
 																			<div className='space-y-1 flex-1'>
 																				<CardTitle className='text-sm font-medium'>
-																					{typeof print.product === 'string' ? print.product : print.product.id}
+																					{typeof print.product === 'string'
+																						? print.product
+																						: print.product.id}
 																				</CardTitle>
 																				<CardDescription className='text-xs'>
 																					Shop Product #{index + 1}
@@ -1201,7 +1193,11 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 																			<div className='flex flex-col gap-2'>
 																				<Label>Product ID</Label>
 																				<Input
-																					value={typeof print.product === 'string' ? print.product : print.product.id}
+																					value={
+																						typeof print.product === 'string'
+																							? print.product
+																							: print.product.id
+																					}
 																					onChange={e =>
 																						setPrints(prev =>
 																							prev.map(item =>
@@ -1295,9 +1291,7 @@ function TableCellViewer({ item }: { item: ZodOrder }) {
 							pressed={item.status.currentStatus === 'cancelled'}
 							onPressedChange={value =>
 								handleStatusUpdate(
-									value
-										? 'cancelled'
-										: (statusHistory?.[statusHistory.length - 1]?.stage ?? item.status.currentStatus)
+									value ? 'cancelled' : (statusHistory?.[statusHistory.length - 1]?.stage ?? item.status.currentStatus),
 								)
 							}
 							className='cursor-pointer justify-center data-[state=on]:border-destructive data-[state=on]:bg-destructive/10 data-[state=on]:text-destructive w-full transition-colors'>
