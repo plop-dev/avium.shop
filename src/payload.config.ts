@@ -28,12 +28,13 @@ export default buildConfig({
 	admin: {
 		user: Users.slug,
 		importMap: {
-			// Write the import map outside of the `src` tree to avoid Next dev
-			// file-watchers triggering rebuilds when Payload updates the file.
-			baseDir: path.resolve(dirname, '..', '.payload'),
+			baseDir: path.resolve(dirname, 'src'),
 		},
 		avatar: 'default',
 		dateFormat: 'dd/MM/yyyy',
+		components: {
+			beforeNavLinks: ['@/components/payload/AdminNav'],
+		},
 	},
 	cors: {
 		origins: [process.env.NEXT_PUBLIC_AVIUM_API_URL || ''],
