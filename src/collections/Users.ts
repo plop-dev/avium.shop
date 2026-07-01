@@ -15,6 +15,17 @@ export const Users: CollectionConfig = {
 		delete: () => false,
 		unlock: selfAccess,
 	},
+	hooks: {
+		beforeChange: [
+			async ({ data, req, operation, originalDoc }) => {
+				const isAdmin = ['admin', 'developer'].includes(req.user?.role || '');
+				if (!isAdmin && data.role) {
+					data.role = operation === 'create' ? 'customer' : originalDoc?.role;
+				}
+				return data;
+			},
+		],
+	},
 	auth: {
 		verify: {
 			generateEmailSubject(args) {
@@ -178,6 +189,10 @@ export const Users: CollectionConfig = {
 			name: 'role',
 			type: 'select',
 			defaultValue: 'customer',
+			access: {
+				create: ({ req }) => ['admin', 'developer'].includes(req.user?.role || ''),
+				update: ({ req }) => ['admin', 'developer'].includes(req.user?.role || ''),
+			},
 			options: [
 				{
 					label: 'Customer',
