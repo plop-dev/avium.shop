@@ -225,6 +225,28 @@ export interface Order {
 		 */
 		deliveredAt?: string | null;
 	};
+
+	/**
+	 * Dimensions of the final, packaged order for shipping.
+	 */
+	dimensions?: {
+		/**
+		 * Length of the package in centimeters
+		 */
+		length?: number | null;
+		/**
+		 * Width of the package in centimeters
+		 */
+		width?: number | null;
+		/**
+		 * Height of the package in centimeters
+		 */
+		height?: number | null;
+		/**
+		 * Weight of the package in grams
+		 */
+		weight?: number | null;
+	};
 	shippingAddress?: {
 		fullName?: string | null;
 		line1?: string | null;

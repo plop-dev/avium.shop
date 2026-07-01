@@ -75,6 +75,17 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Toggle } from '@/components/ui/toggle';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,6 +107,7 @@ import { Where } from 'payload';
 import { orderSchema } from '@/schemas';
 import { updateOrder } from '@/actions/updateOrder';
 import { Order } from '@/payload-types';
+import { buyLabel } from '@/actions/buyLabel';
 
 // server actions
 
@@ -616,9 +628,10 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 	const [payment, setPayment] = React.useState(item.payment);
 	const [shipping, setShipping] = React.useState(item.shipping);
 	const [shippingAddress, setShippingAddress] = React.useState(item.shippingAddress);
+	const [prints, setPrints] = React.useState(item.prints || []);
+	const [dimensions, setDimensions] = React.useState(item.dimensions);
 	const pricing = item.pricing;
 	const queue = item.queue;
-	const [prints, setPrints] = React.useState(item.prints || []);
 
 	React.useEffect(() => {
 		setCurrentStatus(item.status.currentStatus);
@@ -687,6 +700,7 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 			comments,
 			payment,
 			shipping,
+			dimensions,
 			shippingAddress,
 		};
 
@@ -721,6 +735,19 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 		link.click();
 		document.body.removeChild(link);
 		toast.success(`Downloaded ${productId}`);
+	};
+
+	const handleBuyLabel = async () => {
+		toast.info('Purchasing shipping label...');
+
+		try {
+			await buyLabel(item.id, dimensions).then(() => {
+				toast.success('Shipping label purchased successfully. Check the order details for the label.');
+			});
+		} catch (error) {
+			console.error('Error buying label:', error);
+			toast.error('Failed to buy shipping label.');
+		}
 	};
 
 	return (
@@ -1513,6 +1540,103 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 										/>
 									</div>
 								</div>
+							</div>
+						</div>
+
+						<div className='rounded-xl border bg-card p-4'>
+							<div className='flex flex-col gap-3'>
+								<Label>Parcel Details</Label>
+								<span className='text-xs text-muted-foreground'>
+									Enter the details for the final, packaged order (including ALL prints + misc. items).
+								</span>
+								<div className='grid gap-3 md:grid-cols-2'>
+									<div className='flex flex-col gap-2'>
+										<Label>Length (cm)</Label>
+										<Input
+											type='number'
+											value={dimensions?.length ?? ''}
+											onChange={e => {
+												const v = e.target.value;
+												setDimensions(prev => ({
+													...prev,
+													length: v === '' ? undefined : Number(v),
+												}));
+											}}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Height (cm)</Label>
+										<Input
+											type='number'
+											value={dimensions?.height ?? ''}
+											onChange={e => {
+												const v = e.target.value;
+												setDimensions(prev => ({
+													...prev,
+													height: v === '' ? undefined : Number(v),
+												}));
+											}}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Width (cm)</Label>
+										<Input
+											type='number'
+											value={dimensions?.width ?? ''}
+											onChange={e => {
+												const v = e.target.value;
+												setDimensions(prev => ({
+													...prev,
+													width: v === '' ? undefined : Number(v),
+												}));
+											}}
+										/>
+									</div>
+									<div className='flex flex-col gap-2'>
+										<Label>Weight (grams)</Label>
+										<Input
+											type='number'
+											value={dimensions?.weight ?? ''}
+											onChange={e => {
+												const v = e.target.value;
+												setDimensions(prev => ({
+													...prev,
+													weight: v === '' ? undefined : Number(v),
+												}));
+											}}
+										/>
+									</div>
+								</div>
+
+								<AlertDialog>
+									<AlertDialogTrigger asChild>
+										<Button
+											variant='default'
+											disabled={
+												!(
+													(dimensions?.length ?? 0) > 0 &&
+													(dimensions?.height ?? 0) > 0 &&
+													(dimensions?.width ?? 0) > 0 &&
+													(dimensions?.weight ?? 0) > 0
+												)
+											}>
+											Buy Label
+										</Button>
+									</AlertDialogTrigger>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+											<AlertDialogDescription>
+												This action will purchase a shipping label for this order. Please ensure that all parcel
+												details are correct before proceeding.
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>Cancel</AlertDialogCancel>
+											<AlertDialogAction onClick={handleBuyLabel}>Continue</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
 							</div>
 						</div>
 

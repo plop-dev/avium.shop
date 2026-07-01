@@ -12,30 +12,37 @@ export const AdminDetails: GlobalConfig = {
 				{
 					name: 'fullName',
 					type: 'text',
+					required: true,
 				},
 				{
 					name: 'line1',
 					type: 'text',
+					required: true,
 				},
 				{
 					name: 'line2',
 					type: 'text',
+					required: false,
 				},
 				{
 					name: 'city',
 					type: 'text',
+					required: true,
 				},
 				{
 					name: 'county',
 					type: 'text',
+					required: true,
 				},
 				{
 					name: 'postcode',
 					type: 'text',
+					required: true,
 				},
 				{
 					name: 'country',
 					type: 'text',
+					required: true,
 				},
 			],
 		},

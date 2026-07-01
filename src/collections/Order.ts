@@ -550,6 +550,35 @@ export const Orders: CollectionConfig = {
 			],
 		},
 
+		{
+			name: 'dimensions',
+			type: 'group',
+			required: false,
+			admin: { description: 'Dimensions of the final, packaged order for shipping.' },
+			fields: [
+				{
+					name: 'length',
+					type: 'number',
+					admin: { description: 'Length of the package in centimeters' },
+				},
+				{
+					name: 'width',
+					type: 'number',
+					admin: { description: 'Width of the package in centimeters' },
+				},
+				{
+					name: 'height',
+					type: 'number',
+					admin: { description: 'Height of the package in centimeters' },
+				},
+				{
+					name: 'weight',
+					type: 'number',
+					admin: { description: 'Weight of the package in grams' },
+				},
+			],
+		},
+
 		// shipping address
 		{
 			name: 'shippingAddress',

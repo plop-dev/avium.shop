@@ -308,9 +308,9 @@ export default function Basket() {
 							<AlertDialogHeader>
 								<AlertDialogTitle>You are responsible for your delivery address</AlertDialogTitle>
 								<AlertDialogDescription>
-									If you enter your delivery address incorrectly and your order is not able to be delivered, you will be
-									responsible for any additional shipping costs. Please double-check your delivery address before
-									proceeding with checkout.
+									If you enter your delivery address incorrectly and your order is not able to be delivered, you will have
+									to re-order and pay all delivery costs. Please double-check your delivery address before proceeding with
+									checkout.
 								</AlertDialogDescription>
 							</AlertDialogHeader>
 							<AlertDialogFooter>

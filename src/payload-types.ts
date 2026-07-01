@@ -102,10 +102,12 @@ export interface Config {
   globals: {
     'printing-options': PrintingOption;
     'pricing-formula': PricingFormula;
+    'admin-details': AdminDetail;
   };
   globalsSelect: {
     'printing-options': PrintingOptionsSelect<false> | PrintingOptionsSelect<true>;
     'pricing-formula': PricingFormulaSelect<false> | PricingFormulaSelect<true>;
+    'admin-details': AdminDetailsSelect<false> | AdminDetailsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -374,6 +376,27 @@ export interface Order {
      * Date and time when the order was delivered
      */
     deliveredAt?: string | null;
+  };
+  /**
+   * Dimensions of the final, packaged order for shipping.
+   */
+  dimensions?: {
+    /**
+     * Length of the package in centimeters
+     */
+    length?: number | null;
+    /**
+     * Width of the package in centimeters
+     */
+    width?: number | null;
+    /**
+     * Height of the package in centimeters
+     */
+    height?: number | null;
+    /**
+     * Weight of the package in grams
+     */
+    weight?: number | null;
   };
   shippingAddress?: {
     fullName?: string | null;
@@ -864,6 +887,14 @@ export interface OrdersSelect<T extends boolean = true> {
         shippedAt?: T;
         deliveredAt?: T;
       };
+  dimensions?:
+    | T
+    | {
+        length?: T;
+        width?: T;
+        height?: T;
+        weight?: T;
+      };
   shippingAddress?:
     | T
     | {
@@ -1108,6 +1139,24 @@ export interface PricingFormula {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-details".
+ */
+export interface AdminDetail {
+  id: string;
+  shippingAddress: {
+    fullName: string;
+    line1: string;
+    line2?: string | null;
+    city: string;
+    county: string;
+    postcode: string;
+    country: string;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "printing-options_select".
  */
 export interface PrintingOptionsSelect<T extends boolean = true> {
@@ -1151,6 +1200,26 @@ export interface PrintingOptionsSelect<T extends boolean = true> {
  */
 export interface PricingFormulaSelect<T extends boolean = true> {
   pricingFormula?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-details_select".
+ */
+export interface AdminDetailsSelect<T extends boolean = true> {
+  shippingAddress?:
+    | T
+    | {
+        fullName?: T;
+        line1?: T;
+        line2?: T;
+        city?: T;
+        county?: T;
+        postcode?: T;
+        country?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
