@@ -1,4 +1,5 @@
 import { Order, Product } from '@/payload-types';
+import { createHash } from 'crypto';
 import { persistentAtom } from '@nanostores/persistent';
 
 export type CustomPrint = {
@@ -56,11 +57,19 @@ export const resetBasket = () => {
 };
 
 export const addToBasket = (product: BasketItem) => {
-	const existingItem = $basket.get().find(p => p.id === product.id);
+	const existingItem = $basket.get().find(p => {
+		if ('product' in p && 'product' in product) {
+			createHash('sha256').update(Object.values(p.product).join('')).digest('base64') ===
+				createHash('sha256').update(Object.values(product.product).join('')).digest('base64');
+		} else {
+			return p.id === product.id;
+		}
+	});
 
 	if (existingItem) {
 		$basket.set($basket.get().map(p => (p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p)));
 	} else {
+		console.log('Adding new item to basket:', product);
 		$basket.set([...$basket.get(), { ...product, quantity: product.quantity }]);
 	}
 };

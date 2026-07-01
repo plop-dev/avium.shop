@@ -20,12 +20,18 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 	const [selectedColour, setSelectedColour] = useState<string>('');
 
 	const availableColours = useMemo(() => {
-		return product.printingOptions.plastic[0].colours || [{ colour: '#eee', id: 'default' }];
+		return product.printingOptions.plastic[0].colours || [{ id: 'default', colour: '#000000' }];
 	}, []);
 
 	// Set default colour when dialog opens
 	const handleDialogOpen = (isOpen: boolean) => {
 		setOpen(isOpen);
+
+		if (availableColours[0].id === 'default') {
+			setOpen(false);
+			throw new Error('No available colours found for this product. Please contact support.');
+		}
+
 		if (isOpen && availableColours.length > 0 && !selectedColour) {
 			setSelectedColour(availableColours[0].colour);
 		}

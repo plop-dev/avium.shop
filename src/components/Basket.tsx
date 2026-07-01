@@ -29,6 +29,7 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { createHash } from 'crypto';
 
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
 	return 'model' in item;
@@ -262,7 +263,7 @@ export default function Basket() {
 									</div>
 									{shopProducts.map(item => (
 										<BasketItem
-											key={item.id}
+											key={createHash('sha256').update(JSON.stringify(item)).digest('base64')}
 											item={item}
 											onQuantityChange={handleQuantityChange}
 											onRemove={handleRemoveItem}
