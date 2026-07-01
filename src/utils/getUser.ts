@@ -1,7 +1,4 @@
 import { auth } from '@/auth';
-import { getPayload } from 'payload';
-import config from '@payload-config';
-import { headers as nextHeaders } from 'next/headers';
 import { User } from 'next-auth';
 
 export const getUser = async (): Promise<User | null> => {

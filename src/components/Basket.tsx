@@ -30,6 +30,7 @@ import {
 	AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { createHash } from 'crypto';
+import { useSession } from 'next-auth/react';
 
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
 	return 'model' in item;
@@ -41,6 +42,7 @@ const isShopProduct = (item: BasketItemType): item is ShopProduct => {
 
 export default function Basket() {
 	const router = useRouter();
+	const { data: session } = useSession();
 	const [totalItems, setTotalItems] = useState(0);
 	const basketItems = useStore($basket);
 	const orderValidation = useStore($orderValidation);
@@ -103,13 +105,24 @@ export default function Basket() {
 			};
 		});
 
-		const me = await fetch('/api/users/me');
-		if (me.status !== 200) {
+		// const me = await fetch('/api/users/me', { credentials: 'include' });
+
+		// if (me.status !== 200) {
+		// 	toast.error('Failed to retrieve user information.');
+		// 	setIsSubmitting(false);
+		// 	return;
+		// }
+		// const userId = (await me.json()).user.id;
+
+		const me = session?.user;
+
+		if (!me || !me.id) {
 			toast.error('Failed to retrieve user information.');
 			setIsSubmitting(false);
 			return;
 		}
-		const userId = (await me.json()).user.id;
+
+		const userId = me.id;
 
 		const orders = await (
 			await fetch(`/api/orders?sort=-queue&limit=1&select[queue]=true&depth=0`, {
