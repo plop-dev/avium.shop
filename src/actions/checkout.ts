@@ -41,7 +41,6 @@ export async function checkout(orderId: string): Promise<{ success: boolean; mes
 		customer_creation: 'always',
 		customer_email: typeof order.customer === 'string' ? undefined : order.customer.email,
 		client_reference_id: order.id,
-
 		metadata: {
 			orderId: order.id,
 			userId: typeof order.customer === 'string' ? order.customer : order.customer.id,

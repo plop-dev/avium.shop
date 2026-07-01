@@ -36,6 +36,11 @@ export async function POST(req: Request) {
 				id: orderId,
 			});
 
+			if (order.payment?.paidAt) {
+				console.warn(`Order ${orderId} has already been marked as paid. Skipping update.`);
+				return Response.json({ received: true });
+			}
+
 			const chargeId = (await stripe.paymentIntents.retrieve(session.payment_intent as string)).latest_charge?.toString();
 			const shippingDetails = session.collected_information?.shipping_details;
 
@@ -44,8 +49,8 @@ export async function POST(req: Request) {
 				return new Response('Webhook Error: No shipping details found', { status: 500 });
 			}
 
-			await payload
-				.update({
+			try {
+				await payload.update({
 					collection: 'orders',
 					id: orderId,
 					data: {
@@ -71,11 +76,11 @@ export async function POST(req: Request) {
 							country: shippingDetails.address?.country,
 						},
 					},
-				})
-				.catch(err => {
-					console.error('Error updating order after checkout.session.completed:', err);
-					return new Response('Webhook Error: Failed to update order', { status: 500 });
 				});
+			} catch (error) {
+				console.error('Error updating order after checkout.session.completed:', error);
+				return new Response('Webhook Error: Failed to update order', { status: 500 });
+			}
 
 			// now that the order has been paid, we can delete all quotes used for this order
 			const quoteIds = order.prints

@@ -18,7 +18,7 @@ export const Orders: CollectionConfig = {
 	},
 	access: {
 		read: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
-		create: () => true,
+		create: ({ req }) => !!req.user,
 		update: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
 		delete: () => false,
 	},
@@ -46,7 +46,7 @@ export const Orders: CollectionConfig = {
 					Array.isArray(data.prints) && data.prints.length > 0 ? data.prints : originalDoc?.prints || [];
 				let normalizedPrints: Order['prints'] | undefined;
 
-				if (!sourcePrints[0].price) {
+				if (sourcePrints[0] && !sourcePrints[0].price) {
 					normalizedPrints = await Promise.all(
 						sourcePrints.map(async (print: Order['prints'][number]) => {
 							const quantity = Number(print.quantity);
@@ -224,7 +224,7 @@ export const Orders: CollectionConfig = {
 												<p style="margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.04em;">Order update</p>
 												<p style="margin: 0 0 8px; font-size: 20px; font-weight: 600; color: #18181b;">Order #${doc.id}</p>
 												<p style="margin: 0 0 8px; font-size: 16px; line-height: 24px; color: #18181b;">
-												<strong>New status:</strong> ${doc.status}
+												<strong>New status:</strong> ${doc.status.currentStatus}
 												</p>
 												<p style="margin: 0; font-size: 14px; line-height: 22px; color: #71717a;">
 												Updated on: ${doc.updatedAt || new Date().toLocaleString()}
