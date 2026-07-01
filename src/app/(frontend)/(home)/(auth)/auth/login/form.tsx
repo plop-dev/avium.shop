@@ -81,7 +81,7 @@ export default function LoginForm() {
 
 			// Otherwise consider it a success
 			toast.success('Login successful! Redirecting...');
-			router.push(result.url || '/dashboard/home');
+			router.push('/dashboard/home');
 		} catch (error) {
 			toast.error('An unexpected error occurred. Please try again.');
 		} finally {
