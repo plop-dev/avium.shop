@@ -696,7 +696,7 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 				statuses: statusHistory,
 				currentStatus: currentStatus,
 			},
-			prints: prints.map(print => ({ ...print })),
+			prints,
 			comments,
 			payment,
 			shipping,

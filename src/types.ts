@@ -76,6 +76,7 @@ export interface Order {
 				completed?: boolean | null;
 				id?: string | null;
 				blockName?: string | null;
+				colour: string;
 				blockType: 'shopProduct';
 		  }
 		| {

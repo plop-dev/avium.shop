@@ -155,6 +155,7 @@ export const orderSchema: z.ZodSchema<Order> = z.lazy(() =>
 					price: z.number(),
 					completed: z.boolean().optional().nullable(),
 					id: z.string().optional().nullable(),
+					colour: z.string(),
 					blockName: z.string().optional().nullable(),
 					blockType: z.literal('shopProduct'),
 				}),
