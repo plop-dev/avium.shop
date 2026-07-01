@@ -5,6 +5,7 @@ import { Order } from '@/payload-types';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 import { AddressCreateRequest, DistanceUnitEnum, LabelFileTypeEnum, ParcelCreateRequest, WeightUnitEnum } from 'shippo';
+import { revalidatePath } from 'next/cache';
 
 export async function buyLabel(orderId: string, dimensions: Order['dimensions']) {
 	// we could either get dimensions from the ui (should be safe, only admins use it anyways) or
@@ -89,10 +90,16 @@ export async function buyLabel(orderId: string, dimensions: Order['dimensions'])
 					trackingNumber: transaction.trackingNumber,
 					trackingUrl: transaction.trackingUrlProvider,
 					labelUrl: transaction.labelUrl,
-					labelPurchasedAt: rate.objectCreated?.toISOString(),
+					labelPurchasedAt:
+						transaction.objectCreated instanceof Date
+							? transaction.objectCreated.toISOString()
+							: transaction.objectCreated ?? new Date().toISOString(),
+					parcelId: transaction.parcel,
 				},
 			},
 		});
+
+		revalidatePath(`/dashboard/home`);
 	} catch (error) {
 		console.error('Error updating order with shipping details:', error);
 		throw new Error('Failed to update order with shipping details');

@@ -369,13 +369,9 @@ export interface Order {
      */
     labelPurchasedAt?: string | null;
     /**
-     * Date and time when the order was shipped
+     * Parcel ID
      */
-    shippedAt?: string | null;
-    /**
-     * Date and time when the order was delivered
-     */
-    deliveredAt?: string | null;
+    parcelId?: string | null;
   };
   /**
    * Dimensions of the final, packaged order for shipping.
@@ -884,8 +880,7 @@ export interface OrdersSelect<T extends boolean = true> {
         trackingUrl?: T;
         labelUrl?: T;
         labelPurchasedAt?: T;
-        shippedAt?: T;
-        deliveredAt?: T;
+        parcelId?: T;
       };
   dimensions?:
     | T

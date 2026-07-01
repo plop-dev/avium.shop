@@ -538,14 +538,9 @@ export const Orders: CollectionConfig = {
 					admin: { description: 'Date and time when the label was purchased' },
 				},
 				{
-					name: 'shippedAt',
-					type: 'date',
-					admin: { description: 'Date and time when the order was shipped' },
-				},
-				{
-					name: 'deliveredAt',
-					type: 'date',
-					admin: { description: 'Date and time when the order was delivered' },
+					name: 'parcelId',
+					type: 'text',
+					admin: { description: 'Parcel ID' },
 				},
 			],
 		},
