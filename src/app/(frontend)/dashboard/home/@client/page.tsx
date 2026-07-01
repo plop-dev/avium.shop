@@ -240,8 +240,8 @@ export default async function ClientPage() {
 								{latestOrder ? `Latest: ${formatOrderDate(latestOrder.createdAt)}` : 'Latest order'}
 							</Badge>
 						</CardHeader>
-						<CardContent className='flex flex-col gap-3 p-4'>
-							{orders.docs.map(order => {
+						<CardContent className='flex flex-col gap-10 p-4'>
+							{orders.docs.map((order, i) => {
 								const timelineNodes = getTimelineNodes(order.status.currentStatus, order.status.statuses);
 								const paymentVariant = getPaymentStatusVariant(order.payment?.status);
 								const isCancelled = order.status.currentStatus === 'cancelled';
@@ -254,9 +254,14 @@ export default async function ClientPage() {
 										}`}>
 										<CardHeader className={`py-3 border-b ${isCancelled ? 'bg-destructive/10' : 'bg-muted/20'}`}>
 											<div className='flex flex-wrap items-start justify-between gap-3'>
-												<div className='space-y-1'>
+												<div className='space-y-2'>
 													<div className='flex flex-wrap items-center gap-2'>
-														<CardTitle className='text-base'>{order.name}</CardTitle>
+														<CardTitle className='text-base flex gap-2 relative'>
+															<span className='bg-primary -left-1 relative p-1 h-6 w-6 flex items-center justify-center rounded-full text-white'>
+																{i + 1}
+															</span>{' '}
+															{order.name}
+														</CardTitle>
 														{isCancelled ? (
 															<Badge variant='destructive' className='gap-1'>
 																<AlertCircle className='size-3.5' />
@@ -465,13 +470,13 @@ export default async function ClientPage() {
 														</Badge>
 													</div>
 													<Separator className='my-3' />
-													<ol className='space-y-3 h-full'>
+													<ol className='space-y-3 min-h-52 h-full'>
 														{timelineNodes.map((node, index) => {
 															const isCurrent = node.state === 'current';
 															const isComplete = node.state === 'complete';
 
 															return (
-																<li key={node.label} className='flex gap-3 h-[15%]'>
+																<li key={node.label} className='flex gap-3 h-[20%]'>
 																	<div className='flex flex-col items-center'>
 																		<div
 																			className={[
@@ -504,6 +509,8 @@ export default async function ClientPage() {
 														})}
 													</ol>
 												</div>
+
+												<Separator className='mt-12' />
 
 												{isCancelled ? null : (
 													<Alert className='border-dashed'>
