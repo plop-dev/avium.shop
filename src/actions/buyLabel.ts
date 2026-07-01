@@ -6,12 +6,29 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 import { AddressCreateRequest, DistanceUnitEnum, LabelFileTypeEnum, ParcelCreateRequest, WeightUnitEnum } from 'shippo';
 import { revalidatePath } from 'next/cache';
+import { getUser } from '@/utils/getUser';
 
 export async function buyLabel(orderId: string, dimensions: Order['dimensions']) {
 	// we could either get dimensions from the ui (should be safe, only admins use it anyways) or
 	// get it from the db, but that's an extra process (even from server components)
 
 	const payload = await getPayload({ config });
+	const user = await getUser();
+
+	try {
+		const userDoc = await payload.findByID({
+			collection: 'users',
+			id: user?.id || '',
+		});
+
+		if (userDoc.role === 'customer') {
+			throw new Error('Unauthorized: Only admins can buy shipping labels');
+		}
+	} catch (error) {
+		console.error('Error fetching user document:', error);
+		throw new Error('Failed to fetch user document');
+	}
+
 	const adminDetails = await payload.findGlobal({
 		slug: 'admin-details',
 	});
