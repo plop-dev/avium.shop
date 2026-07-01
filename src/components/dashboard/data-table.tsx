@@ -104,7 +104,7 @@ import { Textarea } from '../ui/textarea';
 import { parseAsInteger, useQueryState } from 'nuqs';
 import { useEffect } from 'react';
 import { Where } from 'payload';
-import { orderSchema } from '@/schemas';
+import { orderSchema } from '@/schemas/orderSchema';
 import { updateOrder } from '@/actions/updateOrder';
 import { Order } from '@/payload-types';
 import { buyLabel } from '@/actions/buyLabel';
