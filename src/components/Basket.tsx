@@ -50,12 +50,12 @@ export default function Basket() {
 	const orderDetails = useStore($orderDetails);
 	const [orderCommentsLocal, setOrderCommentsLocal] = useState<string | null>(orderDetails.comments || '');
 
-	const handleQuantityChange = (id: string, newQuantity: number) => {
-		setItemQuantity(id, newQuantity);
+	const handleQuantityChange = (itemKey: string, newQuantity: number) => {
+		setItemQuantity(itemKey, newQuantity);
 	};
 
-	const handleRemoveItem = (id: string) => {
-		setItemQuantity(id, 0);
+	const handleRemoveItem = (itemKey: string) => {
+		setItemQuantity(itemKey, 0);
 	};
 
 	useEffect(() => {
@@ -101,6 +101,7 @@ export default function Basket() {
 				blockType: 'shopProduct',
 				product: shopItem.id,
 				quantity: shopItem.quantity,
+				colour: shopItem.colour,
 				price: 0, // price will be calculated server-side based on the product
 			};
 		});

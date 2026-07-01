@@ -4,7 +4,7 @@ import { Minus, Plus, Trash2, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BasketItem as BasketItemType, CustomPrint, ShopProduct } from '@/stores/basket';
+import { BasketItem as BasketItemType, CustomPrint, getBasketItemSignature, ShopProduct } from '@/stores/basket';
 import { NumberInput } from './ui/number-input';
 import { Preset, PrintingOption } from '@/payload-types';
 import useSWR, { Fetcher } from 'swr';
@@ -43,8 +43,8 @@ export default function BasketItem({
 	canChangeQuantity = true,
 }: {
 	item: BasketItemType;
-	onQuantityChange?: (id: string, newQuantity: number) => void;
-	onRemove?: (id: string) => void;
+	onQuantityChange?: (itemKey: string, newQuantity: number) => void;
+	onRemove?: (itemKey: string) => void;
 	progress?: number; // used for print upload in quotes
 	canChangeQuantity?: boolean;
 }) {
@@ -57,7 +57,7 @@ export default function BasketItem({
 
 	const handleQuantityChange = (value: number) => {
 		if (onQuantityChange) {
-			onQuantityChange(item.id, value);
+			onQuantityChange(getBasketItemSignature(item), value);
 		}
 	};
 
@@ -164,7 +164,7 @@ export default function BasketItem({
 					<Button
 						variant='ghost'
 						size='sm'
-						onClick={() => onRemove?.(item.id)}
+						onClick={() => onRemove?.(getBasketItemSignature(item))}
 						className='text-destructive hover:text-destructive'>
 						<Trash2 className='h-4 w-4' />
 					</Button>

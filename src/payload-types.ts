@@ -213,6 +213,7 @@ export interface Order {
          * Price fetched from product at order time
          */
         price: number;
+        colour: string;
         /**
          * Mark as printed
          */
@@ -818,6 +819,7 @@ export interface OrdersSelect<T extends boolean = true> {
               product?: T;
               quantity?: T;
               price?: T;
+              colour?: T;
               completed?: T;
               id?: T;
               blockName?: T;

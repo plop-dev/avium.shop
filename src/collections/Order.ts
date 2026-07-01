@@ -315,6 +315,7 @@ export const Orders: CollectionConfig = {
 							required: true,
 							admin: { readOnly: true, description: 'Price fetched from product at order time' },
 						},
+						{ name: 'colour', type: 'text', required: true },
 						{ name: 'completed', type: 'checkbox', defaultValue: false, admin: { description: 'Mark as printed' } },
 					],
 				},

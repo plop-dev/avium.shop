@@ -45,6 +45,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 			price: product.price,
 			time: product.time,
 			quantity: quantity,
+			colour: selectedColour,
 			product: {
 				name: product.name,
 				description: product.description,
