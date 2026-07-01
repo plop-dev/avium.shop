@@ -170,7 +170,7 @@ export default async function ClientPage() {
 	return (
 		<div className='@container/main flex flex-1 flex-col gap-4 px-4 py-5 md:px-6 lg:px-8'>
 			<Card className='border-border/70 bg-gradient-to-br from-card via-card to-muted/30 shadow-sm'>
-				<CardContent className='flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between'>
+				<CardContent className='flex flex-col gap-4 p-4 @3xl/main:flex-row @3xl/main:items-center @3xl/main:justify-between'>
 					<div className='space-y-2'>
 						<Badge variant='secondary' className='w-fit'>
 							Orders overview
@@ -244,15 +244,27 @@ export default async function ClientPage() {
 							{orders.docs.map(order => {
 								const timelineNodes = getTimelineNodes(order.status.currentStatus, order.status.statuses);
 								const paymentVariant = getPaymentStatusVariant(order.payment?.status);
+								const isCancelled = order.status.currentStatus === 'cancelled';
 
 								return (
-									<Card key={order.id} className='overflow-hidden border-border/70 shadow-none'>
-										<CardHeader className='border-b bg-muted/20 py-3'>
+									<Card
+										key={order.id}
+										className={`gap-0 overflow-hidden border-border/70 py-0 shadow-none ${
+											isCancelled ? 'border-destructive/40' : ''
+										}`}>
+										<CardHeader className={`py-3 border-b ${isCancelled ? 'bg-destructive/10' : 'bg-muted/20'}`}>
 											<div className='flex flex-wrap items-start justify-between gap-3'>
 												<div className='space-y-1'>
 													<div className='flex flex-wrap items-center gap-2'>
 														<CardTitle className='text-base'>{order.name}</CardTitle>
-														<Badge variant='secondary'>Queue #{queueMap.get(order.id) || 0 + 1}</Badge>
+														{isCancelled ? (
+															<Badge variant='destructive' className='gap-1'>
+																<AlertCircle className='size-3.5' />
+																Cancelled
+															</Badge>
+														) : (
+															<Badge variant='secondary'>Queue #{queueMap.get(order.id) || 0 + 1}</Badge>
+														)}
 													</div>
 													<CardDescription className='flex flex-wrap items-center gap-3 text-xs'>
 														<span className='inline-flex items-center gap-1.5'>
@@ -274,9 +286,22 @@ export default async function ClientPage() {
 											</div>
 										</CardHeader>
 
-										<CardContent className='grid gap-4 p-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)]'>
+										{isCancelled ? (
+											<Alert variant='destructive' className='m-4 mb-0 border-destructive/40 bg-destructive/5'>
+												<AlertCircle />
+												<AlertTitle>This order was cancelled</AlertTitle>
+												<AlertDescription>
+													{order.comments || 'No reason was provided for this cancellation.'}
+												</AlertDescription>
+											</Alert>
+										) : null}
+
+										<CardContent
+											className={`grid gap-4 p-4 @4xl/main:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)] ${
+												isCancelled ? 'pointer-events-none opacity-60' : ''
+											}`}>
 											<div className='space-y-4'>
-												<div className='grid gap-3 sm:grid-cols-2'>
+												<div className='grid gap-3 @2xl/main:grid-cols-2'>
 													<div className='rounded-lg border bg-background/60 p-3 text-sm'>
 														<p className='text-xs uppercase tracking-wide text-muted-foreground'>Overview</p>
 														<div className='mt-2 grid grid-cols-2 gap-x-4 gap-y-2'>
@@ -337,7 +362,7 @@ export default async function ClientPage() {
 																		target='_blank'
 																		rel='noopener noreferrer'
 																		className='underline'>
-																		{order.shipping.trackingUrl}
+																		View tracking page
 																	</Link>
 																) : (
 																	'N/A'
@@ -369,7 +394,7 @@ export default async function ClientPage() {
 														{order.prints.map((item, index) => (
 															<div
 																key={item.id || `${item.blockType}-${index}`}
-																className='grid gap-2 rounded-md bg-background px-3 py-2 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center'>
+																className='grid gap-2 rounded-md bg-background px-3 py-2 text-sm @2xl/main:grid-cols-[minmax(0,1fr)_auto_auto] @2xl/main:items-center'>
 																<div className='min-w-0 space-y-0.5'>
 																	<p className='truncate font-medium'>{getPrintTitle(item)}</p>
 																	<p className='truncate text-xs text-muted-foreground'>
@@ -480,11 +505,13 @@ export default async function ClientPage() {
 													</ol>
 												</div>
 
-												<Alert className='border-dashed'>
-													<AlertCircle />
-													<AlertTitle>Order notes</AlertTitle>
-													<AlertDescription>{order.comments || 'N/A'}</AlertDescription>
-												</Alert>
+												{isCancelled ? null : (
+													<Alert className='border-dashed'>
+														<AlertCircle />
+														<AlertTitle>Order notes</AlertTitle>
+														<AlertDescription>{order.comments || 'N/A'}</AlertDescription>
+													</Alert>
+												)}
 											</div>
 										</CardContent>
 									</Card>

@@ -93,9 +93,10 @@ export async function buyLabel(orderId: string, dimensions: Order['dimensions'])
 					labelPurchasedAt:
 						transaction.objectCreated instanceof Date
 							? transaction.objectCreated.toISOString()
-							: transaction.objectCreated ?? new Date().toISOString(),
+							: (transaction.objectCreated ?? new Date().toISOString()),
 					parcelId: transaction.parcel,
 				},
+				dimensions,
 			},
 		});
 
