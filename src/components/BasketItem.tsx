@@ -49,8 +49,10 @@ export default function BasketItem({
 	canChangeQuantity?: boolean;
 }) {
 	const presetId = isCustomPrint(item) && item.printingOptions.preset ? item.printingOptions.preset : null;
-	const [isDone, setIsDone] = useState(false);
-	const [isLoading, setIsLoading] = useState(!progress || progress < 100);
+	// derive loading/done states directly from the progress prop to avoid
+	// syncing prop -> state inside an effect which can cause brief stale UI
+	const isDone = progress === 100;
+	const isLoading = progress === undefined ? true : progress < 100;
 
 	const { data: presetData, isLoading: presetLoading, error } = usePreset(presetId);
 	const { data: plasticData, isLoading: plasticLoading } = usePlastic();
@@ -61,18 +63,7 @@ export default function BasketItem({
 		}
 	};
 
-	useEffect(() => {
-		// console.log(`Progress updated: ${progress}`);
-		if (progress === 100) {
-			setIsDone(true);
-			setIsLoading(false);
-		} else if (progress === 0) {
-			setIsDone(false);
-			setIsLoading(true);
-		} else if (progress && progress > 0 && progress < 100) {
-			setIsLoading(true);
-		}
-	}, [progress]);
+	// no effect needed; isDone/isLoading are derived from progress
 
 	const renderCustomPrint = (print: CustomPrint) => {
 		return (

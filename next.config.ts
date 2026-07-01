@@ -32,6 +32,7 @@ const nextConfig: NextConfig = {
 	turbopack: {
 		root: process.cwd(),
 	},
+	reactCompiler: true,
 };
 
 export default withPayload(nextConfig);
