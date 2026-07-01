@@ -44,7 +44,7 @@ function formatOrderDate(date: string) {
 
 function formatPaymentAmount(order: PayloadOrder) {
 	if (typeof order.payment?.amount === 'number') {
-		return numToGBP(order.payment.amount / 100);
+		return numToGBP(order.payment.amount);
 	}
 
 	return numToGBP(order.pricing.total || 0);
@@ -111,6 +111,19 @@ function getPaymentStatusVariant(status?: NonNullable<PayloadOrder['payment']>['
 	if (status === 'failed' || status === 'checkout-failed') return 'destructive' as const;
 
 	return 'outline' as const;
+}
+
+function formatShippingAddress(address?: PayloadOrder['shippingAddress']) {
+	if (!address) return 'N/A';
+
+	const parts = [address.line1];
+	if (address.line2) parts.push(address.line2);
+	if (address.city) parts.push(address.city);
+	if (address.county) parts.push(address.county);
+	if (address.postcode) parts.push(address.postcode);
+	if (address.country) parts.push(address.country);
+
+	return parts.filter(Boolean).join(', ');
 }
 
 export default async function ClientPage() {
@@ -265,9 +278,7 @@ export default async function ClientPage() {
 											<div className='space-y-4'>
 												<div className='grid gap-3 sm:grid-cols-2'>
 													<div className='rounded-lg border bg-background/60 p-3 text-sm'>
-														<p className='text-xs uppercase tracking-wide text-muted-foreground'>
-															Order details
-														</p>
+														<p className='text-xs uppercase tracking-wide text-muted-foreground'>Overview</p>
 														<div className='mt-2 grid grid-cols-2 gap-x-4 gap-y-2'>
 															<div className='text-muted-foreground'>Queue</div>
 															<div className='text-right font-medium tabular-nums'>
@@ -279,6 +290,20 @@ export default async function ClientPage() {
 															<div className='text-right font-medium'>
 																{formatDistanceToNow(new Date(order.updatedAt), { addSuffix: true })}
 															</div>
+															<div className='text-muted-foreground'>Receipt</div>
+															<div className='text-right font-medium tabular-nums'>
+																{order.payment?.receiptUrl ? (
+																	<Link
+																		href={order.payment.receiptUrl}
+																		target='_blank'
+																		rel='noopener noreferrer'
+																		className='underline'>
+																		View receipt
+																	</Link>
+																) : (
+																	'N/A'
+																)}
+															</div>
 															<div className='text-muted-foreground'>Total</div>
 															<div className='text-right font-medium tabular-nums'>
 																{numToGBP(order.pricing.total || 0)}
@@ -287,9 +312,9 @@ export default async function ClientPage() {
 													</div>
 
 													<div className='rounded-lg border bg-background/60 p-3 text-sm'>
-														<p className='text-xs uppercase tracking-wide text-muted-foreground'>Payment</p>
-														<div className='mt-2 grid grid-cols-2 gap-x-4 gap-y-2'>
-															<div className='text-muted-foreground'>Status</div>
+														<p className='text-xs uppercase tracking-wide text-muted-foreground'>Details</p>
+														<div className='mt-2 grid grid-cols-[1fr_2fr] gap-x-4 gap-y-2'>
+															<div className='text-muted-foreground'>Payment Status</div>
 															<div className='text-right'>
 																<Badge variant={paymentVariant}>{order.payment?.status || 'unpaid'}</Badge>
 																{order.payment?.status === 'checkout-failed' ? (
@@ -298,13 +323,30 @@ export default async function ClientPage() {
 																	</div>
 																) : null}
 															</div>
-															<div className='text-muted-foreground'>Amount</div>
+
+															<div className='text-muted-foreground'>Tracking Number</div>
 															<div className='text-right font-medium tabular-nums'>
-																{formatPaymentAmount(order)}
+																{order.shipping?.trackingNumber || 'N/A'}
 															</div>
-															<div className='text-muted-foreground'>Stripe intent</div>
-															<div className='min-w-0 truncate text-right font-medium'>
-																{order.payment?.stripePaymentIntentId || 'Not captured yet'}
+
+															<div className='text-muted-foreground'>Tracking URL</div>
+															<div className='text-right font-medium tabular-nums'>
+																{order.shipping?.trackingUrl ? (
+																	<Link
+																		href={order.shipping.trackingUrl}
+																		target='_blank'
+																		rel='noopener noreferrer'
+																		className='underline'>
+																		{order.shipping.trackingUrl}
+																	</Link>
+																) : (
+																	'N/A'
+																)}
+															</div>
+
+															<div className='text-muted-foreground'>Shipping Address</div>
+															<div className='text-right font-medium tabular-nums'>
+																{formatShippingAddress(order.shippingAddress)}
 															</div>
 														</div>
 													</div>
@@ -333,6 +375,28 @@ export default async function ClientPage() {
 																	<p className='truncate text-xs text-muted-foreground'>
 																		{getPrintDescription(item)}
 																	</p>
+																	<Badge
+																		variant='secondary'
+																		style={{
+																			backgroundColor:
+																				item.blockType === 'customPrint'
+																					? item.printingOptions.colour
+																					: item.colour,
+																		}}
+																		className='text-xs'>
+																		<p
+																			className='contrast-[9000] invert grayscale brightness-[1.5]'
+																			style={{
+																				color:
+																					item.blockType === 'customPrint'
+																						? item.printingOptions.colour
+																						: item.colour,
+																			}}>
+																			{item.blockType === 'customPrint'
+																				? item.printingOptions.colour
+																				: item.colour}
+																		</p>
+																	</Badge>
 																</div>
 																<div className='flex items-center gap-2 text-xs text-muted-foreground sm:justify-end'>
 																	<span className='font-medium tabular-nums text-foreground'>
@@ -356,68 +420,72 @@ export default async function ClientPage() {
 												</div>
 											</div>
 
-											<div className='rounded-lg border bg-background/60 p-3'>
-												<div className='flex items-center justify-between gap-3'>
-													<div>
-														<p className='text-sm font-medium'>Status timeline</p>
-														<p className='text-xs text-muted-foreground'>
-															Current position in the order workflow.
-														</p>
+											<div className='rounded-lg border bg-background/60 p-3 grid grid-cols-1 grid-rows-[4fr_1fr]'>
+												<div>
+													<div className='flex items-center justify-between gap-3'>
+														<div>
+															<p className='text-sm font-medium'>Status timeline</p>
+															<p className='text-xs text-muted-foreground'>
+																Current position in the order workflow.
+															</p>
+														</div>
+														<Badge
+															variant={
+																order.status.currentStatus === 'cancelled' ? 'destructive' : 'secondary'
+															}
+															className='shrink-0'>
+															{order.status.currentStatus === 'cancelled'
+																? 'Cancelled'
+																: statusMeta[order.status.currentStatus].label}
+														</Badge>
 													</div>
-													<Badge
-														variant={order.status.currentStatus === 'cancelled' ? 'destructive' : 'secondary'}
-														className='shrink-0'>
-														{order.status.currentStatus === 'cancelled'
-															? 'Cancelled'
-															: statusMeta[order.status.currentStatus].label}
-													</Badge>
-												</div>
-												<Separator className='my-3' />
-												<ol className='space-y-3'>
-													{timelineNodes.map((node, index) => {
-														const isCurrent = node.state === 'current';
-														const isComplete = node.state === 'complete';
+													<Separator className='my-3' />
+													<ol className='space-y-3 h-full'>
+														{timelineNodes.map((node, index) => {
+															const isCurrent = node.state === 'current';
+															const isComplete = node.state === 'complete';
 
-														return (
-															<li key={node.label} className='flex gap-3'>
-																<div className='flex flex-col items-center'>
-																	<div
-																		className={[
-																			'flex size-7 items-center justify-center rounded-full border text-xs font-medium',
-																			isCurrent
-																				? 'border-primary bg-primary text-primary-foreground'
-																				: isComplete
-																					? 'border-primary/40 bg-primary/10 text-primary'
-																					: 'border-border bg-muted text-muted-foreground',
-																		].join(' ')}>
-																		{isCurrent ? '•' : index + 1}
+															return (
+																<li key={node.label} className='flex gap-3 h-[15%]'>
+																	<div className='flex flex-col items-center'>
+																		<div
+																			className={[
+																				'flex size-7 items-center justify-center rounded-full border text-xs font-medium',
+																				isCurrent
+																					? 'border-primary bg-primary text-primary-foreground'
+																					: isComplete
+																						? 'border-primary/40 bg-primary/10 text-primary'
+																						: 'border-border bg-muted text-muted-foreground',
+																			].join(' ')}>
+																			{isCurrent ? '•' : index + 1}
+																		</div>
+																		{index < timelineNodes.length - 1 ? (
+																			<div className='h-full w-px bg-border' aria-hidden='true' />
+																		) : null}
 																	</div>
-																	{index < timelineNodes.length - 1 ? (
-																		<div className='h-full w-px bg-border' aria-hidden='true' />
-																	) : null}
-																</div>
-																<div className='min-w-0 pb-1'>
-																	<p className='font-medium leading-none'>{node.label}</p>
-																	{node.timestamp ? (
-																		<p className='mt-1 text-xs font-medium text-foreground'>
-																			{format(new Date(node.timestamp), 'd MMM yyyy HH:mm')}
+																	<div className='min-w-0 pb-1'>
+																		<p className='font-medium leading-none'>{node.label}</p>
+																		{node.timestamp ? (
+																			<p className='mt-1 text-xs font-medium text-foreground'>
+																				{format(new Date(node.timestamp), 'd MMM yyyy HH:mm')}
+																			</p>
+																		) : null}
+																		<p className='mt-1 text-xs text-muted-foreground'>
+																			{node.description}
 																		</p>
-																	) : null}
-																	<p className='mt-1 text-xs text-muted-foreground'>{node.description}</p>
-																</div>
-															</li>
-														);
-													})}
-												</ol>
-											</div>
+																	</div>
+																</li>
+															);
+														})}
+													</ol>
+												</div>
 
-											{order.comments ? (
 												<Alert className='border-dashed'>
 													<AlertCircle />
 													<AlertTitle>Order notes</AlertTitle>
-													<AlertDescription>{order.comments}</AlertDescription>
+													<AlertDescription>{order.comments || 'N/A'}</AlertDescription>
 												</Alert>
-											) : null}
+											</div>
 										</CardContent>
 									</Card>
 								);
