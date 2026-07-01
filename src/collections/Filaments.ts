@@ -1,3 +1,4 @@
+import { adminAccess } from '@/access/elevated';
 import type { CollectionConfig } from 'payload';
 
 export const Filaments: CollectionConfig = {
@@ -8,6 +9,12 @@ export const Filaments: CollectionConfig = {
 	},
 	admin: {
 		useAsTitle: 'name',
+	},
+	access: {
+		read: () => true,
+		create: ({ req }) => adminAccess({ req }),
+		update: ({ req }) => adminAccess({ req }),
+		delete: () => false,
 	},
 	fields: [
 		{

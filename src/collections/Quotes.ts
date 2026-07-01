@@ -12,10 +12,10 @@ export const Quotes: CollectionConfig = {
 		description: 'Quotes generated for 3D models, used to create orders',
 	},
 	access: {
-		read: selfAccessOrders || adminAccess,
-		create: selfAccessOrders || adminAccess,
-		delete: selfAccessOrders || adminAccess,
-		update: selfAccessOrders || adminAccess || backendAccess,
+		read: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		create: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		delete: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		update: ({ req }) => backendAccess({ req }) || adminAccess({ req }) || selfAccessOrders({ req }),
 	},
 	fields: [
 		{
@@ -76,6 +76,13 @@ export const Quotes: CollectionConfig = {
 			type: 'text',
 			admin: { description: 'Estimated print time as returned by the slicer (total)' },
 		},
-		{ name: 'price', type: 'number' },
+		{
+			name: 'price',
+			type: 'number',
+			access: {
+				create: ({ req }) => backendAccess({ req }) || adminAccess({ req }),
+				update: ({ req }) => backendAccess({ req }) || adminAccess({ req }),
+			},
+		},
 	],
 };

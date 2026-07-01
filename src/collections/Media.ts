@@ -1,3 +1,4 @@
+import { adminAccess } from '@/access/elevated';
 import type { CollectionConfig } from 'payload';
 
 export const Media: CollectionConfig = {
@@ -9,9 +10,9 @@ export const Media: CollectionConfig = {
 	},
 	access: {
 		read: () => true,
-		create: () => true,
-		update: () => true,
-		delete: () => true,
+		create: ({ req }) => adminAccess({ req }),
+		update: ({ req }) => adminAccess({ req }),
+		delete: ({ req }) => adminAccess({ req }),
 	},
 	upload: {
 		mimeTypes: ['image/*', 'video/*'],

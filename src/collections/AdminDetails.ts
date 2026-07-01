@@ -1,8 +1,13 @@
+import { adminAccess } from '@/access/elevated';
 import { GlobalConfig } from 'payload';
 
 export const AdminDetails: GlobalConfig = {
 	slug: 'admin-details',
 	label: 'Admin Details',
+	access: {
+		update: ({ req }) => adminAccess({ req }),
+		read: () => true,
+	},
 	fields: [
 		{
 			name: 'shippingAddress',

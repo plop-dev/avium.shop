@@ -18,7 +18,7 @@ export const Products: CollectionConfig = {
 		read: anyoneAccess,
 		create: adminAccess,
 		update: adminAccess,
-		delete: noAccess,
+		delete: () => false,
 	},
 	timestamps: true,
 	hooks: {

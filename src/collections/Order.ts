@@ -17,10 +17,10 @@ export const Orders: CollectionConfig = {
 		defaultColumns: ['name', 'customer', 'status.currentStatus', 'total', 'createdAt'],
 	},
 	access: {
-		read: selfAccessOrders || adminAccess,
+		read: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
 		create: () => true,
-		update: selfAccessOrders || adminAccess,
-		delete: noAccess,
+		update: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		delete: () => false,
 	},
 	hooks: {
 		beforeChange: [

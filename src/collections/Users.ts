@@ -9,7 +9,7 @@ export const Users: CollectionConfig = {
 		useAsTitle: 'name',
 	},
 	access: {
-		read: adminAccess || selfAccess,
+		read: ({ req }) => adminAccess({ req }) || selfAccess({ req }),
 		update: adminAccess,
 		create: anyoneAccess,
 		delete: () => false,

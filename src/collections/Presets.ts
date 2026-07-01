@@ -1,3 +1,4 @@
+import { adminAccess } from '@/access/elevated';
 import type { CollectionConfig } from 'payload';
 
 export const Presets: CollectionConfig = {
@@ -8,6 +9,12 @@ export const Presets: CollectionConfig = {
 	},
 	admin: {
 		useAsTitle: 'name',
+	},
+	access: {
+		create: ({ req }) => adminAccess({ req }),
+		update: ({ req }) => adminAccess({ req }),
+		delete: ({ req }) => adminAccess({ req }),
+		read: () => true,
 	},
 	fields: [
 		{
