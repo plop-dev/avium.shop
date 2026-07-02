@@ -30,9 +30,6 @@ export async function updateOrder(
 		revalidatePath('/dashboard/home');
 		return res;
 	} catch (error) {
-		console.error('Error updating order:', error);
 		return 'Failed to update order';
-
-		// throw new Error('Failed to update order');
 	}
 }

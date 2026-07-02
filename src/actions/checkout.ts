@@ -5,6 +5,7 @@ import config from '@/payload.config';
 import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
 import { getUser } from '@/utils/getUser';
+import { getServerSideURL } from '@/utils/getServerSideUrl';
 
 export async function checkout(orderId: string): Promise<{ success: boolean; message: string }> {
 	const payload = await getPayload({ config });
@@ -31,13 +32,15 @@ export async function checkout(orderId: string): Promise<{ success: boolean; mes
 		};
 	}
 
+	const serverSideUrl = getServerSideURL();
+
 	// create checkout session
 	const checkout = await stripe.checkout.sessions.create({
 		mode: 'payment',
 		ui_mode: 'hosted_page',
 		currency: 'gbp',
-		success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-		cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/cancel?order_id=${orderId}`,
+		success_url: `${serverSideUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+		cancel_url: `${serverSideUrl}/checkout/cancel?order_id=${orderId}`,
 		customer_creation: 'always',
 		customer_email: typeof order.customer === 'string' ? undefined : order.customer.email,
 		client_reference_id: order.id,
