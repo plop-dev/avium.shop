@@ -10,5 +10,9 @@ export const PricingFormula: GlobalConfig = {
 		update: ({ req }) => adminAccess({ req }),
 		read: () => true,
 	},
+	admin: {
+		description:
+			'Configure the pricing formula for custom prints. Use variables like weight (in grams) and time (in seconds). Example: price = (weight / 1000) + (time * 5)',
+	},
 	fields: [PricingPreviewField],
 };

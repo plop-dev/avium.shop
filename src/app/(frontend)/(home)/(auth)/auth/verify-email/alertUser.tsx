@@ -49,7 +49,7 @@ export function VerifyEmailContent({ from }: { from: 'signup' | 'login' }) {
 									</p>
 
 									<Button variant='outline' asChild className='w-full'>
-										<Link href='/contact'>
+										<Link href='/#contact'>
 											<MessageCircleQuestion className='w-4 h-4'></MessageCircleQuestion>
 											Contact support
 											{/* <ArrowLeft className='w-4 h-4 mr-2' />

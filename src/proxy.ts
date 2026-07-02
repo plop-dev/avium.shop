@@ -16,8 +16,7 @@ export const proxy = auth(req => {
 // - favicon.ico
 // - the root path (/)
 // - admin/login
-// - order
 
 export const config: ProxyConfig = {
-	matcher: ['/((?!api|_next/static|_next/image|favicon.ico|auth/|order).+)'],
+	matcher: ['/((?!api|_next/static|_next/image|favicon.ico|auth/).+)'],
 };

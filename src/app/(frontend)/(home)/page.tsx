@@ -1,4 +1,5 @@
 import Hero from '@/components/home/Hero';
+import Contact from '@/components/home/Contact';
 import PageContainer from '@/components/layouts/PageContainer';
 
 export default function Page() {
@@ -19,7 +20,7 @@ export default function Page() {
 					},
 				}}
 			/>
-			{/* <div className='px-64 w-full'></div> */}
+			<Contact />
 		</PageContainer>
 	);
 }

@@ -302,8 +302,8 @@ const Navbar = ({ items, user }: NavbarProps) => {
 							onMouseEnter={() => setHoveredIndex(index)}
 							onMouseLeave={() => setHoveredIndex(null)}>
 							{item.type === 'link' ? (
-								<NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-									<span className='cursor-default'>{item.title}</span>
+								<NavigationMenuLink asChild className={navigationMenuTriggerStyle({ className: 'cursor-pointer' })}>
+									<Link href={item.href || '#'}>{item.title}</Link>
 								</NavigationMenuLink>
 							) : (
 								<>
