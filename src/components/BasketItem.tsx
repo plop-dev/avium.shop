@@ -155,7 +155,7 @@ export default function BasketItem({
 					<Button
 						variant='ghost'
 						size='sm'
-						onClick={() => onRemove?.(getBasketItemSignature(item))}
+						onClick={() => onRemove?.(item.id)}
 						className='text-destructive hover:text-destructive'>
 						<Trash2 className='h-4 w-4' />
 					</Button>
