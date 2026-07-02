@@ -20,37 +20,32 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 	const [selectedColour, setSelectedColour] = useState<string>('');
 
 	const availableColours = useMemo(() => {
-		return product.printingOptions.plastic[0].colours || [{ colour: '#eee', id: 'default' }];
+		return product.printingOptions.plastic[0].colours || [{ id: 'default', colour: '#000000' }];
 	}, []);
 
 	// Set default colour when dialog opens
 	const handleDialogOpen = (isOpen: boolean) => {
 		setOpen(isOpen);
+
+		if (availableColours[0].id === 'default') {
+			setOpen(false);
+			throw new Error('No available colours found for this product. Please contact support.');
+		}
+
 		if (isOpen && availableColours.length > 0 && !selectedColour) {
 			setSelectedColour(availableColours[0].colour);
 		}
 	};
 
-	async function generateShopProductId(product: ShopProductType['product']) {
-		const res = await crypto.subtle.digest(
-			'SHA-1',
-			new TextEncoder().encode([...Object.values(product), ...Object.values(product.printingOptions)].join('')),
-		);
-		return Array.from(new Uint8Array(res))
-			.map(b => b.toString(36))
-			.join('')
-			.replace(/[^a-zA-Z0-9]/g, '');
-	}
-
-	const handleAddToCart = async (product: ShopProductType['product'], quantity = 1) => {
+	const handleAddToCart = async (product: ShopProductType['product'], id: ShopProductType['id'], quantity = 1) => {
 		toast.success(`Added ${quantity} x ${product.name} to basket`);
-		const id = await generateShopProductId(product);
 
 		addShopProductToBasket({
 			id,
 			price: product.price,
 			time: product.time,
 			quantity: quantity,
+			colour: selectedColour,
 			product: {
 				name: product.name,
 				description: product.description,
@@ -87,7 +82,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 				}}>
 				<div className='h-48 flex items-center justify-center rounded-t-lg'>
 					{typeof pic === 'string' ? (
-						<img className='h-48 w-48 aspect-square bg-cover object-cover' src={pic} alt='Product Image' />
+						<Image className='h-48 w-48 aspect-square bg-cover object-cover' src={pic} alt='Product Image' loading='eager' />
 					) : (
 						<Image
 							className='h-48 w-48 aspect-square bg-cover object-cover'
@@ -95,6 +90,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 							width={pic?.width ?? 512}
 							height={pic?.height ?? pic?.width ?? 512}
 							alt={pic?.alt ?? product.name}
+							loading='eager'
 						/>
 					)}
 				</div>
@@ -122,11 +118,12 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 												<CarouselItem key={idx} className='pl-0'>
 													<div className='w-full flex justify-center'>
 														{typeof p === 'string' ? (
-															<img
+															<Image
 																className='max-h-[60vh] w-auto object-contain rounded-md select-none shadow-sm bg-background'
 																src={p}
 																alt={`Product image ${idx + 1}`}
 																draggable={false}
+																loading='eager'
 															/>
 														) : (
 															<Image
@@ -136,6 +133,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 																height={p?.height ?? p?.width ?? 1024}
 																alt={p?.alt ?? product.name}
 																draggable={false}
+																loading='eager'
 															/>
 														)}
 													</div>
@@ -292,6 +290,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 													colour: selectedColour,
 												},
 											},
+											product.id,
 											qty,
 										);
 										setOpen(false);

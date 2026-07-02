@@ -1,9 +1,14 @@
 import { GlobalConfig } from 'payload';
 import { Plastic } from '@/blocks/Plastic';
+import { adminAccess } from '@/access/elevated';
 
 const PrintingOptions: GlobalConfig = {
 	slug: 'printing-options',
 	label: 'Printing Options',
+	access: {
+		update: ({ req }) => adminAccess({ req }),
+		read: () => true,
+	},
 	fields: [
 		{
 			name: 'plastic',

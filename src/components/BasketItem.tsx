@@ -4,7 +4,7 @@ import { Minus, Plus, Trash2, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BasketItem as BasketItemType, CustomPrint, ShopProduct } from '@/stores/basket';
+import { BasketItem as BasketItemType, CustomPrint, getBasketItemSignature, ShopProduct } from '@/stores/basket';
 import { NumberInput } from './ui/number-input';
 import { Preset, PrintingOption } from '@/payload-types';
 import useSWR, { Fetcher } from 'swr';
@@ -40,43 +40,38 @@ export default function BasketItem({
 	onQuantityChange,
 	onRemove,
 	progress,
+	canChangeQuantity = true,
 }: {
 	item: BasketItemType;
-	onQuantityChange?: (id: string, newQuantity: number) => void;
-	onRemove?: (id: string) => void;
+	onQuantityChange?: (itemKey: string, newQuantity: number) => void;
+	onRemove?: (itemKey: string) => void;
 	progress?: number; // used for print upload in quotes
+	canChangeQuantity?: boolean;
 }) {
 	const presetId = isCustomPrint(item) && item.printingOptions.preset ? item.printingOptions.preset : null;
-	const [isDone, setIsDone] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
+	// derive loading/done states directly from the progress prop to avoid
+	// syncing prop -> state inside an effect which can cause brief stale UI
+	const isDone = progress === 100;
+	const isLoading = progress === undefined ? true : progress < 100;
 
 	const { data: presetData, isLoading: presetLoading, error } = usePreset(presetId);
 	const { data: plasticData, isLoading: plasticLoading } = usePlastic();
 
 	const handleQuantityChange = (value: number) => {
 		if (onQuantityChange) {
-			onQuantityChange(item.id, value);
+			onQuantityChange(getBasketItemSignature(item), value);
 		}
 	};
 
-	useEffect(() => {
-		// console.log(`Progress updated: ${progress}`);
-		if (progress === 100) {
-			setIsDone(true);
-			setIsLoading(false);
-		} else if (progress === 0) {
-			setIsDone(false);
-			setIsLoading(true);
-		} else if (progress && progress > 0 && progress < 100) {
-			setIsLoading(true);
-		}
-	}, [progress]);
+	// no effect needed; isDone/isLoading are derived from progress
 
 	const renderCustomPrint = (print: CustomPrint) => {
 		return (
 			<>
 				<div>
-					<h4 className='font-medium text-sm'>{print.model.filename}</h4>
+					<h4 className='font-medium text-sm items-center'>
+						{print.model.filename} <Badge>x{print.quantity}</Badge>
+					</h4>
 					<p className='text-xs text-muted-foreground'>{print.id}</p>
 				</div>
 
@@ -86,8 +81,8 @@ export default function BasketItem({
 							{plasticLoading
 								? 'Loading...'
 								: plasticData
-								? plasticData.plastic?.find(p => p.id === print.printingOptions.plastic)?.name
-								: 'Preset not found'}
+									? plasticData.plastic?.find(p => p.name === print.printingOptions.plastic)?.name
+									: 'Preset not found'}
 						</Badge>
 					)}
 					{print.printingOptions.layerHeight && (
@@ -119,7 +114,9 @@ export default function BasketItem({
 	const renderShopProduct = (product: ShopProduct) => (
 		<>
 			<div>
-				<h4 className='font-medium text-sm'>{product.product.name}</h4>
+				<h4 className='font-medium text-sm items-center'>
+					{product.product.name} <Badge>x{product.quantity}</Badge>
+				</h4>
 				<p className='text-xs text-muted-foreground'>{product.id}</p>
 			</div>
 
@@ -158,14 +155,16 @@ export default function BasketItem({
 					<Button
 						variant='ghost'
 						size='sm'
-						onClick={() => onRemove?.(item.id)}
+						onClick={() => onRemove?.(getBasketItemSignature(item))}
 						className='text-destructive hover:text-destructive'>
 						<Trash2 className='h-4 w-4' />
 					</Button>
 				</div>
 
 				<div className='flex items-center justify-between mt-3 pt-3 border-t'>
-					<NumberInput min={1} max={100000} defaultValue={item.quantity} onChange={handleQuantityChange}></NumberInput>
+					{canChangeQuantity && (
+						<NumberInput min={1} max={100000} defaultValue={item.quantity} onChange={handleQuantityChange}></NumberInput>
+					)}
 					<div className='flex items-center gap-4'>
 						<Badge variant={'outline'} className='text-md h-10'>
 							<span className='text-sm text-muted-foreground'>

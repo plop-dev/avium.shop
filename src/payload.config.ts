@@ -20,6 +20,7 @@ import { Media } from '@/collections/Media';
 import { Quotes } from './collections/Quotes';
 import { Filaments } from './collections/Filaments';
 import { PricingFormula } from './collections/PricingFormula';
+import { AdminDetails } from './collections/AdminDetails';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -28,15 +29,18 @@ export default buildConfig({
 	admin: {
 		user: Users.slug,
 		importMap: {
-			baseDir: path.resolve(dirname),
+			baseDir: path.resolve(dirname, 'src'),
 		},
 		avatar: 'default',
 		dateFormat: 'dd/MM/yyyy',
+		components: {
+			beforeNavLinks: ['@/components/payload/AdminNav'],
+		},
 	},
 	cors: {
 		origins: [process.env.NEXT_PUBLIC_AVIUM_API_URL || ''],
 	},
-	globals: [PrintingOptions, PricingFormula],
+	globals: [PrintingOptions, PricingFormula, AdminDetails],
 	collections: [Users, Orders, Presets, Products, Media, Quotes, Filaments],
 	editor: lexicalEditor(),
 	secret: process.env.PAYLOAD_SECRET || '',

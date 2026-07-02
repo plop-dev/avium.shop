@@ -198,12 +198,6 @@
 			@apply my-3;
 		}
 	}
-	div:has(> table:only-child):not(.not-prose, .not-prose *) {
-		@apply mt-6 overflow-y-auto;
-		> table {
-			@apply w-[inherit] min-w-[inherit] max-w-[inherit];
-		}
-	}
 
 	code:not(.not-prose, .not-prose *, pre *) {
 		@apply relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold;

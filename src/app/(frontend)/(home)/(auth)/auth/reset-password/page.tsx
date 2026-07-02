@@ -50,10 +50,6 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
 			</div>
 		);
 	} else {
-		return (
-			<>
-				<ForgotPasswordAlert></ForgotPasswordAlert>
-			</>
-		);
+		return <ForgotPasswordAlert></ForgotPasswordAlert>;
 	}
 }

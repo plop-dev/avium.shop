@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import { NavMain } from '@/components/dashboard/nav-main';
-import { NavSecondary } from '@/components/dashboard/nav-secondary';
+import { NavSecondary, ServerData } from '@/components/dashboard/nav-secondary';
 import { NavUser } from '@/components/dashboard/nav-user';
 import {
 	Sidebar,
@@ -19,7 +19,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import logo from '@/assets/logo.png';
-import { LayoutDashboard, List, Settings, UserLock } from 'lucide-react';
+import { Home, LayoutDashboard, List, Settings, UserLock } from 'lucide-react';
 import Link from 'next/link';
 
 export type SidebarData = {
@@ -28,40 +28,38 @@ export type SidebarData = {
 		url: string;
 		icon: React.ElementType;
 	}[];
-	navSecondary: {
+	navSecondary?: {
 		title: string;
 		url: string;
 		icon: React.ElementType;
 	}[];
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-	const data: SidebarData = {
+export function AppSidebar({ isAdmin, ...props }: React.ComponentProps<typeof Sidebar> & { isAdmin: boolean }) {
+	let data: SidebarData = {
 		navMain: [
 			{
-				title: 'Dashboard',
-				url: '#',
-				icon: LayoutDashboard,
-			},
-			{
-				title: 'Admin Panel',
-				url: '/admin',
-				icon: UserLock,
-			},
-			{
-				title: 'Orders',
-				url: '#',
-				icon: List,
+				title: 'Home',
+				url: '/dashboard/home',
+				icon: Home,
 			},
 		],
-		navSecondary: [
-			{
-				title: 'Settings',
-				url: '/admin/account',
-				icon: Settings,
-			},
-		],
+		// navSecondary: [
+		// 	{
+		// 		title: 'Settings',
+		// 		url: '/admin/account',
+		// 		icon: Settings,
+		// 	},
+		// ],
 	};
+
+	if (isAdmin) {
+		data.navMain.push({
+			title: 'Admin Panel',
+			url: '/admin',
+			icon: UserLock,
+		});
+	}
 
 	const [userData, setUserData] = useState<User | null>(null);
 
@@ -80,7 +78,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild className='!p-1.5'>
 							<Link href='/'>
-								<Image priority src={logo} alt='Avium' height={28} width={28}></Image>
+								<Image priority src={logo} loading='eager' alt='Avium' height={28} width={28}></Image>
 								<span className='font-semibold text-xl'>Avium</span>
 							</Link>
 						</SidebarMenuButton>

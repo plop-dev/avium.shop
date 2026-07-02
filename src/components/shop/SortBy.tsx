@@ -8,7 +8,7 @@ export default function SortBy() {
 	const [selectedSort, setSelectedSort] = useQueryState('sort', parseAsString.withDefault('createdAt').withOptions({ shallow: false }));
 
 	return (
-		<Select defaultValue='newest' value={selectedSort} onValueChange={value => setSelectedSort(value)}>
+		<Select defaultValue='-createdAt' value={selectedSort} onValueChange={value => setSelectedSort(value)}>
 			<SelectTrigger className='w-40'>
 				<SelectValue placeholder='Sort by' />
 			</SelectTrigger>

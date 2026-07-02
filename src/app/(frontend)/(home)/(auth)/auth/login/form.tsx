@@ -9,7 +9,6 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { submitLoginForm } from '@/actions/login';
 import { useEffect, useState, useRef, useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
@@ -59,13 +58,30 @@ export default function LoginForm() {
 				email: data.email,
 				password: data.password,
 			});
+			console.log('signIn result:', result);
 
-			if (result.ok) {
-				toast.success('Login successful! Redirecting...');
-				router.push(result.url || '/dashboard/home'); // or router.push(result.url)
-			} else {
-				toast.error(result.error || 'Login failed. Please try again.');
+			// `signIn` can return undefined or an object with `error`, `ok`, `status`, and `url`.
+			// Treat any error or non-OK status as a failure to avoid falsely showing success toasts.
+			if (!result) {
+				toast.error('Login failed. Please try again.');
+				return;
 			}
+
+			if (result.error) {
+				// Prefer the error message from next-auth if present
+				toast.error(`Login Error: ${result.error}`);
+				return;
+			}
+
+			// If status is present and not 200, treat as failure
+			if (typeof result.status === 'number' && result.status !== 200) {
+				toast.error(result.error || 'Login failed. Please check your credentials.');
+				return;
+			}
+
+			// Otherwise consider it a success
+			toast.success('Login successful! Redirecting...');
+			router.push('/dashboard/home');
 		} catch (error) {
 			toast.error('An unexpected error occurred. Please try again.');
 		} finally {
@@ -89,7 +105,7 @@ export default function LoginForm() {
 			const result = await submitForgotPasswordForm(formData);
 
 			if (result.error) {
-				toast.error(result.error);
+				toast.error(`Forgot Password Error: ${result.error}`);
 			} else {
 				toast.success('Password reset email sent! Check your inbox.');
 				setIsForgotPasswordDialogOpen(false);

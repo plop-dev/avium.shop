@@ -1,5 +1,9 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+
+import { signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
 	DropdownMenu,
@@ -18,6 +22,25 @@ import getInitials from '@/utils/getInitials';
 
 export function NavUser({ user }: { user: User | null }) {
 	const { isMobile } = useSidebar();
+	const router = useRouter();
+	const [logoutLoading, setLogoutLoading] = useState(false);
+
+	async function handleLogout(): Promise<{ success: boolean; error?: string }> {
+		if (logoutLoading) return { success: false, error: 'Logout already in progress' };
+
+		setLogoutLoading(true);
+
+		try {
+			await signOut({ redirect: false });
+			router.push('/');
+
+			setLogoutLoading(false);
+			return { success: true };
+		} catch (error) {
+			setLogoutLoading(false);
+			return { success: false, error: 'Failed to logout' };
+		}
+	}
 
 	// Skeleton loading state when user is null
 	if (!user) {
@@ -46,7 +69,14 @@ export function NavUser({ user }: { user: User | null }) {
 							size='lg'
 							className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'>
 							<Avatar className='h-8 w-8 rounded-lg'>
-								<AvatarImage src={user.image || '#'} alt={user.name || ''} className='rounded-lg' width={48} height={48} />
+								<AvatarImage
+									loading='eager'
+									src={user.image || '#'}
+									alt={user.name || ''}
+									className='rounded-lg'
+									width={48}
+									height={48}
+								/>
 								<AvatarFallback className='rounded-lg'>{getInitials(user.name || 'u', 2, true)}</AvatarFallback>
 							</Avatar>
 							<div className='grid flex-1 text-left text-sm leading-tight'>
@@ -80,22 +110,7 @@ export function NavUser({ user }: { user: User | null }) {
 							</div>
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						<DropdownMenuGroup>
-							<DropdownMenuItem>
-								<UserCircle />
-								Account
-							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<CreditCard />
-								Billing
-							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<BellDot />
-								Notifications
-							</DropdownMenuItem>
-						</DropdownMenuGroup>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem>
+						<DropdownMenuItem onClick={handleLogout} disabled={logoutLoading}>
 							<LogOut />
 							Log out
 						</DropdownMenuItem>

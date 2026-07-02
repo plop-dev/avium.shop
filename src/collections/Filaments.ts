@@ -1,3 +1,4 @@
+import { adminAccess } from '@/access/elevated';
 import type { CollectionConfig } from 'payload';
 
 export const Filaments: CollectionConfig = {
@@ -9,11 +10,18 @@ export const Filaments: CollectionConfig = {
 	admin: {
 		useAsTitle: 'name',
 	},
+	access: {
+		read: () => true,
+		create: ({ req }) => adminAccess({ req }),
+		update: ({ req }) => adminAccess({ req }),
+		delete: () => false,
+	},
 	fields: [
 		{
 			name: 'name',
 			type: 'text',
 			required: true,
+			unique: true, // we use names in the order form instead of the id so we need to make sure they are unique
 			admin: {
 				description: 'The name of the filament/material. USE THIS FORMAT: PLA, PETG, ABS, etc.',
 			},

@@ -75,6 +75,7 @@ export interface Config {
     quotes: Quote;
     filaments: Filament;
     search: Search;
+    'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -89,6 +90,7 @@ export interface Config {
     quotes: QuotesSelect<false> | QuotesSelect<true>;
     filaments: FilamentsSelect<false> | FilamentsSelect<true>;
     search: SearchSelect<false> | SearchSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -96,18 +98,22 @@ export interface Config {
   db: {
     defaultIDType: string;
   };
+  fallbackLocale: null;
   globals: {
     'printing-options': PrintingOption;
     'pricing-formula': PricingFormula;
+    'admin-details': AdminDetail;
   };
   globalsSelect: {
     'printing-options': PrintingOptionsSelect<false> | PrintingOptionsSelect<true>;
     'pricing-formula': PricingFormulaSelect<false> | PricingFormulaSelect<true>;
+    'admin-details': AdminDetailsSelect<false> | AdminDetailsSelect<true>;
   };
   locale: null;
-  user: User & {
-    collection: 'users';
+  widgets: {
+    collections: CollectionsWidget;
   };
+  user: User;
   jobs: {
     tasks: unknown;
     workflows: unknown;
@@ -165,7 +171,7 @@ export interface User {
     | {
         provider: string;
         providerAccountId: string;
-        type: string;
+        type: 'oidc' | 'oauth' | 'email' | 'webauthn';
         id?: string | null;
       }[]
     | null;
@@ -182,14 +188,8 @@ export interface User {
   _verificationToken?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
   password?: string | null;
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -208,12 +208,25 @@ export interface Order {
   prints: (
     | {
         product: string | Product;
-        price?: number | null;
+        quantity: number;
+        /**
+         * Price fetched from product at order time
+         */
+        price: number;
+        colour: string;
+        /**
+         * Mark as printed
+         */
+        completed?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'shopProduct';
       }
     | {
+        /**
+         * Reference to the original quote
+         */
+        quote: string | Quote;
         /**
          * The 3D model associated with this item
          */
@@ -237,72 +250,207 @@ export interface Order {
           colour: string;
         };
         /**
-         * Estimated print time as returned by the slicer (total)
+         * Estimated print time as returned by the slicer
          */
         time?: string | null;
         /**
          * Estimated filament usage in grams as returned by the slicer
          */
         filament?: number | null;
-        price?: number | null;
+        quantity: number;
+        /**
+         * Price fetched from quote at order time
+         */
+        price: number;
+        /**
+         * Mark as printed
+         */
+        completed?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'customPrint';
       }
   )[];
-  payment: {};
+  payment?: {
+    /**
+     * Payment provider used for this order
+     */
+    provider?: string | null;
+    /**
+     * Stripe Customer ID
+     */
+    stripeCustomerId?: string | null;
+    /**
+     * Stripe Checkout Session ID
+     */
+    stripeCheckoutSessionId?: string | null;
+    /**
+     * Stripe Payment Intent ID
+     */
+    stripePaymentIntentId?: string | null;
+    /**
+     * Stripe Charge ID
+     */
+    stripeChargeId?: string | null;
+    /**
+     * Currency used for this order
+     */
+    currency?: string | null;
+    /**
+     * Amount paid
+     */
+    amount?: number | null;
+    status?:
+      | (
+          | 'awaiting-payment'
+          | 'paid'
+          | 'failed'
+          | 'refunded'
+          | 'partially-refunded'
+          | 'cancelled'
+          | 'expired'
+          | 'checkout-failed'
+        )
+      | null;
+    /**
+     * Date and time when the payment was made
+     */
+    paidAt?: string | null;
+    /**
+     * Whether the payment was refunded
+     */
+    refunded?: boolean | null;
+    /**
+     * Amount refunded
+     */
+    refundedAmount?: number | null;
+    /**
+     * Date and time when the payment was refunded
+     */
+    refundedAt?: string | null;
+    /**
+     * URL to the payment receipt
+     */
+    receiptUrl?: string | null;
+  };
   /**
-   * The total price of the order. Calculated from the prints subtotals. After quote if order has any custom prints.
+   * GoShippo details details for the order
    */
-  total?: number | null;
-  status?: {
+  shipping?: {
+    /**
+     * Shipment ID
+     */
+    shipmentId?: string | null;
+    /**
+     * Shipment transaction ID
+     */
+    transactionId?: string | null;
+    /**
+     * Shipping carrier
+     */
+    carrier?: string | null;
+    /**
+     * Shipping service
+     */
+    service?: string | null;
+    /**
+     * Tracking number
+     */
+    trackingNumber?: string | null;
+    /**
+     * Tracking URL
+     */
+    trackingUrl?: string | null;
+    /**
+     * Shipping label URL
+     */
+    labelUrl?: string | null;
+    /**
+     * Date and time when the label was purchased
+     */
+    labelPurchasedAt?: string | null;
+    /**
+     * Parcel ID
+     */
+    parcelId?: string | null;
+  };
+  /**
+   * Dimensions of the final, packaged order for shipping.
+   */
+  dimensions?: {
+    /**
+     * Length of the package in centimeters
+     */
+    length?: number | null;
+    /**
+     * Width of the package in centimeters
+     */
+    width?: number | null;
+    /**
+     * Height of the package in centimeters
+     */
+    height?: number | null;
+    /**
+     * Weight of the package in grams
+     */
+    weight?: number | null;
+  };
+  shippingAddress?: {
+    fullName?: string | null;
+    line1?: string | null;
+    line2?: string | null;
+    city?: string | null;
+    county?: string | null;
+    postcode?: string | null;
+    country?: string | null;
+  };
+  /**
+   * Pricing details for the order. EVERYTHING IN PENCE, ALWAYS.
+   */
+  pricing: {
+    /**
+     * The subtotal of the order in pennies (or smallest equivalent of the currency). Calculated from the prints.
+     */
+    subtotal?: number | null;
+    /**
+     * The shipping cost of the order. Always 300p.
+     */
+    shipping?: number | null;
+    /**
+     * The tax of the order. Always £0 since we are not VAT registered, yet.
+     */
+    tax?: number | null;
+    /**
+     * Total Price of everything in this field (subtotal + shipping + tax).
+     */
+    total?: number | null;
+  };
+  /**
+   * The print queue this order is assigned to
+   */
+  queue: number;
+  status: {
     statuses?:
       | {
-          stage: 'received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled';
+          stage: 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled';
           timestamp: string;
           id?: string | null;
         }[]
       | null;
     /**
-     * Denormalized field for quick access
+     * Current order status
      */
-    currentStatus?:
-      | ('received' | 'processing' | 'printing' | 'quality_check' | 'shipped' | 'delivered' | 'cancelled')
-      | null;
+    currentStatus: 'in-queue' | 'printing' | 'packaging' | 'shipped' | 'cancelled';
   };
-  comments?:
-    | {
-        /**
-         * The user who made the comment
-         */
-        author: string | User;
-        /**
-         * The content of the comment
-         */
-        content: {
-          root: {
-            type: string;
-            children: {
-              type: string;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        };
-        createdAt?: string | null;
-        id?: string | null;
-      }[]
-    | null;
+  /**
+   * Comments on this order
+   */
+  comments?: string | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
- * Products available for purchase in the shop. DO NOT DELETE PRODUCTS, HIDE INSTEAD.
+ * Products available for purchase in the shop. DO NOT DELETE PRODUCTS, ARCHIVE INSTEAD.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
@@ -310,7 +458,7 @@ export interface Order {
 export interface Product {
   id: string;
   /**
-   * The name of the product
+   * The name of the product.
    */
   name: string;
   /**
@@ -319,17 +467,21 @@ export interface Product {
   description: string;
   pictures: (string | Media)[];
   /**
-   * The price of the product in GBP (£)
+   * The price of the product in GBP (£) (e.g. 1.5)
    */
   price: number;
   /**
-   * The estimated print time for the product
+   * The estimated print time for the product (e.g. "2h30m")
    */
   time: string;
   /**
    * The number of times this product has been bought
    */
   orders?: number | null;
+  /**
+   * If true, the product will not be shown in the shop and cannot be purchased.
+   */
+  archived?: boolean | null;
   printingOptions: {
     plastic: {
       /**
@@ -385,27 +537,8 @@ export interface Media {
   focalY?: number | null;
 }
 /**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "presets".
- */
-export interface Preset {
-  id: string;
-  /**
-   * The name of the preset
-   */
-  name: string;
-  /**
-   * A brief description of the preset
-   */
-  description?: string | null;
-  /**
-   * The filename of the profile of the preset (process) in Bambu Studio/Orca Slicer. DO NOT INCLUDE FILE EXTENSION. See C:\Program Files\OrcaSlicer\resources\profiles\BBL\process
-   */
-  bambulabName?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
+ * Quotes generated for 3D models, used to create orders
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "quotes".
  */
@@ -442,7 +575,7 @@ export interface Quote {
   /**
    * The user who requested the quote
    */
-  user: string | User;
+  customer: string | User;
   /**
    * Estimated filament usage in grams as returned by the slicer
    */
@@ -452,6 +585,27 @@ export interface Quote {
    */
   time?: string | null;
   price?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "presets".
+ */
+export interface Preset {
+  id: string;
+  /**
+   * The name of the preset
+   */
+  name: string;
+  /**
+   * A brief description of the preset
+   */
+  description?: string | null;
+  /**
+   * The filename of the profile of the preset (process) in Bambu Studio/Orca Slicer. DO NOT INCLUDE FILE EXTENSION. See C:\Program Files\OrcaSlicer\resources\profiles\BBL\process
+   */
+  bambulabName?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -496,6 +650,23 @@ export interface Search {
   };
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv".
+ */
+export interface PayloadKv {
+  id: string;
+  key: string;
+  data:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -631,13 +802,6 @@ export interface UsersSelect<T extends boolean = true> {
   _verificationToken?: T;
   loginAttempts?: T;
   lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -653,13 +817,17 @@ export interface OrdersSelect<T extends boolean = true> {
           | T
           | {
               product?: T;
+              quantity?: T;
               price?: T;
+              colour?: T;
+              completed?: T;
               id?: T;
               blockName?: T;
             };
         customPrint?:
           | T
           | {
+              quote?: T;
               model?:
                 | T
                 | {
@@ -679,13 +847,71 @@ export interface OrdersSelect<T extends boolean = true> {
                   };
               time?: T;
               filament?: T;
+              quantity?: T;
               price?: T;
+              completed?: T;
               id?: T;
               blockName?: T;
             };
       };
-  payment?: T | {};
-  total?: T;
+  payment?:
+    | T
+    | {
+        provider?: T;
+        stripeCustomerId?: T;
+        stripeCheckoutSessionId?: T;
+        stripePaymentIntentId?: T;
+        stripeChargeId?: T;
+        currency?: T;
+        amount?: T;
+        status?: T;
+        paidAt?: T;
+        refunded?: T;
+        refundedAmount?: T;
+        refundedAt?: T;
+        receiptUrl?: T;
+      };
+  shipping?:
+    | T
+    | {
+        shipmentId?: T;
+        transactionId?: T;
+        carrier?: T;
+        service?: T;
+        trackingNumber?: T;
+        trackingUrl?: T;
+        labelUrl?: T;
+        labelPurchasedAt?: T;
+        parcelId?: T;
+      };
+  dimensions?:
+    | T
+    | {
+        length?: T;
+        width?: T;
+        height?: T;
+        weight?: T;
+      };
+  shippingAddress?:
+    | T
+    | {
+        fullName?: T;
+        line1?: T;
+        line2?: T;
+        city?: T;
+        county?: T;
+        postcode?: T;
+        country?: T;
+      };
+  pricing?:
+    | T
+    | {
+        subtotal?: T;
+        shipping?: T;
+        tax?: T;
+        total?: T;
+      };
+  queue?: T;
   status?:
     | T
     | {
@@ -698,14 +924,7 @@ export interface OrdersSelect<T extends boolean = true> {
             };
         currentStatus?: T;
       };
-  comments?:
-    | T
-    | {
-        author?: T;
-        content?: T;
-        createdAt?: T;
-        id?: T;
-      };
+  comments?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -731,6 +950,7 @@ export interface ProductsSelect<T extends boolean = true> {
   price?: T;
   time?: T;
   orders?: T;
+  archived?: T;
   printingOptions?:
     | T
     | {
@@ -798,7 +1018,7 @@ export interface QuotesSelect<T extends boolean = true> {
         plastic?: T;
         colour?: T;
       };
-  user?: T;
+  customer?: T;
   filament?: T;
   time?: T;
   price?: T;
@@ -825,6 +1045,14 @@ export interface SearchSelect<T extends boolean = true> {
   doc?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv_select".
+ */
+export interface PayloadKvSelect<T extends boolean = true> {
+  key?: T;
+  data?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -908,6 +1136,24 @@ export interface PricingFormula {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-details".
+ */
+export interface AdminDetail {
+  id: string;
+  shippingAddress: {
+    fullName: string;
+    line1: string;
+    line2?: string | null;
+    city: string;
+    county: string;
+    postcode: string;
+    country: string;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "printing-options_select".
  */
 export interface PrintingOptionsSelect<T extends boolean = true> {
@@ -954,6 +1200,36 @@ export interface PricingFormulaSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-details_select".
+ */
+export interface AdminDetailsSelect<T extends boolean = true> {
+  shippingAddress?:
+    | T
+    | {
+        fullName?: T;
+        line1?: T;
+        line2?: T;
+        city?: T;
+        county?: T;
+        postcode?: T;
+        country?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

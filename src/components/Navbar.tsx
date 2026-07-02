@@ -7,6 +7,7 @@ import logo from '@/assets/logo.png';
 import {
 	NavigationMenu,
 	NavigationMenuContent,
+	NavigationMenuIndicator,
 	NavigationMenuItem,
 	NavigationMenuLink,
 	NavigationMenuList,
@@ -221,11 +222,6 @@ const Navbar = ({ items, user }: NavbarProps) => {
 			router.push('/');
 			setUserData(null);
 
-			toast.success('Logged out successfully', {
-				duration: 3000,
-				dismissible: true,
-			});
-
 			setLogoutLoading(false);
 			return { success: true };
 		} catch (error) {
@@ -280,13 +276,12 @@ const Navbar = ({ items, user }: NavbarProps) => {
 				}}>
 				<div className='flex-shrink-0'>
 					<Link href='/' className='flex items-center gap-4'>
-						<Image src={logo} alt='Avium Logo' height={28} width={28}></Image>
+						<Image src={logo} loading='eager' alt='Avium Logo' height={28} width={28}></Image>
 						<span className='text-lg font-bold whitespace-nowrap'>Avium</span>
 					</Link>
 				</div>
 
 				<NavigationMenuList ref={listRef} className='relative'>
-					{/* Indicator Element with matching animation classes from NavigationMenuContent */}
 					<div
 						className={cn(
 							'absolute w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-border shadow-md',
@@ -400,8 +395,6 @@ const Navbar = ({ items, user }: NavbarProps) => {
 				<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' />
 
 				<div className='flex gap-x-4 ml-auto'>
-					{/* {user.status === 'loading' && <Skeleton className='w-[200px] h-9'></Skeleton>} */}
-
 					{!userData ? (
 						<>
 							<Link href={'/auth/login'} className={buttonVariants({ variant: 'default' })}>

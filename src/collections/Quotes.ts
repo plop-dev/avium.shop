@@ -1,3 +1,5 @@
+import { selfAccessOrders } from '@/access/anyone';
+import { adminAccess, backendAccess } from '@/access/elevated';
 import type { CollectionConfig } from 'payload';
 
 export const Quotes: CollectionConfig = {
@@ -6,7 +8,30 @@ export const Quotes: CollectionConfig = {
 		singular: 'Quote',
 		plural: 'Quotes',
 	},
-	admin: {},
+	admin: {
+		description: 'Quotes generated for 3D models, used to create orders',
+	},
+	access: {
+		read: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		create: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		delete: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		update: ({ req }) => backendAccess({ req }) || adminAccess({ req }) || selfAccessOrders({ req }),
+	},
+	hooks: {
+		beforeChange: [
+			async ({ data, req, operation, originalDoc }) => {
+				if (operation === 'update' && originalDoc) {
+					for (const key of ['model', 'printingOptions', 'customer', 'filament', 'time', 'price']) {
+						if (originalDoc[key] != null) {
+							data[key] = originalDoc[key];
+						}
+					}
+				}
+
+				return data;
+			},
+		],
+	},
 	fields: [
 		{
 			name: 'model',
@@ -48,7 +73,7 @@ export const Quotes: CollectionConfig = {
 			],
 		},
 		{
-			name: 'user',
+			name: 'customer',
 			type: 'relationship',
 			relationTo: 'users',
 			required: true,
@@ -66,6 +91,13 @@ export const Quotes: CollectionConfig = {
 			type: 'text',
 			admin: { description: 'Estimated print time as returned by the slicer (total)' },
 		},
-		{ name: 'price', type: 'number' },
+		{
+			name: 'price',
+			type: 'number',
+			access: {
+				create: ({ req }) => backendAccess({ req }) || adminAccess({ req }),
+				update: ({ req }) => backendAccess({ req }) || adminAccess({ req }),
+			},
+		},
 	],
 };

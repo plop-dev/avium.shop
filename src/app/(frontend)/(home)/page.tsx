@@ -1,6 +1,5 @@
 import Hero from '@/components/home/Hero';
 import PageContainer from '@/components/layouts/PageContainer';
-import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Page() {
 	return (

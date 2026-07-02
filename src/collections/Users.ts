@@ -1,4 +1,4 @@
-import { anyoneAccess } from '@/access/anyone';
+import { anyoneAccess, selfAccess } from '@/access/anyone';
 import { adminAccess, devAccess } from '@/access/elevated';
 import { getServerSideURL } from '@/utils/getServerSideUrl';
 import type { CollectionConfig } from 'payload';
@@ -9,11 +9,22 @@ export const Users: CollectionConfig = {
 		useAsTitle: 'name',
 	},
 	access: {
-		read: anyoneAccess,
-		update: anyoneAccess,
-		create: anyoneAccess,
+		read: ({ req }) => adminAccess({ req }) || selfAccess({ req }),
+		update: ({ req }) => adminAccess({ req }),
+		create: ({ req }) => anyoneAccess({ req }),
 		delete: () => false,
-		unlock: anyoneAccess,
+		unlock: ({ req }) => selfAccess({ req }),
+	},
+	hooks: {
+		beforeChange: [
+			async ({ data, req, operation, originalDoc }) => {
+				const isAdmin = ['admin', 'developer'].includes(req.user?.role || '');
+				if (!isAdmin && data.role) {
+					data.role = operation === 'create' ? 'customer' : originalDoc?.role;
+				}
+				return data;
+			},
+		],
 	},
 	auth: {
 		verify: {
@@ -178,6 +189,10 @@ export const Users: CollectionConfig = {
 			name: 'role',
 			type: 'select',
 			defaultValue: 'customer',
+			access: {
+				create: ({ req }) => ['admin', 'developer'].includes(req.user?.role || ''),
+				update: ({ req }) => ['admin', 'developer'].includes(req.user?.role || ''),
+			},
 			options: [
 				{
 					label: 'Customer',

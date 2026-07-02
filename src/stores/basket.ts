@@ -1,4 +1,4 @@
-import { Order, Product } from '@/payload-types';
+import { Product } from '@/payload-types';
 import { persistentAtom } from '@nanostores/persistent';
 
 export type CustomPrint = {
@@ -7,9 +7,11 @@ export type CustomPrint = {
 	model: {
 		filename: string;
 		filetype: 'stl' | '3mf';
+		modelUrl: string;
+		gcodeUrl: string;
 	};
 	printingOptions: {
-		preset?: string; // relationship to presets
+		preset?: string; // relationship to presets, so an ID string is stored
 		layerHeight?: number;
 		infill?: number;
 		plastic: string;
@@ -37,6 +39,7 @@ export type ShopProduct = {
 			colour: string; //* USER ONLY CHOOSES THIS
 		};
 	};
+	colour: string; //* USER ONLY CHOOSES THIS
 	price: Product['price'];
 	quantity: number;
 	time: Product['time'];
@@ -49,18 +52,52 @@ export const $basket = persistentAtom<BasketItem[]>('basket', [], {
 	decode: JSON.parse,
 });
 
+const isShopProduct = (item: BasketItem): item is ShopProduct => 'product' in item;
+
+export const getBasketItemSignature = (item: BasketItem) => {
+	if (isShopProduct(item)) {
+		return JSON.stringify({
+			type: 'shop-product',
+			productId: item.id,
+			colour: item.colour,
+			product: {
+				name: item.product.name,
+				description: item.product.description,
+				price: item.product.price,
+				time: item.product.time,
+				printingOptions: item.product.printingOptions,
+			},
+		});
+	}
+
+	return JSON.stringify({
+		type: 'custom-print',
+		itemId: item.id,
+		model: item.model,
+		printingOptions: item.printingOptions,
+		price: item.price,
+		time: item.time,
+	});
+};
+
 export const resetBasket = () => {
 	$basket.set([]);
 };
 
 export const addToBasket = (product: BasketItem) => {
-	const existingItem = $basket.get().find(p => p.id === product.id);
+	const basket = $basket.get();
+	const productSignature = getBasketItemSignature(product);
+	const existingItemIndex = basket.findIndex(item => getBasketItemSignature(item) === productSignature);
 
-	if (existingItem) {
-		$basket.set($basket.get().map(p => (p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p)));
-	} else {
-		$basket.set([...$basket.get(), { ...product, quantity: product.quantity }]);
+	if (existingItemIndex >= 0) {
+		const existingItem = basket[existingItemIndex];
+		const nextQuantity = existingItem.quantity + Math.max(product.quantity, 1);
+		const updatedBasket = basket.map((item, index) => (index === existingItemIndex ? { ...item, quantity: nextQuantity } : item));
+		$basket.set(updatedBasket);
+		return;
 	}
+
+	$basket.set([...basket, { ...product, quantity: Math.max(product.quantity, 1) }]);
 };
 
 export const addShopProductToBasket = (product: ShopProduct) => {
@@ -71,10 +108,14 @@ export const addCustomPrintToBasket = (product: CustomPrint) => {
 	addToBasket(product);
 };
 
-export const setItemQuantity = (id: string, quantity: number) => {
-	$basket.set($basket.get().map(p => (p.id === id ? { ...p, quantity } : p)));
+export const setItemQuantity = (itemKey: string, quantity: number) => {
+	const basket = $basket.get();
+	const nextQuantity = Math.max(quantity, 0);
 
-	if (quantity === 0) {
-		$basket.set($basket.get().filter(p => p.id !== id));
+	if (nextQuantity === 0) {
+		$basket.set(basket.filter(item => getBasketItemSignature(item) !== itemKey));
+		return;
 	}
+
+	$basket.set(basket.map(item => (getBasketItemSignature(item) === itemKey ? { ...item, quantity: nextQuantity } : item)));
 };

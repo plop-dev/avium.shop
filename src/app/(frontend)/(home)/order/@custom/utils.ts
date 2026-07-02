@@ -66,7 +66,8 @@ async function uploadChunk(chunk: UploadChunk, baseServerUrl: string) {
 	});
 
 	if (!response.ok) {
-		throw new Error(`Chunk upload failed: ${response.statusText}`);
+		const json = await response.json();
+		throw new Error(`Chunk upload failed: ${json.details || 'Unknown error'}`);
 	}
 
 	return response.json() as Promise<SlicingResult | UploadedChunkResponse>;
@@ -117,7 +118,7 @@ export async function uploadFile(
 			onProgress(progress, currentChunk, totalChunks);
 		}
 
-		//! TESTING
+		//! FOR TESTING
 		// await new Promise(res => setTimeout(res, 1000));
 	}
 

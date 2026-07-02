@@ -43,7 +43,10 @@ export async function submitSignupForm(formData: FormData) {
 
 		const createRes = await payload.create({
 			collection: 'users',
-			data: signupData,
+			data: {
+				...signupData,
+				collection: 'users',
+			},
 		});
 
 		if (!createRes) {

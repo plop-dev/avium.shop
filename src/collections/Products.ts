@@ -1,4 +1,4 @@
-import { anyoneAccess } from '@/access/anyone';
+import { anyoneAccess, noAccess } from '@/access/anyone';
 import { adminAccess } from '@/access/elevated';
 import { Plastic } from '@/blocks/Plastic';
 import { CollectionConfig } from 'payload';
@@ -12,22 +12,34 @@ export const Products: CollectionConfig = {
 	admin: {
 		useAsTitle: 'name',
 		//? defaultColumns: ['name', 'customer', 'currentStatus', 'createdAt'],
-		description: 'Products available for purchase in the shop. DO NOT DELETE PRODUCTS, HIDE INSTEAD.',
+		description: 'Products available for purchase in the shop. DO NOT DELETE PRODUCTS, ARCHIVE INSTEAD.',
 	},
 	access: {
-		read: anyoneAccess,
-		create: adminAccess,
-		update: adminAccess,
-		delete: adminAccess,
+		read: ({ req }) => anyoneAccess({ req }),
+		create: ({ req }) => adminAccess({ req }),
+		update: ({ req }) => adminAccess({ req }),
+		delete: () => false,
 	},
 	timestamps: true,
+	hooks: {
+		beforeChange: [
+			async ({ req, data, operation, originalDoc }) => {
+				if (operation === 'update') {
+					data.price = originalDoc.price;
+				}
+
+				return data;
+			},
+		],
+	},
 	fields: [
 		{
 			name: 'name',
 			type: 'text',
 			required: true,
+			index: true,
 			admin: {
-				description: 'The name of the product',
+				description: 'The name of the product.',
 			},
 		},
 
@@ -54,7 +66,8 @@ export const Products: CollectionConfig = {
 			type: 'number',
 			required: true,
 			admin: {
-				description: 'The price of the product in GBP (£)',
+				readOnly: true,
+				description: 'The price of the product in GBP (£) (e.g. 1.5)',
 			},
 		},
 
@@ -63,7 +76,7 @@ export const Products: CollectionConfig = {
 			type: 'text',
 			required: true,
 			admin: {
-				description: 'The estimated print time for the product',
+				description: 'The estimated print time for the product (e.g. "2h30m")',
 			},
 		},
 
@@ -74,6 +87,16 @@ export const Products: CollectionConfig = {
 			admin: {
 				description: 'The number of times this product has been bought',
 				readOnly: true,
+			},
+		},
+
+		{
+			name: 'archived',
+			type: 'checkbox',
+			defaultValue: false,
+			required: false,
+			admin: {
+				description: 'If true, the product will not be shown in the shop and cannot be purchased.',
 			},
 		},
 

@@ -1,5 +1,7 @@
 # 🔁 Steps
 
+## After merging dev to main
+
 1. Switch to main
 
     Open the Source Control panel or use the branch switcher at the bottom-left of VSCode.
