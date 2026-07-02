@@ -22,6 +22,7 @@ export type FilamentInfo = {
 	used_mm?: string;
 	used_cm3?: string;
 	used_g?: string;
+	weight?: string; // DEPRECATED - use volume instead
 };
 
 export type SlicingResult = {
