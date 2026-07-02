@@ -29,7 +29,7 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { createHash } from 'crypto';
+import { h64 } from 'xxhashjs';
 import { useSession } from 'next-auth/react';
 
 const isCustomPrint = (item: BasketItemType): item is CustomPrint => {
@@ -275,15 +275,19 @@ export default function Basket() {
 										<Package className='h-4 w-4' />
 										<h3 className='font-semibold text-sm'>Shop Products</h3>
 									</div>
-									{shopProducts.map(item => (
-										<BasketItem
-											key={createHash('sha256').update(JSON.stringify(item)).digest('base64')}
-											item={item}
-											onQuantityChange={handleQuantityChange}
-											onRemove={handleRemoveItem}
-											progress={100}
-										/>
-									))}
+									{shopProducts.map(item => {
+										const key = h64(JSON.stringify(item), 0).toString(16);
+
+										return (
+											<BasketItem
+												key={key}
+												item={item}
+												onQuantityChange={handleQuantityChange}
+												onRemove={handleRemoveItem}
+												progress={100}
+											/>
+										);
+									})}
 								</div>
 							)}
 						</div>

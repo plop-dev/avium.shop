@@ -459,6 +459,8 @@ function PrintItemCard({
 													className='mx-0.5 !w-[calc(100%-0.5rem)]'
 													step='0.01'
 													placeholder='e.g., 0.2'
+													max={printingOptions.layerHeight.max}
+													min={printingOptions.layerHeight.min}
 													{...field}
 													value={field.value || ''}
 												/>
