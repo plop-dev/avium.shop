@@ -1,6 +1,8 @@
 import { adminAccess } from '@/access/elevated';
 import type { CollectionConfig } from 'payload';
 
+// NOTE: The 'cost' field has been deprecated. Filament pricing is now calculated via the pricing formula in PricingFormula collection.
+// If a cost field exists in the database schema, it can remain but should not be used in any components or calculations.
 export const Filaments: CollectionConfig = {
 	slug: 'filaments',
 	labels: {

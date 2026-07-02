@@ -17,11 +17,11 @@ export type UploadedChunkResponse = {
 	complete: boolean;
 };
 
+// DEPRECATED: The cost field is obsolete and should not be used. Pricing is now calculated via the pricing formula.
 export type FilamentInfo = {
 	used_mm?: string;
 	used_cm3?: string;
 	used_g?: string;
-	cost?: string;
 };
 
 export type SlicingResult = {
