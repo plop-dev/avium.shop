@@ -280,7 +280,6 @@ export default function Basket() {
 
 										return (
 											<BasketItem
-												// key={createHash('sha256').update(JSON.stringify(item)).digest('base64')}
 												key={key}
 												item={item}
 												onQuantityChange={handleQuantityChange}

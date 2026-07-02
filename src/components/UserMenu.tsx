@@ -39,19 +39,7 @@ function UserMenu({
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className='w-56' align='start'>
 				<DropdownMenuLabel>My Account</DropdownMenuLabel>
-				<DropdownMenuGroup>
-					<DropdownMenuItem>Dashboard</DropdownMenuItem>
-					<DropdownMenuItem>Profile</DropdownMenuItem>
-					<DropdownMenuItem>Orders</DropdownMenuItem>
-					<DropdownMenuItem>Settings</DropdownMenuItem>
-				</DropdownMenuGroup>
 
-				<DropdownMenuSeparator />
-
-				<DropdownMenuItem>Contact</DropdownMenuItem>
-				<DropdownMenuItem>GitHub</DropdownMenuItem>
-				<DropdownMenuItem disabled>API</DropdownMenuItem>
-				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					variant='destructive'
 					onClick={async e => {
