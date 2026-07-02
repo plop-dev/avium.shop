@@ -224,7 +224,7 @@ export const Orders: CollectionConfig = {
 												<p style="margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.04em;">Order update</p>
 												<p style="margin: 0 0 8px; font-size: 20px; font-weight: 600; color: #18181b;">Order #${doc.id}</p>
 												<p style="margin: 0 0 8px; font-size: 16px; line-height: 24px; color: #18181b;">
-												<strong>New status:</strong> ${doc.status.currentStatus}
+												<strong>New status:</strong> ${doc.status.currentStatus || 'Unknown'}
 												</p>
 												<p style="margin: 0; font-size: 14px; line-height: 22px; color: #71717a;">
 												Updated on: ${doc.updatedAt || new Date().toLocaleString()}

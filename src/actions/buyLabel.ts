@@ -21,7 +21,7 @@ export async function buyLabel(orderId: string, dimensions: Order['dimensions'])
 			id: user?.id || '',
 		});
 
-		if (userDoc.role === 'customer') {
+		if (!['admin', 'developer', 'employee'].includes(userDoc.role || '')) {
 			throw new Error('Unauthorized: Only admins can buy shipping labels');
 		}
 	} catch (error) {

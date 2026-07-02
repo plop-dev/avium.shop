@@ -756,7 +756,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				try {
 					await Promise.all([
 						fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${existingQuote.id}`, { method: 'DELETE' }),
-						fetch(`/api/quotes/${existingQuote.id}`, { method: 'DELETE' }),
+						fetch(`/api/quotes/${existingQuote.id}`, { method: 'DELETE', credentials: 'include' }),
 					]);
 				} catch (error) {
 					console.error('Error cleaning up old quote:', existingQuote.id, error);
@@ -768,6 +768,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				headers: {
 					'Content-Type': 'application/json',
 				},
+				credentials: 'include',
 				body: JSON.stringify({
 					customer: userData.id,
 					printingOptions: {
@@ -778,8 +779,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					model: {
 						filename: print.file.name,
 						filetype: (print.file.name.split('.').pop() || 'stl') as 'stl' | '3mf',
-						modelUrl: '',
-						gcodeUrl: '',
 					},
 				}),
 			}).then(res => res.json());
@@ -987,9 +986,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 							plastic: item.material.plastic,
 							...item.printingOptions,
 						},
-						price: quote.sliceResult.price || 0,
-						time: quote.sliceResult.times?.total || '',
-						filament: Number.parseFloat(quote.sliceResult.filament?.used_g || '') || undefined,
 					}),
 				});
 

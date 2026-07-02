@@ -17,6 +17,21 @@ export const Quotes: CollectionConfig = {
 		delete: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
 		update: ({ req }) => backendAccess({ req }) || adminAccess({ req }) || selfAccessOrders({ req }),
 	},
+	hooks: {
+		beforeChange: [
+			async ({ data, req, operation, originalDoc }) => {
+				if (operation === 'update' && originalDoc) {
+					for (const key of ['model', 'printingOptions', 'customer', 'filament', 'time', 'price']) {
+						if (originalDoc[key] != null) {
+							data[key] = originalDoc[key];
+						}
+					}
+				}
+
+				return data;
+			},
+		],
+	},
 	fields: [
 		{
 			name: 'model',

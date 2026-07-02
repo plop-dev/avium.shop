@@ -10,10 +10,10 @@ export const Users: CollectionConfig = {
 	},
 	access: {
 		read: ({ req }) => adminAccess({ req }) || selfAccess({ req }),
-		update: adminAccess,
-		create: anyoneAccess,
+		update: ({ req }) => adminAccess({ req }),
+		create: ({ req }) => anyoneAccess({ req }),
 		delete: () => false,
-		unlock: selfAccess,
+		unlock: ({ req }) => selfAccess({ req }),
 	},
 	hooks: {
 		beforeChange: [

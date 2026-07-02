@@ -15,9 +15,9 @@ export const Products: CollectionConfig = {
 		description: 'Products available for purchase in the shop. DO NOT DELETE PRODUCTS, ARCHIVE INSTEAD.',
 	},
 	access: {
-		read: anyoneAccess,
-		create: adminAccess,
-		update: adminAccess,
+		read: ({ req }) => anyoneAccess({ req }),
+		create: ({ req }) => adminAccess({ req }),
+		update: ({ req }) => adminAccess({ req }),
 		delete: () => false,
 	},
 	timestamps: true,

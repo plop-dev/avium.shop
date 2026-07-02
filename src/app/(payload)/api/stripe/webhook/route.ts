@@ -34,6 +34,7 @@ export async function POST(req: Request) {
 			const order = await payload.findByID({
 				collection: 'orders',
 				id: orderId,
+				overrideAccess: true,
 			});
 
 			if (order.payment?.paidAt) {
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
 							country: shippingDetails.address?.country,
 						},
 					},
+					overrideAccess: true,
 				});
 			} catch (error) {
 				console.error('Error updating order after checkout.session.completed:', error);
@@ -95,6 +97,7 @@ export async function POST(req: Request) {
 							in: quoteIds,
 						},
 					},
+					overrideAccess: true,
 				});
 			}
 
@@ -120,6 +123,7 @@ export async function POST(req: Request) {
 						stripeCheckoutSessionId: null,
 					},
 				},
+				overrideAccess: true,
 			});
 
 			revalidatePath(`/dashboard/home`);
@@ -146,6 +150,7 @@ export async function POST(req: Request) {
 						refunded: true,
 					},
 				},
+				overrideAccess: true,
 			});
 
 			revalidatePath(`/dashboard/home`);
@@ -180,6 +185,7 @@ export async function POST(req: Request) {
 						refundedAmount: refund.amount,
 					},
 				},
+				overrideAccess: true,
 			});
 
 			revalidatePath(`/dashboard/home`);
