@@ -11,7 +11,7 @@ const FormulaField = ({ field: { label, required = false }, path }: { field: { l
 	useEffect(() => {
 		try {
 			// Example inputs for preview
-			const result = evaluate(value, { weight: 12, time: 3600, cost: 0.2 });
+			const result = evaluate(value, { weight: 12, time: 3600, cost: 200 });
 
 			if (result < 0) {
 				setPreview(`Invalid formula: Preview (12 grams weight, £0.2 cost, 1h time): £${(result / 100).toFixed(2)}`);
