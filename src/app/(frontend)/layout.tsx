@@ -8,6 +8,7 @@ import { Metadata } from 'next';
 import { SessionProvider } from 'next-auth/react';
 import { DM_Sans } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { auth } from '@/auth';
 import { MessageToaster } from '@/components/MessageToaster';
 import CustomToaster from '@/components/layouts/CustomToaster';
@@ -35,6 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 				<body className='bg-background font-sans antialiased'>
 					<NextTopLoader showSpinner={false}></NextTopLoader>
 					<Analytics></Analytics>
+					<SpeedInsights></SpeedInsights>
 					<NuqsAdapter>
 						<SessionProvider session={session}>
 							<CustomToaster></CustomToaster>
