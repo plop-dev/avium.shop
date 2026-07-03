@@ -284,6 +284,60 @@ export function DataTable({ data: initialData, limit, page }: { data: ZodOrder[]
 			cell: ({ row }) => row.original.prints.filter(p => p.blockType === 'customPrint').length || 0,
 		},
 		{
+			accessorKey: 'payment-status',
+			header: () => <div className='w-full'>Payment Status</div>,
+			cell: ({ row }) => {
+				const paymentStatus = row.original.payment?.status;
+				const expiresAt = row.original.expiresAt;
+				const isAwaitingPayment = paymentStatus === 'awaiting-payment';
+
+				if (!isAwaitingPayment) {
+					return (
+						<Badge variant='outline' className='text-muted-foreground px-1.5'>
+							{paymentStatus || 'unknown'}
+						</Badge>
+					);
+				}
+
+				const expiryTime = expiresAt ? new Date(expiresAt).getTime() : null;
+				const timeUntilExpiry = expiryTime ? expiryTime - Date.now() : null;
+				const hoursUntilExpiry = timeUntilExpiry ? Math.floor(timeUntilExpiry / (1000 * 60 * 60)) : null;
+				const isExpiringSoon = hoursUntilExpiry !== null && hoursUntilExpiry < 2;
+				const hasExpired = timeUntilExpiry !== null && timeUntilExpiry <= 0;
+
+				return (
+					<div className='flex flex-col gap-1'>
+						<Badge
+							variant={hasExpired ? 'destructive' : isExpiringSoon ? 'outline' : 'secondary'}
+							className={cn(
+								'px-1.5 w-fit',
+								hasExpired && 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200',
+								isExpiringSoon && !hasExpired && 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200 border-amber-300',
+							)}>
+							Awaiting Payment
+						</Badge>
+						{expiresAt && (
+							<span
+								className={cn(
+									'text-xs font-medium',
+									hasExpired && 'text-red-700 dark:text-red-300',
+									isExpiringSoon && !hasExpired && 'text-amber-700 dark:text-amber-300',
+									!isExpiringSoon && !hasExpired && 'text-muted-foreground',
+								)}>
+								{hasExpired ? (
+									'Expired'
+								) : hoursUntilExpiry !== null && hoursUntilExpiry < 24 ? (
+									<>Expires in {hoursUntilExpiry}h</>
+								) : (
+									<>{format(new Date(expiresAt), 'MMM d, p')}</>
+								)}
+							</span>
+						)}
+					</div>
+				);
+			},
+		},
+		{
 			accessorKey: 'created-at',
 			header: () => <div className='w-full'>Created At</div>,
 			cell: ({ row }) => (

@@ -12,7 +12,8 @@ import type { Order as PayloadOrder } from '@/payload-types';
 import { getUser } from '@/utils/getUser';
 import numToGBP from '@/utils/numToGBP';
 import { RetryCheckoutButton } from '@/components/dashboard/RetryCheckoutButton';
-import { AlertCircle, ArrowRight, CalendarDays, Clock3, CreditCard, Package2 } from 'lucide-react';
+import { AlertCircle, ArrowRight, CalendarDays, Clock3, CreditCard, Package2, Clock } from 'lucide-react';
+import { CancelOrderButton } from '@/components/dashboard/CancelOrderButton';
 
 const statusMeta: Record<
 	PayloadOrder['status']['currentStatus'],
@@ -109,6 +110,7 @@ function getTimelineNodes(status: PayloadOrder['status']['currentStatus'], statu
 function getPaymentStatusVariant(status?: NonNullable<PayloadOrder['payment']>['status']) {
 	if (status === 'paid') return 'default' as const;
 	if (status === 'failed' || status === 'checkout-failed') return 'destructive' as const;
+	if (status === 'awaiting-payment') return 'destructive' as const;
 
 	return 'outline' as const;
 }
@@ -244,7 +246,10 @@ export default async function ClientPage() {
 							{orders.docs.map((order, i) => {
 								const timelineNodes = getTimelineNodes(order.status.currentStatus, order.status.statuses);
 								const paymentVariant = getPaymentStatusVariant(order.payment?.status);
-								const isCancelled = order.status.currentStatus === 'cancelled';
+								const isCancelled =
+									order.status.currentStatus === 'cancelled' ||
+									order.payment?.status === 'checkout-failed' ||
+									order.payment?.status === 'failed';
 
 								return (
 									<Card
@@ -301,9 +306,26 @@ export default async function ClientPage() {
 											</Alert>
 										) : null}
 
+										{order.payment?.status === 'awaiting-payment' && order.expiresAt ? (
+											<Alert className='mt-4 left-4 right-4 w-[calc(100%-2rem)] border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30'>
+												<Clock className='text-amber-600 dark:text-amber-400' />
+												<AlertTitle className='text-amber-900 dark:text-amber-100'>
+													No payment was received for this order
+												</AlertTitle>
+												<AlertDescription className='text-amber-800 dark:text-amber-200 inline'>
+													This order will be automatically deleted on{' '}
+													<strong>{format(new Date(order.expiresAt), 'd MMM yyyy HH:mm')}</strong>
+													<br></br>
+													Please order again when you are ready to pay.
+												</AlertDescription>
+											</Alert>
+										) : null}
+
 										<CardContent
 											className={`grid gap-4 p-4 @4xl/main:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)] ${
-												isCancelled ? 'pointer-events-none opacity-60' : ''
+												isCancelled || order.payment?.status === 'awaiting-payment'
+													? 'pointer-events-none opacity-60'
+													: ''
 											}`}>
 											<div className='space-y-4'>
 												<div className='grid gap-3 @2xl/main:grid-cols-2'>
@@ -513,11 +535,18 @@ export default async function ClientPage() {
 												<Separator className='mt-12' />
 
 												{isCancelled ? null : (
-													<Alert className='border-dashed'>
-														<AlertCircle />
-														<AlertTitle>Order notes</AlertTitle>
-														<AlertDescription>{order.comments || 'N/A'}</AlertDescription>
-													</Alert>
+													<div className='space-y-3'>
+														<Alert className='border-dashed'>
+															<AlertCircle />
+															<AlertTitle>Order notes</AlertTitle>
+															<AlertDescription>{order.comments || 'N/A'}</AlertDescription>
+														</Alert>
+														<CancelOrderButton
+															orderId={order.id}
+															currentStatus={order.status.currentStatus}
+															canCancel={!isCancelled && order.status.currentStatus !== 'shipped'}
+														/>
+													</div>
 												)}
 											</div>
 										</CardContent>

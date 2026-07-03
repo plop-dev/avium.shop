@@ -205,6 +205,10 @@ export interface Order {
    * The user who placed the order
    */
   customer: string | User;
+  /**
+   * The date and time when the order will expire if not paid (payment.status == awaiting-payment)
+   */
+  expiresAt?: string | null;
   prints: (
     | {
         product: string | Product;
@@ -811,6 +815,7 @@ export interface UsersSelect<T extends boolean = true> {
 export interface OrdersSelect<T extends boolean = true> {
   name?: T;
   customer?: T;
+  expiresAt?: T;
   prints?:
     | T
     | {

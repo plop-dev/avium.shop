@@ -295,6 +295,15 @@ export const Orders: CollectionConfig = {
 			},
 		},
 
+		{
+			name: 'expiresAt',
+			type: 'date',
+			required: false,
+			admin: {
+				description: 'The date and time when the order will expire if not paid (payment.status == awaiting-payment)',
+			},
+		},
+
 		// prints
 		{
 			name: 'prints',

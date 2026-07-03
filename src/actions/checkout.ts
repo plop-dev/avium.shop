@@ -111,6 +111,7 @@ export async function checkout(orderId: string): Promise<{ success: boolean; mes
 				stripeCheckoutSessionId: checkout.id,
 				status: 'awaiting-payment',
 			},
+			expiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(), // 6 hours from now
 		},
 	});
 
