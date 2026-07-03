@@ -87,6 +87,7 @@ export default function Basket() {
 				// custom print shape
 				return {
 					blockType: 'customPrint',
+					time: item.time,
 					quote: item.id,
 					model: item.model,
 					printingOptions: item.printingOptions,
@@ -105,15 +106,6 @@ export default function Basket() {
 				price: 0, // price will be calculated server-side based on the product
 			};
 		});
-
-		// const me = await fetch('/api/users/me', { credentials: 'include' });
-
-		// if (me.status !== 200) {
-		// 	toast.error('Failed to retrieve user information.');
-		// 	setIsSubmitting(false);
-		// 	return;
-		// }
-		// const userId = (await me.json()).user.id;
 
 		const me = session?.user;
 

@@ -1309,7 +1309,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 															form.setValue(`prints.${i}.quantity`, qty);
 														}}
 														canChangeQuantity={false}
-														onRemove={async id => {
+														onRemove={async basketItem => {
+															const id = JSON.parse(basketItem).itemId;
 															remove(i);
 
 															const updatedQuotes = new Map(quotes);
