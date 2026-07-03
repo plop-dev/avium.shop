@@ -169,7 +169,7 @@ export default function BasketItem({
 						<Badge variant={'outline'} className='text-md h-10'>
 							<span className='text-sm text-muted-foreground'>
 								<LoadingSwap isLoading={isLoading} loaderClassName='size-4 my-1 mx-2' className='!w-auto'>
-									{multiplyTimeString(item.time || '2h', item.quantity)}
+									{multiplyTimeString(item.time, item.quantity)}
 								</LoadingSwap>
 							</span>
 						</Badge>

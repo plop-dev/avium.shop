@@ -108,6 +108,7 @@ import { orderSchema } from '@/schemas/orderSchema';
 import { updateOrder } from '@/actions/updateOrder';
 import { Order } from '@/payload-types';
 import { buyLabel } from '@/actions/buyLabel';
+import { multiplyTimeString } from '@/utils/multiplyTimeString';
 
 // server actions
 
@@ -1067,7 +1068,7 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 																			<div className='flex flex-col gap-2'>
 																				<Label>Estimated Time</Label>
 																				<Input
-																					value={print.time || ''}
+																					value={multiplyTimeString(print.time, print.quantity)}
 																					onChange={e =>
 																						setPrints(prev =>
 																							prev.map(item =>

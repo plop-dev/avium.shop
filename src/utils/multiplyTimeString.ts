@@ -1,5 +1,9 @@
-export function multiplyTimeString(timeStr: string, x: number): string {
+export function multiplyTimeString(timeStr?: string | undefined | null, x: number = 1): string {
 	// Parse the time string
+	if (!timeStr) {
+		return 'N/A';
+	}
+
 	const timeParts = timeStr.split(' ');
 	let totalSeconds = 0;
 
