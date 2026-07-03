@@ -765,6 +765,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				}
 			}
 
+			// create quote with known data
 			const quoteRes: { doc: Quote } = await fetch('/api/quotes', {
 				method: 'POST',
 				headers: {
@@ -787,6 +788,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 			let filamentJSON;
 			try {
+				// find the filament profile for the selected plastic type
 				const query = stringify(
 					{
 						where: {
@@ -808,9 +810,10 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					return;
 				}
 
+				// upload the filament profile to the Avium API for this quote
 				const filamentRequestData = new FormData();
 
-				filamentRequestData.append('name', `${quoteRes.doc.id}`);
+				filamentRequestData.append('name', `${filamentJSON.docs[0].id}`);
 				filamentRequestData.append(
 					'file',
 					new Blob([JSON.stringify(filamentJSON.docs[0].data)], { type: 'application/json' }),
