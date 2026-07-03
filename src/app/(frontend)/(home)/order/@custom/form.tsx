@@ -925,7 +925,8 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 				try {
 					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/presets/${quoteRes.doc.id}`, { method: 'DELETE' });
-					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/filaments/${quoteRes.doc.id}`, { method: 'DELETE' });
+					//* don't delete the filament profile, as it may be used by other quotes
+					// await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/filaments/${quoteRes.doc.id}`, { method: 'DELETE' });
 				} catch (error) {
 					console.error('Error deleting temporary files:', error);
 				}
