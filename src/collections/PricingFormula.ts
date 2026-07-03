@@ -12,7 +12,7 @@ export const PricingFormula: GlobalConfig = {
 	},
 	admin: {
 		description:
-			'Configure the pricing formula for custom prints. Use variables like volume (in cubic centimeters) and time (in seconds). Example: price = (volume / 1000) + (time * 5)',
+			'Configure the pricing formula for custom prints. Use variables like volume (in cubic centimeters), time (in seconds) and filament multiplier (defined in Filaments). Example: price = (volume * filamentMultiplier / 1000) + (time * 5)',
 	},
 	fields: [PricingPreviewField],
 };

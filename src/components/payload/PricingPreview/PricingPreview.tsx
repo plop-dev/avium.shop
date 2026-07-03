@@ -11,16 +11,16 @@ const FormulaField = ({ field: { label, required = false }, path }: { field: { l
 	useEffect(() => {
 		try {
 			// Example inputs for preview (cost and weight parameters are deprecated, use volume instead)
-			const result = evaluate(value, { volume: 500, time: 3600 });
+			const result = evaluate(value, { volume: 100, time: 3600, filamentMultiplier: 1.0 });
 
 			if (result < 0) {
-				setPreview(`Invalid formula: Preview (500cm³ volume, 1h time): £${(result / 100).toFixed(2)}`);
+				setPreview(`Invalid formula: Preview (100cm³ volume, 1h time, filament multipler 1.0): £${(result / 100).toFixed(2)}`);
 			}
 			if (result === Infinity || isNaN(result)) {
 				setPreview('Invalid formula');
 				return;
 			}
-			setPreview(`Preview (500cm³ volume, 1h time): £${(result / 100).toFixed(2)}`);
+			setPreview(`Preview (100cm³ volume, 1h time, 1.0 filament multiplier): £${(result / 100).toFixed(2)}`);
 		} catch (err) {
 			setPreview('Invalid formula');
 		}
@@ -31,7 +31,7 @@ const FormulaField = ({ field: { label, required = false }, path }: { field: { l
 			<TextInput
 				path={path}
 				value={value}
-				placeholder='price = (volume / 1000) + (time * 5)'
+				placeholder='price = (volume * filamentMultiplier / 1000) + (time * 5)'
 				onChange={(e: ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
 				style={{ width: '100%', fontFamily: 'monospace' }}
 			/>

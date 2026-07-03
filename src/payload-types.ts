@@ -619,6 +619,7 @@ export interface Filament {
    * The name of the filament/material. USE THIS FORMAT: PLA, PETG, ABS, etc.
    */
   name: string;
+  filamentMultiplier: number;
   /**
    * JSON data from filament folder in Bambu Labs or Orca Slicer. Path: C:/Program Files/OrcaSlicer/resources/profiles/BBL
    */
@@ -1031,6 +1032,7 @@ export interface QuotesSelect<T extends boolean = true> {
  */
 export interface FilamentsSelect<T extends boolean = true> {
   name?: T;
+  filamentMultiplier?: T;
   data?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1125,7 +1127,7 @@ export interface PrintingOption {
   createdAt?: string | null;
 }
 /**
- * Configure the pricing formula for custom prints. Use variables like volume (in cubic centimeters) and time (in seconds). Example: price = (volume / 1000) + (time * 5)
+ * Configure the pricing formula for custom prints. Use variables like volume (in cubic centimeters), time (in seconds) and filament multiplier (defined in Filaments). Example: price = (volume * filamentMultiplier / 1000) + (time * 5)
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pricing-formula".

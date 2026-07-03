@@ -75,7 +75,7 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 		{
 			title: 'Contact',
 			type: 'link',
-			href: '#contact',
+			href: '/#contact',
 		},
 	];
 

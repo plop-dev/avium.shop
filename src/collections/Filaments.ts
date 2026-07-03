@@ -29,6 +29,12 @@ export const Filaments: CollectionConfig = {
 			},
 		},
 		{
+			name: 'filamentMultiplier',
+			label: 'Filament Multiplier',
+			type: 'number',
+			required: true,
+		},
+		{
 			name: 'data',
 			type: 'json',
 			required: true,
