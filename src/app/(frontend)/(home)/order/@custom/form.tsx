@@ -785,6 +785,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				}),
 			}).then(res => res.json());
 
+			let filamentJSON;
 			try {
 				const query = stringify(
 					{
@@ -797,7 +798,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				);
 
 				const filamentRes = await fetch(`/api/filaments${query}`);
-				const filamentJSON = await filamentRes.json();
+				filamentJSON = await filamentRes.json();
 
 				if (filamentJSON.totalDocs === 0) {
 					lockQuoteView(
@@ -862,7 +863,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			try {
 				const slicerSettings: SlicingSettings = {
 					exportType: 'gcode',
-					filament: quoteRes.doc.id,
+					filament: filamentJSON.docs[0].id,
 					plate: '0',
 					printer: 'machine', // 'machine' default printer profile (bbl p1s .4 nozzle)
 					multicolorOnePlate: false,
