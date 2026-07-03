@@ -17,7 +17,7 @@ export default async function CheckoutCancelPage({ searchParams }: { searchParam
 
 	return (
 		<main className='relative isolate overflow-hidden px-4 py-8 sm:px-6 lg:px-8'>
-			<div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.14),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.12),transparent_30%),linear-gradient(to_bottom,rgba(255,255,255,0.96),rgba(246,248,255,0.88))]' />
+			<div className='absolute inset-0 -z-10' />
 			<div className='mx-auto flex min-h-[calc(100vh-8rem)] max-w-4xl items-center'>
 				<Card className='w-full overflow-hidden border-border/70 bg-background/90 shadow-xl backdrop-blur'>
 					<CardHeader className='border-b bg-muted/30 pb-5'>
