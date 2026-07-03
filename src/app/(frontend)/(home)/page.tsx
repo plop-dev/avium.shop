@@ -12,11 +12,11 @@ export default function Page() {
 				buttons={{
 					primary: {
 						text: 'Get A Free Quote',
-						url: '#',
+						url: '/order',
 					},
 					secondary: {
 						text: 'Browse Prints',
-						url: '#',
+						url: '/order',
 					},
 				}}
 			/>
