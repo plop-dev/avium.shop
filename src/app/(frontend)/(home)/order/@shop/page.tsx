@@ -1,15 +1,10 @@
-import { Search } from 'lucide-react';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 import { loadSearchParams } from './searchParams';
 import { SearchParams } from 'nuqs';
 import ShopProduct from '@/components/shop/ShopProduct';
-import SortBy from '@/components/shop/SortBy';
-import SearchInput from '@/components/shop/Search';
 import { cacheLife, cacheTag } from 'next/cache';
 import { Suspense } from 'react';
-import { Input } from '@/components/ui/input';
-import { BoneSuspense } from 'boneyard-js/react';
 import { ShopInputs } from './ShopInputs';
 
 async function getShopProducts(page: number, sort: string) {
