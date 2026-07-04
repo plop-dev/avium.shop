@@ -3,6 +3,7 @@ import config from '@payload-config';
 import { format, formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -128,7 +129,7 @@ function formatShippingAddress(address?: PayloadOrder['shippingAddress']) {
 	return parts.filter(Boolean).join(', ');
 }
 
-export default async function ClientPage() {
+async function ClientContent() {
 	const payload = await getPayload({ config });
 	const user = await getUser();
 
@@ -560,5 +561,13 @@ export default async function ClientPage() {
 				</div>
 			)}
 		</div>
+	);
+}
+
+export default function ClientPage() {
+	return (
+		<Suspense fallback={<div className='@container/main flex flex-1 flex-col gap-4 px-4 py-5 md:px-6 lg:px-8' />}>
+			<ClientContent />
+		</Suspense>
 	);
 }

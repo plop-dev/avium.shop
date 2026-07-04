@@ -1,5 +1,6 @@
 import { stripe } from '@/lib/stripe';
 import { CheckoutStatusClient } from './checkout-status-client.tsx';
+import { Suspense } from 'react';
 
 function getSessionId(searchParams: { session_id?: string | string[] }) {
 	if (!searchParams.session_id) return undefined;
@@ -18,7 +19,11 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 		const checkout = await stripe.checkout.sessions.retrieve(sessionId);
 		const orderId = checkout.client_reference_id || checkout.metadata?.orderId;
 
-		return <CheckoutStatusClient orderId={orderId || undefined} />;
+		return (
+			<Suspense>
+				<CheckoutStatusClient orderId={orderId || undefined} />
+			</Suspense>
+		);
 	} catch {
 		return <CheckoutStatusClient />;
 	}
