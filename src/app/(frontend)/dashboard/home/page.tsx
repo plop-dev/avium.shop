@@ -6,7 +6,7 @@ async function WelcomeContent() {
 
 	return (
 		<div className='p-6'>
-			<h1 className='text-2xl font-bold'>Welcome back, {session.user?.name || session.user?.email}!</h1>
+			<h1 className='text-2xl font-bold'>Welcome back, {session?.user?.name || session?.user?.email}!</h1>
 		</div>
 	);
 }
