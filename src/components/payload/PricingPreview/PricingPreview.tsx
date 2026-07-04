@@ -11,16 +11,18 @@ const FormulaField = ({ field: { label, required = false }, path }: { field: { l
 	useEffect(() => {
 		try {
 			// Example inputs for preview (cost and weight parameters are deprecated, use volume instead)
-			const result = evaluate(value, { volume: 10, time: 1800, filamentMultiplier: 22.32 });
+			const result = evaluate(value, { volume: 10, time: 1800, filamentMultiplier: 0.02232 });
 
 			if (result < 0) {
-				setPreview(`Invalid formula: Preview (10cm³ volume, 30mins time, filament multipler 22.32): £${(result / 100).toFixed(2)}`);
+				setPreview(
+					`Invalid formula: Preview (10cm³ volume, 30mins time, filament multipler 0.02232): £${(result / 100).toFixed(2)}`,
+				);
 			}
 			if (result === Infinity || isNaN(result)) {
 				setPreview('Invalid formula');
 				return;
 			}
-			setPreview(`Preview (10cm³ volume, 30mins time, 22.32 filament multiplier): £${(result / 100).toFixed(2)}`);
+			setPreview(`Preview (10cm³ volume, 30mins time, 0.02232 filament multiplier): £${(result / 100).toFixed(2)}`);
 		} catch (err) {
 			setPreview('Invalid formula');
 		}

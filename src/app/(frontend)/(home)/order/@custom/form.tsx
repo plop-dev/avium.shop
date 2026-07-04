@@ -45,7 +45,7 @@ const defaultPrintItem = {
 		colour: '',
 	},
 	printingOptions: {
-		infill: 10,
+		infill: 15,
 	},
 };
 
@@ -681,7 +681,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		const currentSettings = {
 			plastic: currentPrint.material.plastic,
-			infill: currentPrint.printingOptions.infill || 10,
+			infill: currentPrint.printingOptions.infill || 15,
 			preset: currentPrint.printingOptions.preset,
 			layerHeight: currentPrint.printingOptions.layerHeight,
 		};
@@ -844,7 +844,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				} = {
 					name: quoteRes.doc.id,
 					layerHeight: print.printingOptions.layerHeight || 0.2,
-					infill: print.printingOptions.infill || 10,
+					infill: print.printingOptions.infill || 15,
 				};
 
 				await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/generate/presets`, {
@@ -908,7 +908,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 										id: quoteRes.doc.id,
 										sliceResult: { ...res },
 										originalSettings: {
-											infill: print.printingOptions.infill || 10,
+											infill: print.printingOptions.infill || 15,
 											preset: print.printingOptions.preset,
 											layerHeight: print.printingOptions.layerHeight,
 											plastic: print.material.plastic,
