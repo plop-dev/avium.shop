@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
 	/* config options here */
 	images: {
 		dangerouslyAllowLocalIP: isDev,
+		minimumCacheTTL: 31536000,
 		remotePatterns: [
 			{
 				protocol: 'https',

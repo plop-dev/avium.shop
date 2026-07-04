@@ -151,18 +151,20 @@ export default async function ClientPage() {
 	// how many order have a higher priority
 	const queueMap = new Map<string, number>();
 
-	orders.docs.forEach(async order => {
-		const res = await payload.db.count({
-			collection: 'orders',
-			where: {
-				queue: {
-					greater_than: order.queue,
+	await Promise.all(
+		orders.docs.map(async order => {
+			const res = await payload.db.count({
+				collection: 'orders',
+				where: {
+					queue: {
+						greater_than: order.queue,
+					},
 				},
-			},
-		});
+			});
 
-		queueMap.set(order.id, res.totalDocs);
-	});
+			queueMap.set(order.id, res.totalDocs);
+		})
+	);
 
 	const totalOrders = orders.totalDocs;
 	const activeOrders = orders.docs.filter(order => !['shipped', 'cancelled'].includes(order.status.currentStatus)).length;

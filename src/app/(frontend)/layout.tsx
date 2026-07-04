@@ -10,12 +10,9 @@ import { DM_Sans } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import Script from 'next/script';
-import { auth } from '@/auth';
 import { MessageToaster } from '@/components/MessageToaster';
 import CustomToaster from '@/components/layouts/CustomToaster';
 import NanostoreManager from '@/components/NanostoreManager';
-import { cacheTag } from 'next/cache';
-import { cacheLife } from 'next/cache';
 
 export const metadata: Metadata = {
 	title: 'Avium',
@@ -24,11 +21,12 @@ export const metadata: Metadata = {
 
 const dmSans = DM_Sans({
 	subsets: ['latin'],
-	weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900', '1000'],
-	style: ['normal', 'italic'],
+	weight: ['400', '500', '600', '900'],
+	style: ['normal'],
+	display: 'swap',
 });
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<>
 			<html lang='en' suppressHydrationWarning className={dmSans.className}>
@@ -41,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 						<SessionProvider>
 							<CustomToaster></CustomToaster>
 							<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange enableColorScheme>
-								<Suspense>
+								<Suspense fallback={null}>
 									<MessageToaster></MessageToaster>
 									<NanostoreManager></NanostoreManager>
 								</Suspense>
