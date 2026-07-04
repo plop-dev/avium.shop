@@ -13,7 +13,7 @@ import type { Order as PayloadOrder } from '@/payload-types';
 import { getUser } from '@/utils/getUser';
 import numToGBP from '@/utils/numToGBP';
 import { RetryCheckoutButton } from '@/components/dashboard/RetryCheckoutButton';
-import { AlertCircle, ArrowRight, CalendarDays, Clock3, CreditCard, Package2, Clock } from 'lucide-react';
+import { AlertCircle, ArrowRight, CalendarDays, Clock3, CreditCard, Package2, Clock, Loader2 } from 'lucide-react';
 import { CancelOrderButton } from '@/components/dashboard/CancelOrderButton';
 
 const statusMeta: Record<
@@ -164,7 +164,7 @@ async function ClientContent() {
 			});
 
 			queueMap.set(order.id, res.totalDocs);
-		})
+		}),
 	);
 
 	const totalOrders = orders.totalDocs;
@@ -566,7 +566,14 @@ async function ClientContent() {
 
 export default function ClientPage() {
 	return (
-		<Suspense fallback={<div className='@container/main flex flex-1 flex-col gap-4 px-4 py-5 md:px-6 lg:px-8' />}>
+		<Suspense
+			fallback={
+				<div className='@container/main flex flex-1 flex-col gap-4 px-4 py-5 md:px-6 lg:px-8 relative'>
+					<h1 className='absolute left-1/2 right-1/2 -translate-x-1/2 -translate-y-1/2'>
+						<Loader2></Loader2> Loading dashboard...
+					</h1>
+				</div>
+			}>
 			<ClientContent />
 		</Suspense>
 	);

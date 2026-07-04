@@ -109,6 +109,7 @@ import { updateOrder } from '@/actions/updateOrder';
 import { Order } from '@/payload-types';
 import { buyLabel } from '@/actions/buyLabel';
 import { multiplyTimeString } from '@/utils/multiplyTimeString';
+import { LoadingSwap } from '../ui/loading-swap';
 
 // server actions
 
@@ -312,7 +313,9 @@ export function DataTable({ data: initialData, limit, page }: { data: ZodOrder[]
 							className={cn(
 								'px-1.5 w-fit',
 								hasExpired && 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200',
-								isExpiringSoon && !hasExpired && 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200 border-amber-300',
+								isExpiringSoon &&
+									!hasExpired &&
+									'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200 border-amber-300',
 							)}>
 							Awaiting Payment
 						</Badge>
@@ -687,6 +690,8 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 	const [dimensions, setDimensions] = React.useState(item.dimensions);
 	const pricing = item.pricing;
 	const queue = item.queue;
+
+	const [isLoading, setIsLoading] = React.useState(false);
 
 	React.useEffect(() => {
 		setCurrentStatus(item.status.currentStatus);
@@ -1768,8 +1773,8 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 					</div>
 				</form>
 				<DrawerFooter>
-					<Button type='submit' form='order-form'>
-						Save Changes
+					<Button type='submit' form='order-form' onClick={() => setIsLoading(true)}>
+						<LoadingSwap isLoading={isLoading}>Save Changes</LoadingSwap>
 					</Button>
 					<DrawerClose asChild>
 						<Button variant='outline'>Cancel</Button>
