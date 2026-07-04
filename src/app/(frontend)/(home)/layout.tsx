@@ -5,10 +5,10 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 import { headers as nextHeaders } from 'next/headers';
 import { getUser } from '@/utils/getUser';
+import { Suspense } from 'react';
+import NavUser from '@/components/home/NavUser';
 
 export default async function HomeLayout({ children }: { children: React.ReactNode }) {
-	const user = await getUser();
-
 	const items: NavMenuItem[] = [
 		// {
 		// 	title: 'Home',
@@ -81,7 +81,9 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 
 	return (
 		<main className='w-full px-32 2xl:px-64'>
-			<Navbar items={items} user={user || undefined} />
+			<Suspense fallback={<Navbar items={items} user={undefined}></Navbar>}>
+				<NavUser items={items}></NavUser>
+			</Suspense>
 			<div className='pt-16'>{children}</div>
 		</main>
 	);

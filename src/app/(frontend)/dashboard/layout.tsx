@@ -4,8 +4,9 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { getUser } from '@/utils/getUser';
 import { getPayload } from 'payload';
 import config from '@/payload.config';
+import { Suspense } from 'react';
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+async function SidebarContent() {
 	const user = await getUser();
 	const payload = await getPayload({ config });
 
@@ -15,6 +16,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
 		overrideAccess: true,
 	});
 
+	return <AppSidebar variant='inset' isAdmin={userDoc.role !== 'customer'} />;
+}
+
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<SidebarProvider
 			style={
@@ -23,7 +28,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 					'--header-height': 'calc(var(--spacing) * 12)',
 				} as React.CSSProperties
 			}>
-			<AppSidebar variant='inset' isAdmin={userDoc.role !== 'customer'} />
+			<Suspense fallback={<AppSidebar variant={'inset'} isAdmin={false} />}>
+				<SidebarContent />
+			</Suspense>
 			<SidebarInset>
 				<SiteHeader />
 				{children}

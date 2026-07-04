@@ -1,4 +1,5 @@
 import { adminAccess } from '@/access/elevated';
+import { revalidateTag } from 'next/cache';
 import type { CollectionConfig } from 'payload';
 
 export const Presets: CollectionConfig = {
@@ -15,6 +16,18 @@ export const Presets: CollectionConfig = {
 		update: ({ req }) => adminAccess({ req }),
 		delete: ({ req }) => adminAccess({ req }),
 		read: () => true,
+	},
+	hooks: {
+		afterChange: [
+			async () => {
+				revalidateTag('presets', 'max');
+			},
+		],
+		afterDelete: [
+			async () => {
+				revalidateTag('presets', 'max');
+			},
+		],
 	},
 	fields: [
 		{

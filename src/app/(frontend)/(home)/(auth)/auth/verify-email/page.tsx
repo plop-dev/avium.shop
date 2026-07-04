@@ -8,13 +8,11 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 import { loadSearchParams } from './searchParams';
 import { getServerSideURL } from '@/utils/getServerSideUrl';
+import { connection } from 'next/server';
 
-export default async function VerifyEmailPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+async function VerifyEmailHandler({ from, token }: { from: string; token: string }) {
+	connection();
 	const payload = await getPayload({ config });
-
-	const { from, token } = await loadSearchParams(searchParams);
-
-	// if no token, this page is used to tell the user to check their email
 
 	if (token.trim()) {
 		let res;
@@ -38,14 +36,24 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
 		}
 	}
 
+	return <VerifyEmailContent from={(from as 'signup' | 'login') || 'login'} />;
+}
+
+async function LoadAndVerify({ searchParams }: { searchParams: Promise<SearchParams> }) {
+	const { from, token } = await loadSearchParams(searchParams);
+
 	// check if from or token is not defined in the URL (this means the user accessed this page directly, manually)
 	if (!from && !token) {
 		redirect(`/auth/login?error=${encodeURIComponent('Invalid request. Please try again.')}`);
 	}
 
+	return <VerifyEmailHandler from={from} token={token} />;
+}
+
+export default async function VerifyEmailPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
 	return (
 		<Suspense fallback={<div>Loading...</div>}>
-			<VerifyEmailContent from={from || 'login'} />
+			<LoadAndVerify searchParams={searchParams} />
 		</Suspense>
 	);
 }

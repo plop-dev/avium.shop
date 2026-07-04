@@ -7,6 +7,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Suspense } from 'react';
+import { cacheLife } from 'next/cache';
 
 function getOrderId(searchParams: { order_id?: string | string[] }) {
 	if (!searchParams.order_id) return undefined;
@@ -14,9 +16,13 @@ function getOrderId(searchParams: { order_id?: string | string[] }) {
 	return Array.isArray(searchParams.order_id) ? searchParams.order_id[0] : searchParams.order_id;
 }
 
-export default async function CheckoutCancelPage({ searchParams }: { searchParams: Promise<{ order_id?: string | string[] }> }) {
+async function OrderReference({ searchParams }: { searchParams: Promise<{ order_id?: string | string[] }> }) {
 	const orderId = getOrderId(await searchParams);
 
+	return <span className='font-medium'>{orderId ?? 'Unavailable'}</span>;
+}
+
+export default async function CheckoutCancelPage({ searchParams }: { searchParams: Promise<{ order_id?: string | string[] }> }) {
 	return (
 		<main className='relative isolate overflow-hidden px-4 py-8 sm:px-6 lg:px-8'>
 			<div className='absolute inset-0 -z-10' />
@@ -90,7 +96,10 @@ export default async function CheckoutCancelPage({ searchParams }: { searchParam
 								<CardContent className='grid gap-3 pb-5 text-sm'>
 									<div className='flex items-center justify-between gap-4'>
 										<span className='text-muted-foreground'>Order reference</span>
-										<span className='font-medium'>{orderId ?? 'Unavailable'}</span>
+
+										<Suspense fallback={<span className='font-medium'>Loading...</span>}>
+											<OrderReference searchParams={searchParams}></OrderReference>
+										</Suspense>
 									</div>
 									<div className='flex items-center justify-between gap-4'>
 										<span className='text-muted-foreground'>Payment state</span>

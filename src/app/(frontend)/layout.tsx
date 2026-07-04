@@ -9,7 +9,7 @@ import { SessionProvider } from 'next-auth/react';
 import { DM_Sans } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { auth } from '@/auth';
+import Script from 'next/script';
 import { MessageToaster } from '@/components/MessageToaster';
 import CustomToaster from '@/components/layouts/CustomToaster';
 import NanostoreManager from '@/components/NanostoreManager';
@@ -21,14 +21,12 @@ export const metadata: Metadata = {
 
 const dmSans = DM_Sans({
 	subsets: ['latin'],
-	weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900', '1000'],
-	style: ['normal', 'italic'],
+	weight: ['400', '500', '600', '900'],
+	style: ['normal'],
+	display: 'swap',
 });
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-	// const cookieStore = await cookies();
-	const session = await auth();
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<>
 			<html lang='en' suppressHydrationWarning className={dmSans.className}>
@@ -38,10 +36,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 					<Analytics></Analytics>
 					<SpeedInsights></SpeedInsights>
 					<NuqsAdapter>
-						<SessionProvider session={session}>
+						<SessionProvider>
 							<CustomToaster></CustomToaster>
 							<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange enableColorScheme>
-								<Suspense>
+								<Suspense fallback={null}>
 									<MessageToaster></MessageToaster>
 									<NanostoreManager></NanostoreManager>
 								</Suspense>

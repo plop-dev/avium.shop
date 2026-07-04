@@ -1,5 +1,6 @@
 import { stripe } from '@/lib/stripe';
 import { CheckoutStatusClient } from './checkout-status-client.tsx';
+import { Suspense } from 'react';
 
 function getSessionId(searchParams: { session_id?: string | string[] }) {
 	if (!searchParams.session_id) return undefined;
@@ -7,7 +8,7 @@ function getSessionId(searchParams: { session_id?: string | string[] }) {
 	return Array.isArray(searchParams.session_id) ? searchParams.session_id[0] : searchParams.session_id;
 }
 
-export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ session_id?: string | string[] }> }) {
+async function CheckoutPageContent({ searchParams }: { searchParams: Promise<{ session_id?: string | string[] }> }) {
 	const sessionId = getSessionId(await searchParams);
 
 	if (!sessionId) {
@@ -22,4 +23,12 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 	} catch {
 		return <CheckoutStatusClient />;
 	}
+}
+
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ session_id?: string | string[] }> }) {
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<CheckoutPageContent searchParams={searchParams} />
+		</Suspense>
+	);
 }

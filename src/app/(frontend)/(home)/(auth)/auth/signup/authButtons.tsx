@@ -1,14 +1,11 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 import { useTransition } from 'react';
 import { LoadingSwap } from '@/components/ui/loading-swap';
 
 export default function AuthButtons() {
-	const router = useRouter();
 	const [isGoogleLoading, startGoogleLoading] = useTransition();
 	const [isGithubLoading, startGithubLoading] = useTransition();
 
