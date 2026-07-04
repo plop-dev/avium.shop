@@ -1173,7 +1173,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 															disabled={isAddingPrint}>
 															<LoadingSwap isLoading={isAddingPrint} className='flex items-center'>
 																<PlusCircle className='mr-2 h-4 w-4' />
-																Add Print
+																Add Another Print
 															</LoadingSwap>
 														</Button>
 													</div>
