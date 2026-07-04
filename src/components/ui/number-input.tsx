@@ -1,8 +1,9 @@
+'use client';
+
 import NumberFlow from '@number-flow/react';
 import clsx from 'clsx';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from './button';
 import { Minus, Plus } from 'lucide-react';
 
 type Props = {

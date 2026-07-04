@@ -1,8 +1,14 @@
 import { getPayload } from 'payload';
 import CustomPrintForm from './form';
 import config from '@/payload.config';
+import { cacheLife, cacheTag } from 'next/cache';
 
-export default async function Custom() {
+async function getCustomPrintData() {
+	'use cache';
+	cacheTag('presets');
+	cacheTag('printing-options');
+	cacheLife('hours');
+
 	const payload = await getPayload({ config });
 	const [presets, printingOptions] = await Promise.all([
 		payload.find({
@@ -13,6 +19,11 @@ export default async function Custom() {
 			slug: 'printing-options',
 		}),
 	]);
+	return { presets, printingOptions };
+}
+
+export default async function Custom() {
+	const { presets, printingOptions } = await getCustomPrintData();
 
 	return (
 		<div className='flex flex-col gap-y-4'>

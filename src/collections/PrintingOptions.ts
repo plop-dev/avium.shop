@@ -1,6 +1,7 @@
 import { GlobalConfig } from 'payload';
 import { Plastic } from '@/blocks/Plastic';
 import { adminAccess } from '@/access/elevated';
+import { revalidateTag } from 'next/cache';
 
 const PrintingOptions: GlobalConfig = {
 	slug: 'printing-options',
@@ -8,6 +9,13 @@ const PrintingOptions: GlobalConfig = {
 	access: {
 		update: ({ req }) => adminAccess({ req }),
 		read: () => true,
+	},
+	hooks: {
+		afterChange: [
+			async () => {
+				revalidateTag('printing-options', 'max');
+			},
+		],
 	},
 	fields: [
 		{

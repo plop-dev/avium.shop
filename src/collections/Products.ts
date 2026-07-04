@@ -1,6 +1,7 @@
 import { anyoneAccess, noAccess } from '@/access/anyone';
 import { adminAccess } from '@/access/elevated';
 import { Plastic } from '@/blocks/Plastic';
+import { revalidateTag } from 'next/cache';
 import { CollectionConfig } from 'payload';
 
 export const Products: CollectionConfig = {
@@ -29,6 +30,16 @@ export const Products: CollectionConfig = {
 				}
 
 				return data;
+			},
+		],
+		afterChange: [
+			async () => {
+				revalidateTag('products', 'max');
+			},
+		],
+		afterDelete: [
+			async () => {
+				revalidateTag('products', 'max');
 			},
 		],
 	},

@@ -1,7 +1,6 @@
 import { withPayload } from '@payloadcms/next/withPayload';
 import type { NextConfig } from 'next';
 
-export const runtime = 'edge';
 const backendURL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 const isDev = backendURL.startsWith('http://localhost');
 
@@ -33,6 +32,7 @@ const nextConfig: NextConfig = {
 		root: process.cwd(),
 	},
 	reactCompiler: true,
+	cacheComponents: true,
 };
 
 export default withPayload(nextConfig);

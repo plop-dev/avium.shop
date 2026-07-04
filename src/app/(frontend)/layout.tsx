@@ -9,10 +9,13 @@ import { SessionProvider } from 'next-auth/react';
 import { DM_Sans } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import Script from 'next/script';
 import { auth } from '@/auth';
 import { MessageToaster } from '@/components/MessageToaster';
 import CustomToaster from '@/components/layouts/CustomToaster';
 import NanostoreManager from '@/components/NanostoreManager';
+import { cacheTag } from 'next/cache';
+import { cacheLife } from 'next/cache';
 
 export const metadata: Metadata = {
 	title: 'Avium',
@@ -26,9 +29,6 @@ const dmSans = DM_Sans({
 });
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-	// const cookieStore = await cookies();
-	const session = await auth();
-
 	return (
 		<>
 			<html lang='en' suppressHydrationWarning className={dmSans.className}>
@@ -38,7 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 					<Analytics></Analytics>
 					<SpeedInsights></SpeedInsights>
 					<NuqsAdapter>
-						<SessionProvider session={session}>
+						<SessionProvider>
 							<CustomToaster></CustomToaster>
 							<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange enableColorScheme>
 								<Suspense>
