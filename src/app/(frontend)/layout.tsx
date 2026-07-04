@@ -17,6 +17,9 @@ import NanostoreManager from '@/components/NanostoreManager';
 export const metadata: Metadata = {
 	title: 'Avium',
 	description: 'Avium makes 3d printing simple and affordable',
+	icons: {
+		icon: [{ url: '/favicon.ico' }],
+	},
 };
 
 const dmSans = DM_Sans({
@@ -30,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 	return (
 		<>
 			<html lang='en' suppressHydrationWarning className={dmSans.className}>
-				<head />
+				<head></head>
 				<body className='bg-background font-sans antialiased'>
 					<NextTopLoader showSpinner={false}></NextTopLoader>
 					<Analytics></Analytics>
