@@ -17,27 +17,40 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 
 function UserMenu({
+	fullWidth = false,
 	userData,
 	handleLogout,
 	logoutLoading,
+	className,
 }: {
+	fullWidth?: boolean;
 	userData: { name: string; image: string };
 	handleLogout: () => Promise<{ success: boolean; error?: string }>;
 	logoutLoading: boolean;
+	className?: string;
 }) {
 	const [isLogOutLoading, setIsLogOutLoading] = useState(false);
 
 	return (
 		<DropdownMenu open={isLogOutLoading} onOpenChange={setIsLogOutLoading}>
-			<DropdownMenuTrigger>
-				<Avatar className='flex items-center justify-center cursor-pointer'>
-					<AvatarImage className='border-2 rounded-full' src={userData.image} alt='User' width={36} height={36}></AvatarImage>
-					<AvatarFallback className='border-2 rounded-full w-9 aspect-square grid place-items-center'>
+			<DropdownMenuTrigger asChild>
+				<Avatar className='flex items-center justify-center cursor-pointer w-full'>
+					<AvatarImage
+						className={cn('border-2', fullWidth ? 'rounded-md w-full' : 'rounded-full')}
+						src={userData.image}
+						alt='User'
+						width={36}
+						height={36}></AvatarImage>
+					<AvatarFallback
+						className={cn(
+							'border-2 bg-muted/50 grid place-items-center h-9',
+							fullWidth ? 'rounded-md w-full' : 'rounded-full w-9 aspect-square',
+						)}>
 						{getInitials(userData.name)}
 					</AvatarFallback>
 				</Avatar>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent className='w-56' align='start'>
+			<DropdownMenuContent className={cn(`w-56`, className)} align='start'>
 				<DropdownMenuLabel>My Account</DropdownMenuLabel>
 
 				<DropdownMenuItem

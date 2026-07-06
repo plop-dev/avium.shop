@@ -259,29 +259,27 @@ const Navbar = ({ items, user }: NavbarProps) => {
 				<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' />
 
 				<div className='flex gap-x-2 sm:gap-x-4 ml-auto items-center'>
-					<div className='hidden sm:flex sm:gap-x-4'>
-						{!userData ? (
-							<>
-								<Link href={'/auth/login'} className={buttonVariants({ variant: 'default', size: 'sm' })}>
-									Login
-								</Link>
-								<Link href={'/auth/signup'} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-									Sign Up
-								</Link>
-							</>
-						) : (
-							<div className='h-full flex items-center gap-x-4'>
-								<Basket></Basket>
-								<UserMenu
-									userData={{ name: userData.name || '', image: userData.image || '#' }}
-									handleLogout={handleLogout}
-									logoutLoading={logoutLoading}
-								/>
-							</div>
-						)}
-					</div>
+					{!userData ? (
+						<div className='hidden sm:flex sm:gap-x-4'>
+							<Link href={'/auth/login'} className={buttonVariants({ variant: 'default', size: 'sm' })}>
+								Login
+							</Link>
+							<Link href={'/auth/signup'} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+								Sign Up
+							</Link>
+						</div>
+					) : (
+						<div className='h-full flex items-center sm:flex gap-x-4'>
+							<UserMenu
+								userData={{ name: userData.name || '', image: userData.image || '#' }}
+								handleLogout={handleLogout}
+								logoutLoading={logoutLoading}
+								className='lg:hidden flex'
+							/>
+							<Basket></Basket>
+						</div>
+					)}
 
-					<Basket></Basket>
 					<ThemeToggle></ThemeToggle>
 
 					<button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className='md:hidden p-2' aria-label='Toggle menu'>
@@ -312,12 +310,16 @@ const Navbar = ({ items, user }: NavbarProps) => {
 								</Link>
 							</>
 						) : (
-							<div className='flex gap-x-2 mt-4'>
-								<UserMenu
-									userData={{ name: userData.name || '', image: userData.image || '#' }}
-									handleLogout={handleLogout}
-									logoutLoading={logoutLoading}
-								/>
+							<div className='flex flex-col gap-y-2 mt-4'>
+								<Basket></Basket>
+								<div className='inline'>
+									<UserMenu
+										fullWidth={true}
+										userData={{ name: userData.name || '', image: userData.image || '#' }}
+										handleLogout={handleLogout}
+										logoutLoading={logoutLoading}
+									/>
+								</div>
 							</div>
 						)}
 					</div>
