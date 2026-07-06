@@ -107,11 +107,11 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 			</div>
 
 			<Dialog open={open} onOpenChange={handleDialogOpen}>
-				<DialogContent className='xl:!max-w-6xl xl:!w-6xl p-0 !max-w-2xl !w-2xl'>
-					<div className='flex gap-x-8 p-6 overflow-auto'>
-						<div className='relative'>
+				<DialogContent className='xl:!max-w-6xl xl:!w-6xl !max-w-sm sm:!max-w-2xl p-0'>
+					<div className='flex flex-col sm:flex-row gap-4 sm:gap-x-6 p-4 sm:p-6 overflow-auto'>
+						<div className='relative flex-shrink-0'>
 							<div className='rounded-lg border bg-gradient-to-br from-muted/40 to-transparent p-2'>
-								<Carousel className='w-xl'>
+								<Carousel className='w-56 sm:w-xs'>
 									<CarouselContent className='-ml-0'>
 										{pictures.length > 0 ? (
 											pictures.map((p, idx: number) => (
@@ -119,7 +119,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 													<div className='w-full flex justify-center'>
 														{typeof p === 'string' ? (
 															<Image
-																className='max-h-[60vh] w-auto object-contain rounded-md select-none shadow-sm bg-background'
+																className='max-h-[40vh] sm:max-h-[60vh] w-auto object-contain rounded-md select-none shadow-sm bg-background'
 																src={p}
 																alt={`Product image ${idx + 1}`}
 																draggable={false}
@@ -127,7 +127,7 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 															/>
 														) : (
 															<Image
-																className='max-h-[60vh] w-auto object-contain rounded-md select-none shadow-sm bg-background'
+																className='max-h-[40vh] sm:max-h-[60vh] w-auto object-contain rounded-md select-none shadow-sm bg-background'
 																src={p?.url ?? '#'}
 																width={p?.width ?? 1024}
 																height={p?.height ?? p?.width ?? 1024}
@@ -141,16 +141,16 @@ export default function ShopProduct({ key, product }: { key: number; product: Pr
 											))
 										) : (
 											<CarouselItem className='pl-0'>
-												<div className='w-full h-[300px] flex items-center justify-center rounded-md bg-muted'>
-													<span className='text-muted-foreground text-sm'>No images</span>
+												<div className='w-full h-[200px] sm:h-[300px] flex items-center justify-center rounded-md bg-muted'>
+													<span className='text-muted-foreground text-xs sm:text-sm'>No images</span>
 												</div>
 											</CarouselItem>
 										)}
 									</CarouselContent>
 									{pictures.length > 1 && (
 										<>
-											<CarouselPrevious className='ml-8' />
-											<CarouselNext className='mr-8' />
+											<CarouselPrevious className='ml-4 sm:ml-8' />
+											<CarouselNext className='mr-4 sm:mr-8' />
 										</>
 									)}
 								</Carousel>

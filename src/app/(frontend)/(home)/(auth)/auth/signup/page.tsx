@@ -10,10 +10,10 @@ import AuthButtons from '../signup/authButtons';
 
 export default async function SignUpPage() {
 	return (
-		<div className='flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10'>
-			<div className='flex w-full max-w-sm flex-col gap-6'>
-				<Link href='/' className='flex items-center gap-2 self-center font-medium text-2xl'>
-					<div className='text-primary-foreground flex size-8 items-center justify-center'>
+		<div className='flex min-h-svh flex-col items-center justify-center gap-3 sm:gap-4 p-4'>
+			<div className='flex w-full max-w-sm flex-col gap-3 sm:gap-4'>
+				<Link href='/' className='flex items-center gap-2 self-center font-medium text-lg sm:text-xl'>
+					<div className='text-primary-foreground flex size-6 sm:size-8 items-center justify-center'>
 						<Image priority src={logo} alt='Avium' height={32} width={32}></Image>
 					</div>
 					Avium

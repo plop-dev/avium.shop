@@ -80,7 +80,7 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
 	];
 
 	return (
-		<main className='w-full px-32 2xl:px-64'>
+		<main className='w-full px-4 sm:px-8 lg:px-32 2xl:px-64'>
 			<Suspense fallback={<Navbar items={items} user={undefined}></Navbar>}>
 				<NavUser items={items}></NavUser>
 			</Suspense>

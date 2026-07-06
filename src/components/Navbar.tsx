@@ -26,6 +26,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { UserMenu } from './UserMenu';
 import Basket from './Basket';
+import { Menu, X } from 'lucide-react';
 
 export interface NavbarListItemProps {
 	title: string;
@@ -72,6 +73,7 @@ const Navbar = ({ items, user }: NavbarProps) => {
 	});
 	const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
 	const [isOpen, setIsOpen] = useState(false);
+	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const router = useRouter();
 
 	async function handleLogout(): Promise<{ success: boolean; error?: string }> {
@@ -131,7 +133,7 @@ const Navbar = ({ items, user }: NavbarProps) => {
 	return (
 		<>
 			<NavigationMenu
-				className='min-w-full fixed gap-x-8 h-16 items-center z-50 bg-background border-b-border border-b-2 box-border left-0 px-64'
+				className='min-w-full fixed gap-x-2 sm:gap-x-8 h-16 items-center z-50 bg-background border-b-border border-b-2 box-border left-0 px-4 sm:px-8 lg:px-32 2xl:px-64'
 				onValueChange={value => {
 					console.log('navmenu value changed:', value);
 					setIsOpen(value !== '');
@@ -139,11 +141,11 @@ const Navbar = ({ items, user }: NavbarProps) => {
 				<div className='flex-shrink-0'>
 					<Link href='/' className='flex items-center gap-4'>
 						<Image src={logo} loading='eager' alt='Avium Logo' height={28} width={28}></Image>
-						<span className='text-lg font-bold whitespace-nowrap'>Avium</span>
+						<span className='hidden sm:inline text-lg font-bold whitespace-nowrap'>Avium</span>
 					</Link>
 				</div>
 
-				<NavigationMenuList ref={listRef} className='relative'>
+				<NavigationMenuList ref={listRef} className='relative hidden md:flex'>
 					<div
 						className={cn(
 							'absolute w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-border shadow-md',
@@ -256,30 +258,71 @@ const Navbar = ({ items, user }: NavbarProps) => {
 
 				<NavigationMenuViewport className='bg-popover/80 backdrop-blur-lg shadow-md' />
 
-				<div className='flex gap-x-4 ml-auto'>
-					{!userData ? (
-						<>
-							<Link href={'/auth/login'} className={buttonVariants({ variant: 'default' })}>
-								Login
-							</Link>
-							<Link href={'/auth/signup'} className={buttonVariants({ variant: 'outline' })}>
-								Sign Up
-							</Link>
-						</>
-					) : (
-						<div className='h-full flex items-center gap-x-4'>
-							<Basket></Basket>
-							<UserMenu
-								userData={{ name: userData.name || '', image: userData.image || '#' }}
-								handleLogout={handleLogout}
-								logoutLoading={logoutLoading}
-							/>
-						</div>
-					)}
+				<div className='flex gap-x-2 sm:gap-x-4 ml-auto items-center'>
+					<div className='hidden sm:flex sm:gap-x-4'>
+						{!userData ? (
+							<>
+								<Link href={'/auth/login'} className={buttonVariants({ variant: 'default', size: 'sm' })}>
+									Login
+								</Link>
+								<Link href={'/auth/signup'} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+									Sign Up
+								</Link>
+							</>
+						) : (
+							<div className='h-full flex items-center gap-x-4'>
+								<Basket></Basket>
+								<UserMenu
+									userData={{ name: userData.name || '', image: userData.image || '#' }}
+									handleLogout={handleLogout}
+									logoutLoading={logoutLoading}
+								/>
+							</div>
+						)}
+					</div>
 
+					<Basket></Basket>
 					<ThemeToggle></ThemeToggle>
+
+					<button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className='md:hidden p-2' aria-label='Toggle menu'>
+						{mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+					</button>
 				</div>
 			</NavigationMenu>
+
+			{mobileMenuOpen && (
+				<div className='fixed top-16 left-0 right-0 z-40 bg-background border-b border-border md:hidden'>
+					<div className='flex flex-col p-4'>
+						{items.map((item, index) => (
+							<Link
+								key={index}
+								href={item.href || '#'}
+								className='py-2 px-2 text-sm hover:bg-muted rounded-md'
+								onClick={() => setMobileMenuOpen(false)}>
+								{item.title}
+							</Link>
+						))}
+						{!userData ? (
+							<>
+								<Link href={'/auth/login'} className={cn(buttonVariants({ variant: 'default', size: 'sm' }), 'mt-4')}>
+									Login
+								</Link>
+								<Link href={'/auth/signup'} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'mt-2')}>
+									Sign Up
+								</Link>
+							</>
+						) : (
+							<div className='flex gap-x-2 mt-4'>
+								<UserMenu
+									userData={{ name: userData.name || '', image: userData.image || '#' }}
+									handleLogout={handleLogout}
+									logoutLoading={logoutLoading}
+								/>
+							</div>
+						)}
+					</div>
+				</div>
+			)}
 		</>
 	);
 };

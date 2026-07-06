@@ -53,7 +53,7 @@ const CHUNK_SIZE = 5 * 1024 * 1024; // 5mb
 
 function PresetSelection({ onChange, value, presets }: { onChange: (value?: string) => void; value?: string; presets: Preset[] }) {
 	return (
-		<div className='grid grid-cols-1 gap-2 sm:grid-cols-3 p-[1px]'>
+		<div className='grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 p-[1px]'>
 			{presets.map(preset => (
 				<Card
 					key={preset.id}
@@ -106,7 +106,7 @@ function MaterialSelection({ index, printingOptions }: { index: number; printing
 					<FormItem>
 						<FormLabel>Plastic Type</FormLabel>
 						<FormControl>
-							<div className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 p-[1px]'>
+							<div className='grid grid-cols-1 gap-1 sm:grid-cols-2 p-[1px]'>
 								{printingOptions.plastic?.map(plastic => (
 									<Card
 										key={plastic.id}
@@ -148,7 +148,7 @@ function MaterialSelection({ index, printingOptions }: { index: number; printing
 									<p className='text-sm'>No colours available for this plastic</p>
 								</div>
 							) : (
-								<div className='grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 p-[1px]'>
+								<div className='grid grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-4 p-[1px]'>
 									{availableColours.map(colour => (
 										<Card
 											key={colour.id}
@@ -388,7 +388,7 @@ function PrintItemCard({
 						</div>
 					</AccordionTrigger>
 					<AccordionContent className='space-y-4'>
-						<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+						<div className='grid grid-cols-1 gap-2 sm:gap-3'>
 							<FormField
 								control={control}
 								name={`prints.${index}.quantity`}
@@ -1057,10 +1057,10 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					setIsOpen(open);
 				}}
 				modal={true}>
-				<div className='w-full space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm cursor-pointer'>
+				<div className='w-full space-y-2 rounded-xl border border-border bg-card p-3 sm:p-4 shadow-sm cursor-pointer'>
 					<div className=''>
-						<h3 className='text-base font-medium'>3D File Upload</h3>
-						<p className='text-sm text-muted-foreground'>Supported formats: STL, 3MF, OBJ</p>
+						<h3 className='text-sm sm:text-base font-medium'>3D File Upload</h3>
+						<p className='text-xs sm:text-sm text-muted-foreground'>Supported formats: STL, 3MF, OBJ</p>
 					</div>
 
 					<Input type='file' accept='.stl,.3mf' className='hidden' ref={triggerFileInputRef} onChange={handleTriggerFileChange} />
@@ -1085,7 +1085,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 								handleDrop(e);
 							}}
 							className={cn(
-								'flex h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted',
+								'flex h-32 sm:h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted',
 								isDragging && 'border-primary/50 bg-primary/5',
 								!orderValidation.orderNameValid && 'opacity-50 cursor-not-allowed',
 							)}>
@@ -1100,7 +1100,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 						</div>
 					) : (
 						<div className='relative'>
-							<div className='group relative h-48 overflow-hidden rounded-lg border' onClick={() => setIsOpen(true)}>
+							<div className='group relative h-32 sm:h-48 overflow-hidden rounded-lg border' onClick={() => setIsOpen(true)}>
 								<h1 className='absolute top-1/2 left-1/2 -translate-1/2 opacity-50 thicc-text text-4xl'>
 									{triggerFileName?.split('.')[triggerFileName?.split('.').length - 1].toUpperCase()}
 								</h1>
@@ -1127,10 +1127,10 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					)}
 				</div>
 
-				<DialogContent className='!w-4xl !max-w-4xl max-h-[calc(100vh-8rem)] overflow-hidden' asChild>
+				<DialogContent className='!p-0 !max-w-sm sm:!max-w-2xl lg:!max-w-4xl !w-[calc(100vw-2rem)] max-h-[calc(100vh-8rem)] overflow-hidden' asChild>
 					<div className='relative w-full h-[calc(100vh-12rem)] overflow-hidden'>
 						<div
-							className='flex w-[200%] h-full transition-transform duration-500 ease-out'
+							className='hidden sm:flex w-[200%] h-full transition-transform duration-500 ease-out'
 							style={{ transform: isQuoteView ? 'translateX(-50%)' : 'translateX(0%)' }}>
 							{/* Left panel: original form */}
 							<div className='w-1/2 flex-none px-4 h-full'>
@@ -1393,6 +1393,244 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 									</Button>
 								</div>
 							</div>
+						</div>
+
+						{/* Mobile view: stacked layout */}
+						<div className='sm:hidden flex flex-col w-full h-full overflow-hidden'>
+							{!isQuoteView ? (
+								<div className='flex-1 overflow-y-auto px-4'>
+									<div className='flex flex-col space-y-4 py-4'>
+										<DialogHeader className='w-full'>
+											<DialogTitle className='flex items-center gap-2 text-base'>
+												<Printer className='h-4 w-4 text-primary' />
+												Add a Custom Print
+											</DialogTitle>
+											<DialogDescription className='text-xs'>
+												Configure your 3D printing requirements
+											</DialogDescription>
+										</DialogHeader>
+
+										<div className='w-full space-y-4'>
+											<Form {...form}>
+												<form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+													<div className='space-y-3'>
+														<div className='flex items-center justify-between'>
+															<h2 className='text-base font-semibold'>Print Items</h2>
+															<span className='text-xs text-muted-foreground'>{fields.length} item(s)</span>
+														</div>
+
+														{fields.map((field, index) => (
+															<PrintItemCard
+																key={field.id}
+																index={index}
+																remove={remove}
+																presets={presets}
+																printingOptions={printingOptions}
+															/>
+														))}
+
+														<div className='flex gap-2'>
+															<Button
+																type='button'
+																variant='secondary'
+																size='sm'
+																className='flex-1 border-dashed bg-secondary/70 hover:bg-secondary/50 text-xs'
+																onClick={handleAddPrint}
+																disabled={isAddingPrint}>
+																<LoadingSwap isLoading={isAddingPrint} className='flex items-center'>
+																	<PlusCircle className='mr-1 h-3 w-3' />
+																	Add Print
+																</LoadingSwap>
+															</Button>
+														</div>
+													</div>
+
+													<Separator />
+
+													<div className='space-y-2'>
+														<label
+															htmlFor='orderComments'
+															className='text-xs font-medium'>
+															Order Comments (Optional)
+														</label>
+														<Textarea
+															id='orderComments'
+															placeholder='Any special instructions?'
+															value={orderComments}
+															onChange={e => setOrderComments(e.target.value)}
+															className='min-h-[80px] text-xs'
+														/>
+													</div>
+
+													<Button
+														type='submit'
+														className='w-full text-xs'
+														size='sm'
+														disabled={isLoading || !orderValidation.orderNameValid}>
+														<LoadingSwap isLoading={isLoading}>
+															{!orderValidation.orderNameValid
+																? 'Enter a valid order name'
+																: 'Submit for Quote'}
+														</LoadingSwap>
+													</Button>
+												</form>
+											</Form>
+										</div>
+									</div>
+								</div>
+							) : (
+								<div className='flex flex-col gap-3 h-full overflow-hidden'>
+									{quoteAlerts.map(alert => (
+										<div key={alert.id} className='px-4 pt-4'>
+											<Alert variant='destructive'>
+												<AlertCircle className='h-3 w-3' />
+												<AlertTitle className='text-xs'>{alert.title}</AlertTitle>
+												<AlertDescription className='text-xs'>{alert.description}</AlertDescription>
+											</Alert>
+										</div>
+									))}
+
+									<div className='px-4 flex-1 overflow-y-auto'>
+										<div className='mt-2'>
+											<h2 className='text-sm font-semibold flex items-center gap-2'>
+												<Printer className='h-4 w-4 text-primary' />
+												Your Quote
+											</h2>
+											<p className='text-xs text-muted-foreground'>
+												Review your prints
+											</p>
+										</div>
+
+										<div className={cn('flex flex-col gap-2 mt-3', quotePageLocked && 'pointer-events-none opacity-60')}>
+											{form.getValues().prints.map((p, i) => {
+												const filename = p.file?.name || 'No file';
+												const quote = quotes.get(i);
+												const isInvalidQuote = isZeroPriceQuote(quote?.sliceResult.price);
+
+												return (
+													<div
+														key={i}
+														className={cn(
+															'rounded-lg transition-all',
+															isInvalidQuote &&
+																'border border-destructive/40 bg-destructive/5 p-1 shadow-sm ring-1 ring-destructive/20',
+														)}>
+														{isInvalidQuote && (
+															<div className='mb-2'>
+																<Alert variant='destructive' className='py-2'>
+																	<AlertCircle className='h-3 w-3' />
+																	<AlertTitle className='text-xs'>Price unavailable</AlertTitle>
+																	<AlertDescription className='text-xs'>
+																		Choose a different model.
+																	</AlertDescription>
+																</Alert>
+															</div>
+														)}
+														<BasketItem
+															item={{
+																id: quote?.id || '',
+																model: {
+																	filename,
+																	filetype: (filename.split('.').pop() || 'stl') as 'stl' | '3mf',
+																	modelUrl: quote?.sliceResult.modelUrl || '',
+																	gcodeUrl: quote?.sliceResult.gcodeUrl || '',
+																},
+																price: quote?.sliceResult.price || null,
+																time: quote?.sliceResult.times.total || null,
+																printingOptions: {
+																	colour: p.material.colour,
+																	plastic: p.material.plastic,
+																	infill: p.printingOptions.infill,
+																	layerHeight: p.printingOptions.layerHeight,
+																	preset: p.printingOptions.preset,
+																},
+																quantity: p.quantity,
+															}}
+															progress={uploadProgress.get(i)?.progress}
+															onQuantityChange={(id, qty) => {
+																form.setValue(`prints.${i}.quantity`, qty);
+															}}
+															canChangeQuantity={false}
+															onRemove={async basketItem => {
+																const id = JSON.parse(basketItem).itemId;
+																remove(i);
+
+																const updatedQuotes = new Map(quotes);
+																updatedQuotes.delete(i);
+
+																const reindexedQuotes = new Map<
+																	number,
+																	NonNullable<typeof updatedQuotes extends Map<number, infer T> ? T : never>
+																>();
+																updatedQuotes.forEach((quote, index) => {
+																	if (quote && index > i) {
+																		reindexedQuotes.set(index - 1, quote);
+																	} else if (quote) {
+																		reindexedQuotes.set(index, quote);
+																	}
+																});
+
+																setQuotes(reindexedQuotes);
+
+																setUploadProgress(prev => {
+																	const updated = new Map(prev);
+																	updated.delete(i);
+
+																	const reindexedProgress = new Map<
+																		number,
+																		{ progress: number; currentChunk: number; chunkTotal: number }
+																	>();
+																	updated.forEach((progress, index) => {
+																		if (index > i) {
+																			reindexedProgress.set(index - 1, progress);
+																		} else {
+																			reindexedProgress.set(index, progress);
+																		}
+																	});
+
+																	return reindexedProgress;
+																});
+
+																try {
+																	await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
+																		method: 'DELETE',
+																	});
+																	await fetch(`/api/quotes/${id}`, {
+																		method: 'DELETE',
+																		credentials: 'include',
+																	});
+																} catch (error) {
+																	console.error('Error cleaning up quote:', id, error);
+																}
+															}}></BasketItem>
+													</div>
+												);
+											})}
+										</div>
+									</div>
+
+									<div className='px-4 pb-4 flex gap-2'>
+										<Button
+											onClick={() => setIsQuoteView(false)}
+											variant='default'
+											size='sm'
+											className='flex-1 text-xs'
+											disabled={quotePageLocked}>
+											Back
+										</Button>
+										<Button
+											className='flex-1 text-xs'
+											size='sm'
+											onClick={() => {
+												if (isLoading || form.getValues().prints.length === 0) cancelQuote();
+												else confirmQuote();
+											}}
+											disabled={quotePageLocked || quotes.size !== form.getValues().prints.length || hasZeroPriceQuote}>
+											{isLoading ? 'Loading...' : 'Add to Basket'}
+										</Button>
+									</div>
+								</div>
+							)}
 						</div>
 					</div>
 				</DialogContent>
