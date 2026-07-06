@@ -57,17 +57,21 @@ const Hero = async ({
 					</h1>
 					<p className='text-sm sm:text-base w-full px-4 sm:px-0 sm:w-4/5 lg:w-2/3'>{description}</p>
 					<div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto px-4 sm:px-0'>
-						<Link href={buttons.primary.url} className={cn(buttonVariants({ variant: 'default', size: 'sm' }), 'w-full sm:w-auto')}>
+						<Link
+							href={buttons.primary.url}
+							className={cn(buttonVariants({ variant: 'default', size: 'sm' }), 'w-full sm:w-auto')}>
 							{buttons.primary.text}
 						</Link>
-						<Link href={buttons.secondary.url} className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }), 'w-full sm:w-auto')}>
+						<Link
+							href={buttons.secondary.url}
+							className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }), 'w-full sm:w-auto')}>
 							{buttons.secondary.text}
 						</Link>
 					</div>
 				</div>
 			</div>
 
-			<div className='grid place-items-center relative w-full px-4 sm:px-0'>
+			<div className='grid place-items-center relative w-3/4 px-4 sm:px-0'>
 				<div className='absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/80 z-10 pointer-events-none'></div>
 				<Video
 					type='video/webm'
