@@ -312,14 +312,6 @@ const Navbar = ({ items, user }: NavbarProps) => {
 						) : (
 							<div className='flex flex-col gap-y-2 mt-4'>
 								<Basket></Basket>
-								<div className='inline'>
-									<UserMenu
-										fullWidth={true}
-										userData={{ name: userData.name || '', image: userData.image || '#' }}
-										handleLogout={handleLogout}
-										logoutLoading={logoutLoading}
-									/>
-								</div>
 							</div>
 						)}
 					</div>

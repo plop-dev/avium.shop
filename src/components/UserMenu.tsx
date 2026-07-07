@@ -34,13 +34,14 @@ function UserMenu({
 	return (
 		<DropdownMenu open={isLogOutLoading} onOpenChange={setIsLogOutLoading}>
 			<DropdownMenuTrigger asChild>
-				<Avatar className='flex items-center justify-center cursor-pointer w-full'>
+				<Avatar className={cn('flex items-center justify-center cursor-pointer')}>
 					<AvatarImage
-						className={cn('border-2', fullWidth ? 'rounded-md w-full' : 'rounded-full')}
+						className={cn('border-2', 'rounded-full')}
 						src={userData.image}
 						alt='User'
 						width={36}
-						height={36}></AvatarImage>
+						height={36}
+						loading='eager'></AvatarImage>
 					<AvatarFallback
 						className={cn(
 							'border-2 bg-muted/50 grid place-items-center h-9',
