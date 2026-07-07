@@ -15,8 +15,29 @@ import CustomToaster from '@/components/layouts/CustomToaster';
 import NanostoreManager from '@/components/NanostoreManager';
 
 export const metadata: Metadata = {
-	title: 'Avium',
+	title: 'Avium | 3D Printing',
+	applicationName: 'Avium | 3D Printing',
 	description: 'Avium makes 3d printing simple and affordable',
+	generator: 'Next.js',
+	keywords: [
+		'3d printing',
+		'3d printing service',
+		'3d printing marketplace',
+		'3d printing marketplace near me',
+		'3d printing marketplace for businesses',
+		'3d printing marketplace for individuals',
+		'3d printing marketplace for designers',
+		'3d printing marketplace for engineers',
+	],
+	openGraph: {
+		type: 'website',
+		locale: 'en_GB',
+		countryName: 'United Kingdom',
+		description: 'Avium makes 3d printing simple and affordable',
+		emails: 'support@avium.shop',
+		images: [{ url: 'https://avium.shop/og-image.png' }],
+	},
+	publisher: 'Vercel',
 	icons: {
 		icon: [{ url: '/favicon.ico' }],
 	},
