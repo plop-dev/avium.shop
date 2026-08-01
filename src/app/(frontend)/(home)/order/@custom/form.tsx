@@ -934,7 +934,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				console.error('Quote request error:', error);
 				lockQuoteView(
 					'Quote generation failed',
-					'An error occurred while getting a quote. Please cancel this quote and try again.',
+					'The model may be invalid, too large, or poorly prepared for printing.\n\nThings you could try:\n1) check the model for holes, non-manifold geometry, or inverted normals;\n2) reduce the model size if it is too large;\n3) repair or re-export the file from your CAD software;\n4) try slicing it yourself to confirm it is valid;\n5) try using the STL version if you uploaded 3MF, or the 3MF version if you uploaded STL.\n\nPlease cancel this quote and try again.',
 				);
 				return;
 			}
@@ -1127,13 +1127,15 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					)}
 				</div>
 
-				<DialogContent className='!p-0 !max-w-sm sm:!max-w-2xl lg:!max-w-4xl !w-[calc(100vw-2rem)] max-h-[calc(100vh-8rem)] overflow-hidden' asChild>
+				<DialogContent
+					className='!p-0 !max-w-sm sm:!max-w-2xl lg:!max-w-4xl !w-[calc(100vw-2rem)] max-h-[calc(100vh-8rem)] overflow-hidden'
+					asChild>
 					<div className='relative w-full h-[calc(100vh-12rem)] overflow-hidden'>
 						<div
 							className='hidden sm:flex w-[200%] h-full transition-transform duration-500 ease-out'
 							style={{ transform: isQuoteView ? 'translateX(-50%)' : 'translateX(0%)' }}>
 							{/* Left panel: original form */}
-							<div className='w-1/2 flex-none px-4 h-full'>
+							<div className='w-1/2 flex-none p-4 h-full'>
 								<div className='flex flex-col space-y-6 h-full overflow-y-auto'>
 									<DialogHeader className='w-full'>
 										<DialogTitle className='flex items-center gap-2'>
@@ -1217,7 +1219,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 							</div>
 
 							{/* Right panel: quote view */}
-							<div className='w-1/2 flex-none px-4 h-full'>
+							<div className='w-1/2 flex-none p-4 h-full'>
 								<div className='flex flex-col gap-4 h-full overflow-y-auto'>
 									{quoteAlerts.map(alert => (
 										<Alert key={alert.id} variant='destructive'>
@@ -1448,9 +1450,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 													<Separator />
 
 													<div className='space-y-2'>
-														<label
-															htmlFor='orderComments'
-															className='text-xs font-medium'>
+														<label htmlFor='orderComments' className='text-xs font-medium'>
 															Order Comments (Optional)
 														</label>
 														<Textarea
@@ -1496,12 +1496,11 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 												<Printer className='h-4 w-4 text-primary' />
 												Your Quote
 											</h2>
-											<p className='text-xs text-muted-foreground'>
-												Review your prints
-											</p>
+											<p className='text-xs text-muted-foreground'>Review your prints</p>
 										</div>
 
-										<div className={cn('flex flex-col gap-2 mt-3', quotePageLocked && 'pointer-events-none opacity-60')}>
+										<div
+											className={cn('flex flex-col gap-2 mt-3', quotePageLocked && 'pointer-events-none opacity-60')}>
 											{form.getValues().prints.map((p, i) => {
 												const filename = p.file?.name || 'No file';
 												const quote = quotes.get(i);
@@ -1560,7 +1559,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 																const reindexedQuotes = new Map<
 																	number,
-																	NonNullable<typeof updatedQuotes extends Map<number, infer T> ? T : never>
+																	NonNullable<
+																		typeof updatedQuotes extends Map<number, infer T> ? T : never
+																	>
 																>();
 																updatedQuotes.forEach((quote, index) => {
 																	if (quote && index > i) {
@@ -1625,7 +1626,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 												if (isLoading || form.getValues().prints.length === 0) cancelQuote();
 												else confirmQuote();
 											}}
-											disabled={quotePageLocked || quotes.size !== form.getValues().prints.length || hasZeroPriceQuote}>
+											disabled={
+												quotePageLocked || quotes.size !== form.getValues().prints.length || hasZeroPriceQuote
+											}>
 											{isLoading ? 'Loading...' : 'Add to Basket'}
 										</Button>
 									</div>
