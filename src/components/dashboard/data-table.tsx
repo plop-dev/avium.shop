@@ -896,7 +896,9 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 																					{print.model.filename}
 																				</CardTitle>
 																				<CardDescription className='text-xs'>
-																					Custom Print #{index + 1}
+																					{typeof print.quote === 'string'
+																						? print.quote
+																						: print.quote?.id}
 																				</CardDescription>
 																			</div>
 																			<Badge variant='secondary'>{numToGBP(print.price)}</Badge>
