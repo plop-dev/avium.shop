@@ -403,7 +403,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 		limit,
 		sort: '-queue',
 		page,
-		depth: 2,
+		depth: 10,
 	});
 
 	const orderData: ZodOrder[] = orders.docs;

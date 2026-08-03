@@ -1012,7 +1012,7 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 																					value={
 																						typeof print.printingOptions.preset === 'string'
 																							? print.printingOptions.preset
-																							: ''
+																							: print.printingOptions.preset?.name
 																					}
 																					onChange={e =>
 																						setPrints(prev =>
@@ -1139,28 +1139,6 @@ function TableCellViewer({ item, setData }: { item: ZodOrder; setData: React.Dis
 																											...item,
 																											time:
 																												e.target.value || undefined,
-																										}
-																									: item,
-																							),
-																						)
-																					}
-																				/>
-																			</div>
-																			<div className='flex flex-col gap-2'>
-																				<Label>Filament (g)</Label>
-																				<Input
-																					type='number'
-																					value={print.filament ?? ''}
-																					onChange={e =>
-																						setPrints(prev =>
-																							prev.map(item =>
-																								item.id === print.id &&
-																								item.blockType === 'customPrint'
-																									? {
-																											...item,
-																											filament:
-																												Number(e.target.value) ||
-																												undefined,
 																										}
 																									: item,
 																							),
