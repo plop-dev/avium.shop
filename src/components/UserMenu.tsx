@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { Button } from './ui/button';
 
 function UserMenu({
 	fullWidth = false,
@@ -32,7 +33,56 @@ function UserMenu({
 	const [isLogOutLoading, setIsLogOutLoading] = useState(false);
 
 	return (
-		<DropdownMenu open={isLogOutLoading} onOpenChange={setIsLogOutLoading}>
+		// <DropdownMenu>
+		// 	<DropdownMenuTrigger>
+		// 		<Avatar className={cn('flex items-center justify-center cursor-pointer')}>
+		// 			<AvatarImage
+		// 				className={cn('border-2', 'rounded-full')}
+		// 				src={userData.image}
+		// 				alt='User'
+		// 				width={36}
+		// 				height={36}
+		// 				loading='eager'></AvatarImage>
+		// 			<AvatarFallback
+		// 				className={cn(
+		// 					'border-2 bg-muted/50 grid place-items-center h-9',
+		// 					fullWidth ? 'rounded-md w-full' : 'rounded-full w-9 aspect-square',
+		// 				)}>
+		// 				{getInitials(userData.name)}
+		// 			</AvatarFallback>
+		// 		</Avatar>
+		// 	</DropdownMenuTrigger>
+		// 	<DropdownMenuContent className={cn(`w-56`, className)} align='start'>
+		// 		<DropdownMenuLabel>My Account</DropdownMenuLabel>
+
+		// 		<DropdownMenuItem
+		// 			variant='destructive'
+		// 			onClick={async e => {
+		// 				e.preventDefault();
+
+		// 				setIsLogOutLoading(true);
+
+		// 				const res = await handleLogout();
+
+		// 				if (res.success) {
+		// 					toast.success('Logged out successfully');
+		// 				} else {
+		// 					toast.error(res.error || 'Failed to log out');
+		// 				}
+		// 				setIsLogOutLoading(false);
+		// 			}}
+		// 			disabled={logoutLoading}
+		// 			className='relative'>
+		// 			Log out
+		// 			<Loader2
+		// 				className={cn('absolute top-1/2 -translate-y-1/2 right-2 animate-spin', {
+		// 					hidden: !logoutLoading,
+		// 				})}></Loader2>
+		// 		</DropdownMenuItem>
+		// 	</DropdownMenuContent>
+		// </DropdownMenu>
+
+		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Avatar className={cn('flex items-center justify-center cursor-pointer')}>
 					<AvatarImage
@@ -51,7 +101,7 @@ function UserMenu({
 					</AvatarFallback>
 				</Avatar>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent className={cn(`w-56`, className)} align='start'>
+			<DropdownMenuContent>
 				<DropdownMenuLabel>My Account</DropdownMenuLabel>
 
 				<DropdownMenuItem
