@@ -33,6 +33,9 @@ export async function SectionCards() {
 			'status.currentStatus': {
 				not_equals: 'cancelled',
 			},
+			'payment.status': {
+				equals: 'paid',
+			},
 		},
 		select: {
 			prints: true,
