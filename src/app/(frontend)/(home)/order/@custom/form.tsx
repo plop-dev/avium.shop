@@ -9,7 +9,21 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, FilePlus2, ImagePlus, Loader2, PlusCircle, Printer, Trash2, Upload, X, Palette, Settings } from 'lucide-react';
+import {
+	AlertCircle,
+	ChevronDown,
+	FilePlus2,
+	ImagePlus,
+	Info,
+	Loader2,
+	PlusCircle,
+	Printer,
+	Trash2,
+	Upload,
+	X,
+	Palette,
+	Settings,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingSwap } from '@/components/ui/loading-swap';
@@ -24,6 +38,7 @@ import { SlicingResult, SlicingSettings, uploadFile } from './utils';
 import { addCustomPrintToBasket, CustomPrint } from '@/stores/basket';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { $orderValidation, setOrderNameValid } from '@/stores/order';
 import { $orderDetails, setOrderDetails } from '@/stores/order';
 import { useStore } from '@nanostores/react';
@@ -71,6 +86,52 @@ function PresetSelection({ onChange, value, presets }: { onChange: (value?: stri
 				</Card>
 			))}
 		</div>
+	);
+}
+
+function QuoteLockAlert({ title, description }: { title: string; description: string }) {
+	const [isExpanded, setIsExpanded] = useState(false);
+	const isLongDescription = description.length > 180;
+	const preview = isLongDescription ? `${description.slice(0, 180).trimEnd()}…` : description;
+
+	return (
+		<Alert variant='destructive' className='relative overflow-hidden'>
+			<AlertCircle className='h-4 w-4' />
+			<div className='flex items-start justify-between gap-3'>
+				<div className='min-w-0 flex-1 space-y-2'>
+					<AlertTitle className='pr-2'>{title}</AlertTitle>
+					<AlertDescription className='space-y-2'>
+						<p className='whitespace-pre-line text-sm leading-6 text-destructive-foreground/90'>
+							{isExpanded || !isLongDescription ? description : preview}
+						</p>
+
+						{isLongDescription && (
+							<button
+								type='button'
+								onClick={() => setIsExpanded(prev => !prev)}
+								className='inline-flex items-center gap-1 rounded-md border border-destructive-foreground/20 bg-destructive-foreground/5 px-2 py-1 text-xs font-medium text-destructive-foreground/90 transition-colors hover:bg-destructive-foreground/10'>
+								<ChevronDown className={cn('h-3.5 w-3.5 transition-transform', isExpanded && 'rotate-180')} />
+								{isExpanded ? 'Show less' : 'Read full message'}
+							</button>
+						)}
+					</AlertDescription>
+				</div>
+
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<button
+							type='button'
+							aria-label='View full quote error details'
+							className='mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive-foreground/20 bg-background/10 text-destructive-foreground/90 transition-colors hover:bg-background/20'>
+							<Info className='h-4 w-4' />
+						</button>
+					</TooltipTrigger>
+					<TooltipContent side='left' className='max-w-xs'>
+						<p className='whitespace-pre-line text-left leading-5'>{description}</p>
+					</TooltipContent>
+				</Tooltip>
+			</div>
+		</Alert>
 	);
 }
 
@@ -1222,11 +1283,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 							<div className='w-1/2 flex-none p-4 h-full'>
 								<div className='flex flex-col gap-4 h-full overflow-y-auto'>
 									{quoteAlerts.map(alert => (
-										<Alert key={alert.id} variant='destructive'>
-											<AlertCircle className='h-4 w-4' />
-											<AlertTitle>{alert.title}</AlertTitle>
-											<AlertDescription>{alert.description}</AlertDescription>
-										</Alert>
+										<QuoteLockAlert key={alert.id} title={alert.title} description={alert.description} />
 									))}
 
 									{hasZeroPriceQuote && (
@@ -1482,11 +1539,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 								<div className='flex flex-col gap-3 h-full overflow-hidden'>
 									{quoteAlerts.map(alert => (
 										<div key={alert.id} className='px-4 pt-4'>
-											<Alert variant='destructive'>
-												<AlertCircle className='h-3 w-3' />
-												<AlertTitle className='text-xs'>{alert.title}</AlertTitle>
-												<AlertDescription className='text-xs'>{alert.description}</AlertDescription>
-											</Alert>
+											<QuoteLockAlert title={alert.title} description={alert.description} />
 										</div>
 									))}
 
