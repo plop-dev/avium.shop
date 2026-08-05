@@ -223,7 +223,7 @@ function MaterialSelection({ index, printingOptions }: { index: number; printing
 													className='w-8 h-8 rounded-full border-2 border-border shadow-sm'
 													style={{ backgroundColor: colour.colour }}
 												/>
-												<span className='text-xs font-medium capitalize'>{colour.colour}</span>
+												<span className='text-xs font-medium'>{colour.colour}</span>
 											</CardContent>
 										</Card>
 									))}
