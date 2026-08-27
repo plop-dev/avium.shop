@@ -458,7 +458,7 @@ export interface Preset {
 	/**
 	 * The filename of the profile of the preset (process) in Bambu Studio/Orca Slicer. DO NOT INCLUDE FILE EXTENSION. See C:\Program Files\OrcaSlicer\resources\profiles\BBL\process
 	 */
-	bambulabName?: string | null;
+	bambulabName: string;
 	updatedAt: string;
 	createdAt: string;
 }
