@@ -78,7 +78,7 @@ export const Products: CollectionConfig = {
 			required: true,
 			admin: {
 				readOnly: true,
-				description: 'The price of the product in GBP (£) (e.g. 1.5)',
+				description: 'The price of the product in pence (p) (e.g. 1500 for £1.50)',
 			},
 		},
 
