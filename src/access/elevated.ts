@@ -1,25 +1,23 @@
-import type { Access, PayloadRequest } from 'payload';
+import type { PayloadRequest } from 'payload';
 
 export const adminAccess = ({ req }: { req: PayloadRequest }) => {
-	if (req.user?.role === 'admin' || req.user?.role === 'developer') {
-		return true;
-	} else {
-		return false;
-	}
+	return req.user?.role === 'admin' || req.user?.role === 'developer';
+};
+
+export const staffAccess = ({ req }: { req: PayloadRequest }) => {
+	return req.user?.role === 'employee' || req.user?.role === 'admin' || req.user?.role === 'developer';
 };
 
 export const devAccess = ({ req }: { req: PayloadRequest }) => {
-	if (req.user?.role === 'developer') {
-		return true;
-	} else {
-		return false;
-	}
+	return req.user?.role === 'developer';
 };
 
 export const backendAccess = ({ req }: { req: PayloadRequest }) => {
-	if (req.headers.get('X-Internal-Token') === process.env.AVIUM_BACKEND_PASSWORD) {
-		return true;
-	} else {
+	const expected = process.env.AVIUM_BACKEND_PASSWORD;
+
+	if (!expected) {
 		return false;
 	}
+
+	return req.headers.get('X-Internal-Token') === expected;
 };

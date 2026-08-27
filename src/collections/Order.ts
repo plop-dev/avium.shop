@@ -1,6 +1,6 @@
 import { Order } from '@/payload-types';
 import { APIError, CollectionConfig } from 'payload';
-import { adminAccess } from '@/access/elevated';
+import { adminAccess, backendAccess, staffAccess } from '@/access/elevated';
 import { noAccess, selfAccessOrders } from '@/access/anyone';
 import { getServerSideURL } from '@/utils/getServerSideUrl';
 
@@ -17,9 +17,9 @@ export const Orders: CollectionConfig = {
 		defaultColumns: ['name', 'customer', 'status.currentStatus', 'total', 'createdAt'],
 	},
 	access: {
-		read: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		read: ({ req }) => staffAccess({ req }) || selfAccessOrders({ req }),
 		create: ({ req }) => !!req.user,
-		update: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		update: ({ req }) => staffAccess({ req }) || backendAccess({ req }),
 		delete: () => false,
 	},
 	hooks: {
