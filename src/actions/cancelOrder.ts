@@ -55,7 +55,7 @@ export async function cancelOrder(orderId: string): Promise<{ success: boolean; 
 					? `${order.comments}\n\nCancelled by customer on ${new Date().toLocaleDateString()}`
 					: `Cancelled by customer on ${new Date().toLocaleDateString()}`,
 			},
-			overrideAccess: false,
+			overrideAccess: true, //* this is only true because users are not allowed to update orders, at all
 			user: userDoc,
 		});
 
