@@ -1,3 +1,4 @@
+import { authoriseSlice } from '@/actions/authoriseSlice';
 import fileToBase64 from '@/utils/fileToBase64';
 import validateUrl from '@/utils/validateUrl';
 
@@ -56,13 +57,16 @@ export interface SlicingSettings {
 
 export type Category = 'printers' | 'presets' | 'filaments';
 
-async function uploadChunk(chunk: UploadChunk, baseServerUrl: string) {
-	const response = await fetch(`${baseServerUrl}${!baseServerUrl.endsWith('/') && '/'}slice`, {
+async function uploadChunk(chunk: UploadChunk, baseServerUrl: string, token: string) {
+	const response = await fetch(`${baseServerUrl}${!baseServerUrl.endsWith('/') ? '/' : ''}slice`, {
 		method: 'POST',
+
 		headers: {
 			'Content-Type': 'application/json',
+
+			Authorization: `Bearer ${token}`,
 		},
-		credentials: 'include',
+
 		body: JSON.stringify(chunk),
 	});
 
@@ -87,6 +91,8 @@ export async function uploadFile(
 
 	console.log(`Uploading ${file.name} in ${totalChunks} chunks`);
 
+	const token = await authoriseSlice(uploadId);
+
 	for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
 		const start = chunkIndex * CHUNK_SIZE;
 		const end = Math.min(start + CHUNK_SIZE, file.size);
@@ -105,7 +111,7 @@ export async function uploadFile(
 			...(chunkIndex === 0 && { settings: slicerSettings }),
 		};
 
-		const res = await uploadChunk(chunkData, baseServerUrl);
+		const res = await uploadChunk(chunkData, baseServerUrl, token);
 		console.log(`Chunk ${chunkIndex + 1}/${totalChunks} upload response:`, res);
 
 		if ('complete' in res && res.complete) {
