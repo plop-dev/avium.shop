@@ -1,6 +1,6 @@
 import { selfAccessOrders } from '@/access/anyone';
 import { adminAccess, backendAccess } from '@/access/elevated';
-import type { CollectionConfig } from 'payload';
+import { APIError, type CollectionConfig } from 'payload';
 
 export const Quotes: CollectionConfig = {
 	slug: 'quotes',
@@ -20,6 +20,12 @@ export const Quotes: CollectionConfig = {
 	hooks: {
 		beforeChange: [
 			async ({ data, req, operation, originalDoc }) => {
+				const price = Number(data.price);
+
+				if (!Number.isSafeInteger(price) || price <= 0) {
+					throw new APIError('Invalid product price', 500);
+				}
+
 				if (operation === 'update' && originalDoc) {
 					for (const key of ['model', 'printingOptions', 'customer', 'filament', 'time', 'price']) {
 						if (originalDoc[key] != null) {
