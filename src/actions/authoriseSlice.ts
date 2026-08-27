@@ -32,7 +32,7 @@ export async function authoriseSlice(quoteId: string) {
 		v: 1,
 		userId: user.id,
 		quoteId,
-		exp: Date.now() + 15 * 60 * 1000, // in 15 minutes
+		exp: Date.now() + 1 * 60 * 60 * 1000, // in 1 hour
 	});
 
 	return token;

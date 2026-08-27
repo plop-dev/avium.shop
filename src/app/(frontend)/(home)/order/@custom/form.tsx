@@ -50,6 +50,7 @@ import { useSession } from 'next-auth/react';
 import { evaluate } from 'mathjs';
 import { timeStringToSeconds } from '@/utils/multiplyTimeString';
 import { prepareSliceResources } from '@/actions/prepareSlice';
+import { authoriseSlice } from '@/actions/authoriseSlice';
 
 type CustomOrderFormValues = z.infer<typeof customOrderFormSchema>;
 
@@ -64,6 +65,20 @@ const defaultPrintItem = {
 		infill: 15,
 	},
 };
+
+async function deleteSliceFromBackend(quoteId: string, token: string) {
+	const response = await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, {
+		method: 'DELETE',
+
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+
+	if (!response.ok && response.status !== 404) {
+		throw new Error('Failed to delete slicing session');
+	}
+}
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5mb
 
@@ -810,6 +825,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		for (const { print, index: i } of printsToProcess) {
 			const existingQuote = quotes.get(i);
+
 			if (existingQuote) {
 				setUploadProgress(prev => {
 					const updated = new Map(prev);
@@ -817,9 +833,11 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					return updated;
 				});
 
+				const sliceToken = await authoriseSlice(existingQuote.id);
 				try {
 					await Promise.all([
-						fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${existingQuote.id}`, { method: 'DELETE' }),
+						deleteSliceFromBackend(existingQuote.id, sliceToken),
+
 						fetch(`/api/quotes/${existingQuote.id}`, { method: 'DELETE', credentials: 'include' }),
 					]);
 				} catch (error) {
@@ -1003,7 +1021,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		const cleanupPromises = quotesToCleanup.map(async quoteId => {
 			try {
-				await Promise.all([fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' })]);
+				const sliceToken = await authoriseSlice(quoteId);
+
+				deleteSliceFromBackend(quoteId, sliceToken);
 			} catch (error) {
 				console.error('Error cleaning up quote:', quoteId, error);
 			}
@@ -1329,9 +1349,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 															});
 
 															try {
-																await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
-																	method: 'DELETE',
-																});
+																const sliceToken = await authoriseSlice(id);
+
+																deleteSliceFromBackend(id, sliceToken);
 																await fetch(`/api/quotes/${id}`, {
 																	method: 'DELETE',
 																	credentials: 'include',
@@ -1564,9 +1584,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 																});
 
 																try {
-																	await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
-																		method: 'DELETE',
-																	});
+																	const sliceToken = await authoriseSlice(id);
+
+																	deleteSliceFromBackend(id, sliceToken);
 																	await fetch(`/api/quotes/${id}`, {
 																		method: 'DELETE',
 																		credentials: 'include',

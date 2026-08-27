@@ -1,11 +1,11 @@
 import 'server-only';
 
 export async function aviumServerFetch(path: string, init: RequestInit = {}) {
-	const baseUrl = process.env.AVIUM_API_URL;
+	const baseUrl = process.env.NEXT_PUBLIC_AVIUM_API_URL;
 	const secret = process.env.AVIUM_ORDER_SERVER_SECRET;
 
 	if (!baseUrl) {
-		throw new Error('AVIUM_API_URL is not configured');
+		throw new Error('NEXT_PUBLIC_AVIUM_API_URL is not configured');
 	}
 
 	if (!secret) {
