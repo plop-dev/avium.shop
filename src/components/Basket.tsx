@@ -180,22 +180,6 @@ export default function Basket() {
 
 			router.push(checkoutRes.message);
 		} else {
-			// mark the checkout as failed
-			await fetch(`/api/orders/${resJSON.doc.id}`, {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					payment: {
-						status: 'checkout-failed',
-					},
-				}),
-				credentials: 'include',
-			}).catch(err => {
-				console.error('Failed to mark order as checkout-failed: ', err);
-			});
-
 			toast.error(checkoutRes.message || 'Failed to create checkout session. Please try again, or visit your dashboard.');
 			setIsSubmitting(false);
 

@@ -35,88 +35,108 @@ export async function checkout(orderId: string): Promise<{ success: boolean; mes
 	const serverSideUrl = getServerSideURL();
 
 	// create checkout session
-	const checkout = await stripe.checkout.sessions.create({
-		mode: 'payment',
-		ui_mode: 'hosted_page',
-		currency: 'gbp',
-		success_url: `${serverSideUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-		cancel_url: `${serverSideUrl}/checkout/cancel?order_id=${orderId}`,
-		customer_creation: 'always',
-		customer_email: typeof order.customer === 'string' ? undefined : order.customer.email,
-		client_reference_id: order.id,
-		metadata: {
-			orderId: order.id,
-			userId: typeof order.customer === 'string' ? order.customer : order.customer.id,
+	try {
+		const checkout = await stripe.checkout.sessions.create({
+			mode: 'payment',
+			ui_mode: 'hosted_page',
 			currency: 'gbp',
-		},
-		line_items: [
-			{
-				price_data: {
-					currency: 'gbp',
-					product_data: {
-						name: `Shipping`,
-					},
-					unit_amount: 300,
-				},
-				quantity: 1,
+			success_url: `${serverSideUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${serverSideUrl}/checkout/cancel?order_id=${orderId}`,
+			customer_creation: 'always',
+			customer_email: typeof order.customer === 'string' ? undefined : order.customer.email,
+			client_reference_id: order.id,
+			metadata: {
+				orderId: order.id,
+				userId: typeof order.customer === 'string' ? order.customer : order.customer.id,
+				currency: 'gbp',
 			},
-			...order.prints.map(print => {
-				if (print.blockType === 'customPrint') {
-					const r: Stripe.Checkout.SessionCreateParams.LineItem = {
-						price_data: {
-							currency: 'gbp',
-							product_data: {
-								name: `Custom Print - ${print.model.filename}`,
-								description: `Printing options: ${print.printingOptions.colour} ${print.printingOptions.plastic}, Quality: ${print.printingOptions.layerHeight || (typeof print.printingOptions.preset === 'string' ? print.printingOptions.preset : print.printingOptions.preset?.name)}, Infill: ${print.printingOptions.infill}`,
-							},
-							unit_amount: print.price,
+			line_items: [
+				{
+					price_data: {
+						currency: 'gbp',
+						product_data: {
+							name: `Shipping`,
 						},
-						quantity: print.quantity,
-					};
-
-					return r;
-				} else {
-					const r: Stripe.Checkout.SessionCreateParams.LineItem = {
-						price_data: {
-							currency: 'gbp',
-							product_data: {
-								name: `Shop Product - ${typeof print.product === 'string' ? print.product : print.product.name}`,
+						unit_amount: 300,
+					},
+					quantity: 1,
+				},
+				...order.prints.map(print => {
+					if (print.blockType === 'customPrint') {
+						const r: Stripe.Checkout.SessionCreateParams.LineItem = {
+							price_data: {
+								currency: 'gbp',
+								product_data: {
+									name: `Custom Print - ${print.model.filename}`,
+									description: `Printing options: ${print.printingOptions.colour} ${print.printingOptions.plastic}, Quality: ${print.printingOptions.layerHeight || (typeof print.printingOptions.preset === 'string' ? print.printingOptions.preset : print.printingOptions.preset?.name)}, Infill: ${print.printingOptions.infill}`,
+								},
+								unit_amount: print.price,
 							},
-							unit_amount: print.price,
-						},
-						quantity: print.quantity,
-					};
+							quantity: print.quantity,
+						};
 
-					return r;
-				}
-			}),
-		],
-		shipping_address_collection: {
-			allowed_countries: ['GB'],
-		},
-		billing_address_collection: 'required',
-	});
+						return r;
+					} else {
+						const r: Stripe.Checkout.SessionCreateParams.LineItem = {
+							price_data: {
+								currency: 'gbp',
+								product_data: {
+									name: `Shop Product - ${typeof print.product === 'string' ? print.product : print.product.name}`,
+								},
+								unit_amount: print.price,
+							},
+							quantity: print.quantity,
+						};
 
-	if (!checkout.url) {
+						return r;
+					}
+				}),
+			],
+			shipping_address_collection: {
+				allowed_countries: ['GB'],
+			},
+			billing_address_collection: 'required',
+		});
+
+		if (!checkout.url) {
+			return {
+				success: false,
+				message: 'Failed to create checkout session.',
+			};
+		}
+		await payload.update({
+			id: orderId,
+			collection: 'orders',
+			data: {
+				payment: {
+					stripeCheckoutSessionId: checkout.id,
+					status: 'awaiting-payment',
+				},
+				expiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(), // 6 hours from now
+			},
+		});
+
+		return {
+			success: true,
+			message: checkout.url,
+		};
+	} catch (error) {
+		await payload.update({
+			collection: 'orders',
+			id: orderId,
+			data: {
+				payment: {
+					status: 'checkout-failed',
+				},
+			},
+			overrideAccess: true,
+		});
+
+		console.error('Checkout creation failed:', error);
+
 		return {
 			success: false,
 			message: 'Failed to create checkout session.',
 		};
 	}
-	await payload.update({
-		id: orderId,
-		collection: 'orders',
-		data: {
-			payment: {
-				stripeCheckoutSessionId: checkout.id,
-				status: 'awaiting-payment',
-			},
-			expiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(), // 6 hours from now
-		},
-	});
-
-	return {
-		success: true,
-		message: checkout.url,
-	};
 }
