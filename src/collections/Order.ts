@@ -1,6 +1,6 @@
 import { Order } from '@/payload-types';
 import { APIError, CollectionConfig } from 'payload';
-import { adminAccess } from '@/access/elevated';
+import { adminAccess, backendAccess, staffAccess } from '@/access/elevated';
 import { noAccess, selfAccessOrders } from '@/access/anyone';
 import { getServerSideURL } from '@/utils/getServerSideUrl';
 
@@ -17,9 +17,9 @@ export const Orders: CollectionConfig = {
 		defaultColumns: ['name', 'customer', 'status.currentStatus', 'total', 'createdAt'],
 	},
 	access: {
-		read: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		read: ({ req }) => staffAccess({ req }) || selfAccessOrders({ req }),
 		create: ({ req }) => !!req.user,
-		update: ({ req }) => adminAccess({ req }) || selfAccessOrders({ req }),
+		update: ({ req }) => staffAccess({ req }) || backendAccess({ req }),
 		delete: () => false,
 	},
 	hooks: {
@@ -42,13 +42,15 @@ export const Orders: CollectionConfig = {
 				//* 2. the quotes will never update in price anyways
 				//* 3. the product price should NEVER change, but might, so not updating it will keep the price consistent
 
-				const sourcePrints: Order['prints'] =
-					Array.isArray(data.prints) && data.prints.length > 0 ? data.prints : originalDoc?.prints || [];
-				let normalizedPrints: Order['prints'] | undefined;
+				const sourcePrints: Order['prints'] = Array.isArray(data.prints) ? data.prints : [];
 
-				if (sourcePrints[0] && !sourcePrints[0].price) {
-					normalizedPrints = await Promise.all(
-						sourcePrints.map(async (print: Order['prints'][number]) => {
+				if (operation === 'create') {
+					if (sourcePrints.length === 0) {
+						throw new APIError('Order must contain at least one print.', 400);
+					}
+
+					const normalizedPrints = await Promise.all(
+						sourcePrints.map(async print => {
 							const quantity = Number(print.quantity);
 
 							if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
@@ -59,73 +61,111 @@ export const Orders: CollectionConfig = {
 								const productId = typeof print.product === 'string' ? print.product : print.product?.id;
 
 								if (!productId) {
-									throw new APIError('Shop product prints must include a product.', 400);
+									throw new APIError('Shop product must include a product.', 400);
 								}
 
 								const product = await req.payload.findByID({
 									collection: 'products',
 									id: productId,
+
+									overrideAccess: false,
+									user: req.user,
 								});
 
-								const price = Number(product?.price);
+								const price = Number(product.price);
 
-								if (!Number.isFinite(price) || price <= 0) {
-									throw new APIError(`Product price is invalid or missing. Got: ${product?.price}`, 400);
+								if (!Number.isInteger(price) || price <= 0) {
+									throw new APIError('Product has an invalid price.', 500);
 								}
 
 								return {
-									...print,
+									blockType: 'shopProduct' as const,
 									product: productId,
 									quantity,
-									price: Math.round(price), // the only field actually getting updated
+
+									// the only field the user can change
+									colour: print.colour,
+
+									// from db
+									price,
+									completed: false,
 								};
 							}
+
+							// custom prints
 
 							const quoteId = typeof print.quote === 'string' ? print.quote : print.quote?.id;
 
 							if (!quoteId) {
-								throw new APIError('Custom print must include a quote reference.', 400);
+								throw new APIError('Custom print must include a quote.', 400);
 							}
 
 							const quote = await req.payload.findByID({
 								collection: 'quotes',
 								id: quoteId,
+								overrideAccess: false,
+								user: req.user,
 							});
 
 							const price = Number(quote.price);
 
-							if (!Number.isFinite(price) || price <= 0) {
-								throw new APIError(`Quote price is invalid or missing. Got: ${quote?.price}`, 400);
+							if (!Number.isInteger(price) || price <= 0) {
+								throw new APIError('Quote has an invalid price.', 400);
 							}
 
 							return {
-								...print,
-								quote: quoteId,
+								blockType: 'customPrint' as const,
+
+								// all from the db (quote)
+								quote: quote.id,
+								model: quote.model,
+								printingOptions: quote.printingOptions,
+								filament: quote.filament,
+								time: quote.time,
+
 								quantity,
-								price, // the only field actually getting updated
+								price,
+								completed: false,
 							};
 						}),
-					).catch(err => {
-						console.error('Error normalizing prints:', err);
-						throw new APIError('Failed to normalize prints. ' + (err instanceof Error ? err.message : String(err)), 400);
-					});
+					);
+
 					data.prints = normalizedPrints;
 
-					// pricing calculation
-					const subtotal = normalizedPrints.reduce(
-						(sum: number, print: Order['prints'][number]) => sum + (Number(print.price) || 0) * Number(print.quantity || 0),
-						0,
-					);
-					const shipping = Number(data.pricing?.shipping ?? originalDoc?.pricing?.shipping) || 300;
-					const tax = Number(data.pricing?.tax ?? originalDoc?.pricing?.tax) || 0;
+					const subtotal = normalizedPrints.reduce((total, print) => total + Number(print.price) * Number(print.quantity), 0);
+
+					const shipping = 300;
+					const tax = 0;
+
 					data.pricing = {
 						subtotal,
 						shipping,
 						tax,
 						total: subtotal + shipping + tax,
 					};
-				} else {
-					data.pricing = originalDoc?.pricing ?? data.pricing; //* if the prices are already set, disable updating prices
+
+					// status
+
+					const now = new Date().toISOString();
+
+					data.payment = {
+						status: 'awaiting-payment',
+					};
+
+					data.status = {
+						currentStatus: 'in-queue',
+						statuses: [
+							{
+								stage: 'in-queue',
+								timestamp: now,
+							},
+						],
+					};
+
+					data.shipping = undefined;
+					data.shippingAddress = undefined;
+					data.dimensions = undefined;
+					data.expiresAt = undefined;
 				}
 
 				// makes the shippingAddress readonly

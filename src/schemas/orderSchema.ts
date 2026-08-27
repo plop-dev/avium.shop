@@ -6,7 +6,7 @@ export const presetSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	description: z.string().optional().nullable(),
-	bambulabName: z.string().optional().nullable(),
+	bambulabName: z.string(),
 	updatedAt: z.string(),
 	createdAt: z.string(),
 });

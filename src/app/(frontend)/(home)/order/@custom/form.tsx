@@ -49,6 +49,8 @@ import { User } from 'next-auth';
 import { useSession } from 'next-auth/react';
 import { evaluate } from 'mathjs';
 import { timeStringToSeconds } from '@/utils/multiplyTimeString';
+import { prepareSliceResources } from '@/actions/prepareSlice';
+import { authoriseSlice } from '@/actions/authoriseSlice';
 
 type CustomOrderFormValues = z.infer<typeof customOrderFormSchema>;
 
@@ -63,6 +65,20 @@ const defaultPrintItem = {
 		infill: 15,
 	},
 };
+
+async function deleteSliceFromBackend(quoteId: string, token: string) {
+	const response = await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, {
+		method: 'DELETE',
+
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+
+	if (!response.ok && response.status !== 404) {
+		throw new Error('Failed to delete slicing session');
+	}
+}
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5mb
 
@@ -809,6 +825,7 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		for (const { print, index: i } of printsToProcess) {
 			const existingQuote = quotes.get(i);
+
 			if (existingQuote) {
 				setUploadProgress(prev => {
 					const updated = new Map(prev);
@@ -816,9 +833,11 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					return updated;
 				});
 
+				const sliceToken = await authoriseSlice(existingQuote.id);
 				try {
 					await Promise.all([
-						fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${existingQuote.id}`, { method: 'DELETE' }),
+						deleteSliceFromBackend(existingQuote.id, sliceToken),
+
 						fetch(`/api/quotes/${existingQuote.id}`, { method: 'DELETE', credentials: 'include' }),
 					]);
 				} catch (error) {
@@ -847,91 +866,16 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 				}),
 			}).then(res => res.json());
 
-			let filamentJSON;
-			try {
-				// find the filament profile for the selected plastic type
-				const query = stringify(
-					{
-						where: {
-							name: { equals: print.material.plastic },
-						},
-						limit: 1,
-					},
-					{ addQueryPrefix: true },
-				);
-
-				const filamentRes = await fetch(`/api/filaments${query}`);
-				filamentJSON = await filamentRes.json();
-
-				if (filamentJSON.totalDocs === 0) {
-					lockQuoteView(
-						'Quote generation failed',
-						`No filament profile was found for ${print.material.plastic}. Please cancel this quote and contact support.`,
-					);
-					return;
-				}
-
-				// upload the filament profile to the Avium API for this quote
-				const filamentRequestData = new FormData();
-
-				filamentRequestData.append('name', `${filamentJSON.docs[0].id}`);
-				filamentRequestData.append(
-					'file',
-					new Blob([JSON.stringify(filamentJSON.docs[0].data)], { type: 'application/json' }),
-					'filament.json',
-				);
-				console.log('filamentJSON', filamentJSON);
-
-				await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/filaments`, {
-					method: 'POST',
-					body: filamentRequestData,
-				});
-			} catch (error) {
-				console.error('Error fetching filament data:', error);
-				lockQuoteView(
-					'Quote generation failed',
-					'An error occurred fetching filament data. Please cancel this quote and try again.',
-				);
-				return;
-			}
-
-			//* only works if a preset is not used
-			try {
-				const body: {
-					name: string;
-					layerHeight?: number;
-					infill?: number;
-					preset?: string;
-				} = {
-					name: quoteRes.doc.id,
-					layerHeight: print.printingOptions.layerHeight || 0.2,
-					infill: print.printingOptions.infill || 15,
-				};
-
-				await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/generate/presets`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify(body),
-				});
-			} catch (error) {
-				console.error('Error generating preset profile:', error);
-				lockQuoteView(
-					'Quote generation failed',
-					'An error occurred generating the preset profile. Please cancel this quote and try again.',
-				);
-				return;
-			}
+			const resources = await prepareSliceResources(quoteRes.doc.id);
 
 			try {
 				const slicerSettings: SlicingSettings = {
 					exportType: 'gcode',
-					filament: filamentJSON.docs[0].id,
+					filament: resources.filament,
 					plate: '0',
 					printer: 'machine', // 'machine' default printer profile (bbl p1s .4 nozzle)
 					multicolorOnePlate: false,
-					preset: quoteRes.doc.id,
+					preset: resources.preset,
 				};
 
 				if (print.printingOptions.preset) {
@@ -982,14 +926,6 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 					console.error('No response from slicing API');
 					lockQuoteView('Quote generation failed', 'The slicer did not return a quote. Please cancel this quote and try again.');
 					return;
-				}
-
-				try {
-					await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/presets/${quoteRes.doc.id}`, { method: 'DELETE' });
-					//* don't delete the filament profile, as it may be used by other quotes
-					// await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/profiles/filaments/${quoteRes.doc.id}`, { method: 'DELETE' });
-				} catch (error) {
-					console.error('Error deleting temporary files:', error);
 				}
 			} catch (error) {
 				console.error('Quote request error:', error);
@@ -1085,7 +1021,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 
 		const cleanupPromises = quotesToCleanup.map(async quoteId => {
 			try {
-				await Promise.all([fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${quoteId}`, { method: 'DELETE' })]);
+				const sliceToken = await authoriseSlice(quoteId);
+
+				deleteSliceFromBackend(quoteId, sliceToken);
 			} catch (error) {
 				console.error('Error cleaning up quote:', quoteId, error);
 			}
@@ -1411,9 +1349,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 															});
 
 															try {
-																await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
-																	method: 'DELETE',
-																});
+																const sliceToken = await authoriseSlice(id);
+
+																deleteSliceFromBackend(id, sliceToken);
 																await fetch(`/api/quotes/${id}`, {
 																	method: 'DELETE',
 																	credentials: 'include',
@@ -1646,9 +1584,9 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 																});
 
 																try {
-																	await fetch(`${process.env.NEXT_PUBLIC_AVIUM_API_URL}/slice/${id}`, {
-																		method: 'DELETE',
-																	});
+																	const sliceToken = await authoriseSlice(id);
+
+																	deleteSliceFromBackend(id, sliceToken);
 																	await fetch(`/api/quotes/${id}`, {
 																		method: 'DELETE',
 																		credentials: 'include',

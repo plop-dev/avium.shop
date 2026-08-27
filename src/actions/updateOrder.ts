@@ -19,6 +19,13 @@ export async function updateOrder(
 			id: user?.id || '',
 		});
 
+		const roles = Array.isArray(userDoc.role) ? userDoc.role : userDoc.role ? [userDoc.role] : [];
+
+		// double check, just in case
+		if (!roles.some(role => ['admin', 'developer', 'employee'].includes(role))) {
+			return 'Not authorised';
+		}
+
 		const res = await payload.update({
 			collection: 'orders',
 			id: orderId,

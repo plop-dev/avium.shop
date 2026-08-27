@@ -471,7 +471,7 @@ export interface Product {
   description: string;
   pictures: (string | Media)[];
   /**
-   * The price of the product in GBP (£) (e.g. 1.5)
+   * The price of the product in pence (p) (e.g. 1500 for £1.50)
    */
   price: number;
   /**
@@ -609,7 +609,7 @@ export interface Preset {
   /**
    * The filename of the profile of the preset (process) in Bambu Studio/Orca Slicer. DO NOT INCLUDE FILE EXTENSION. See C:\Program Files\OrcaSlicer\resources\profiles\BBL\process
    */
-  bambulabName?: string | null;
+  bambulabName: string;
   updatedAt: string;
   createdAt: string;
 }

@@ -18,7 +18,8 @@ const FormulaField = ({ field: { label, required = false }, path }: { field: { l
 					`Invalid formula: Preview (10cm³ volume, 30mins time, filament multipler 0.02232): £${(result / 100).toFixed(2)}`,
 				);
 			}
-			if (result === Infinity || isNaN(result)) {
+
+			if (result === Infinity || isNaN(result) || !Number.isSafeInteger(result)) {
 				setPreview('Invalid formula');
 				return;
 			}
