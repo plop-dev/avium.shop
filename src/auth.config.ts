@@ -54,46 +54,19 @@ export const authConfig: NextAuthConfig = {
 			if (user) {
 				token.id = user.id;
 
-				// @ts-expect-error: ts being annoying
+				// @ts-expect-error custom Payload token
 				token.token = user.token;
 			}
+
 			return token;
 		},
+
 		session({ session, token }) {
 			if (session.user) {
 				session.user.id = token.id as string;
 			}
+
 			return session;
-		},
-		authorized: ({ auth, request: { nextUrl } }) => {
-			const isOnAuthPage = nextUrl.pathname.startsWith('/auth/');
-			const isLoggedIn = !!auth;
-
-			if (isOnAuthPage || nextUrl.pathname === '/') {
-				return true; // Allow access to auth pages
-			}
-
-			return isLoggedIn; // Require auth for other pages
-		},
-		async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-			const isRelativeUrl = url.startsWith('/');
-			if (isRelativeUrl) {
-				return `${baseUrl}${url}`;
-			}
-
-			const isSameOriginUrl = new URL(url).origin === baseUrl;
-			const alreadyRedirected = url.includes('callbackUrl=');
-			if (isSameOriginUrl && alreadyRedirected) {
-				const originalCallbackUrl = decodeURIComponent(url.split('callbackUrl=')[1]);
-
-				return originalCallbackUrl;
-			}
-
-			if (isSameOriginUrl) {
-				return url;
-			}
-
-			return baseUrl;
 		},
 	},
 	session: {

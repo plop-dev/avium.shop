@@ -21,6 +21,7 @@ import { Quotes } from './collections/Quotes';
 import { Filaments } from './collections/Filaments';
 import { PricingFormula } from './collections/PricingFormula';
 import { AdminDetails } from './collections/AdminDetails';
+import { PAYLOAD_SECRET, AUTH_SECRET, DATABASE_URI, NEXT_PUBLIC_AVIUM_API_URL } from './lib/environmentVars';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -38,17 +39,17 @@ export default buildConfig({
 		},
 	},
 	cors: {
-		origins: [process.env.NEXT_PUBLIC_AVIUM_API_URL || ''],
+		origins: [NEXT_PUBLIC_AVIUM_API_URL],
 	},
 	globals: [PrintingOptions, PricingFormula, AdminDetails],
 	collections: [Users, Orders, Presets, Products, Media, Quotes, Filaments],
 	editor: lexicalEditor(),
-	secret: process.env.PAYLOAD_SECRET || '',
+	secret: PAYLOAD_SECRET,
 	typescript: {
 		outputFile: path.resolve(dirname, 'payload-types.ts'),
 	},
 	db: mongooseAdapter({
-		url: process.env.DATABASE_URI || '',
+		url: DATABASE_URI,
 	}),
 	sharp,
 	serverURL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
@@ -79,9 +80,6 @@ export default buildConfig({
 			auth: {
 				user: process.env.SMTP_USER,
 				pass: process.env.SMTP_PASS,
-			},
-			tls: {
-				rejectUnauthorized: false,
 			},
 		}),
 	}),

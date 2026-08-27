@@ -15,8 +15,9 @@ export async function buyLabel(orderId: string, dimensions: Order['dimensions'])
 	const payload = await getPayload({ config });
 	const user = await getUser();
 
+	let userDoc;
 	try {
-		const userDoc = await payload.findByID({
+		userDoc = await payload.findByID({
 			collection: 'users',
 			id: user?.id || '',
 		});
@@ -31,6 +32,8 @@ export async function buyLabel(orderId: string, dimensions: Order['dimensions'])
 
 	const adminDetails = await payload.findGlobal({
 		slug: 'admin-details',
+		user: userDoc.id,
+		overrideAccess: false,
 	});
 
 	const orderDetails = await payload.findByID({

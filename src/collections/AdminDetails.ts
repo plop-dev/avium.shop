@@ -6,7 +6,7 @@ export const AdminDetails: GlobalConfig = {
 	label: 'Admin Details',
 	access: {
 		update: ({ req }) => adminAccess({ req }),
-		read: () => true,
+		read: ({ req }) => adminAccess({ req }),
 	},
 	fields: [
 		{

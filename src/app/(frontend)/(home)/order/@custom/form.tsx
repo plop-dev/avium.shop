@@ -1023,7 +1023,14 @@ export default function CustomPrintForm({ presets, printingOptions }: { presets:
 			try {
 				const sliceToken = await authoriseSlice(quoteId);
 
-				deleteSliceFromBackend(quoteId, sliceToken);
+				await Promise.allSettled([
+					deleteSliceFromBackend(quoteId, sliceToken),
+
+					fetch(`/api/quotes/${quoteId}`, {
+						method: 'DELETE',
+						credentials: 'include',
+					}),
+				]);
 			} catch (error) {
 				console.error('Error cleaning up quote:', quoteId, error);
 			}
