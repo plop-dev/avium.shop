@@ -20,20 +20,22 @@ export async function authoriseSlice(quoteId: string) {
 		id: user.id,
 	});
 
-	// confirm quote belongs to user
-	await payload.findByID({
-		collection: 'quotes',
-		id: quoteId,
-		overrideAccess: false,
-		user: userDoc,
-	});
+	try {
+		// checking the user owns the quote and has permission
+		await payload.findByID({
+			collection: 'quotes',
+			id: quoteId,
+			overrideAccess: false,
+			user: userDoc,
+		});
+	} catch {
+		throw new Error('Quote not found or not authorised');
+	}
 
-	const token = createSliceToken({
+	return createSliceToken({
 		v: 1,
 		userId: user.id,
 		quoteId,
-		exp: Date.now() + 1 * 60 * 60 * 1000, // in 1 hour
+		exp: Date.now() + 15 * 60 * 1000,
 	});
-
-	return token;
 }
